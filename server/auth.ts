@@ -21,11 +21,13 @@ export function getSession() {
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
+    name: 'sessionId', // Explicit session name
     cookie: {
       httpOnly: true,
-      secure: false, // Set to true in production with HTTPS
+      secure: process.env.NODE_ENV === 'production', // Only secure in production
       maxAge: sessionTtl,
-      sameSite: 'lax' // Better compatibility with modern browsers
+      sameSite: 'lax', // Better compatibility with modern browsers
+      path: '/' // Ensure cookie is available for all paths
     },
   });
 }
