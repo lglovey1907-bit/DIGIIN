@@ -9,6 +9,7 @@ import Register from "@/pages/register";
 import Home from "@/pages/home";
 import InspectionForm from "@/pages/inspection-form";
 import AdminDashboard from "@/pages/admin-dashboard";
+import CMIDashboard from "@/pages/cmi-dashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
