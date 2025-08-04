@@ -9,7 +9,8 @@ import {
   Users, 
   Calendar,
   Train,
-  LogOut
+  LogOut,
+  Download
 } from "lucide-react";
 
 export default function Home() {
@@ -25,6 +26,33 @@ export default function Home() {
 
   const handleLogout = () => {
     window.location.href = "/api/logout";
+  };
+
+  const handleDownloadPDF = async (inspectionId: string) => {
+    try {
+      const response = await fetch(`/api/inspections/${inspectionId}/export-pdf`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download PDF');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `inspection-${inspectionId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Failed to download PDF. Please try again.');
+    }
   };
 
   return (
@@ -150,13 +178,24 @@ export default function Home() {
                         {inspection.stationCode} • {inspection.area} • {new Date(inspection.inspectionDate).toLocaleDateString()}
                       </p>
                     </div>
-                    <span className={`px-3 py-1 text-xs rounded-full ${
-                      inspection.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      inspection.status === 'submitted' ? 'bg-blue-100 text-blue-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {inspection.status}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        onClick={() => handleDownloadPDF(inspection.id)}
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center space-x-1"
+                      >
+                        <Download size={16} />
+                        <span>PDF</span>
+                      </Button>
+                      <span className={`px-3 py-1 text-xs rounded-full ${
+                        inspection.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        inspection.status === 'submitted' ? 'bg-blue-100 text-blue-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {inspection.status}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>

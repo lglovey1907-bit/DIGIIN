@@ -7,6 +7,7 @@ import { insertInspectionSchema, insertInspectionAssignmentSchema, insertShortli
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import PDFDocument from "pdfkit";
 
 // Configure multer for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -247,6 +248,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching files:", error);
       res.status(500).json({ message: "Failed to fetch files" });
+    }
+  });
+
+  // PDF Export route
+  app.get('/api/inspections/:id/export-pdf', isAuthenticated, async (req: any, res) => {
+    try {
+      const inspection = await storage.getInspection(req.params.id);
+      if (!inspection) {
+        return res.status(404).json({ message: "Inspection not found" });
+      }
+
+      const user = await storage.getUser(inspection.userId);
+      
+      // Create PDF document
+      const doc = new PDFDocument({ margin: 50 });
+      
+      // Set response headers
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="inspection-${inspection.id}.pdf"`);
+      
+      // Pipe the PDF to response
+      doc.pipe(res);
+      
+      // Northern Railway Header
+      doc.fontSize(20).text('Northern Railway', { align: 'center' });
+      doc.fontSize(16).text('Delhi Division Digital Inspection Report', { align: 'center' });
+      doc.moveDown(2);
+      
+      // Inspection Details
+      doc.fontSize(14).text('INSPECTION DETAILS', { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(12);
+      doc.text(`Inspection ID: ${inspection.id}`);
+      doc.text(`Station: ${inspection.stationCode}`);
+      doc.text(`Area: ${inspection.area.toUpperCase()}`);
+      doc.text(`Date: ${inspection.createdAt ? new Date(inspection.createdAt).toLocaleDateString('en-IN') : 'N/A'}`);
+      doc.text(`Time: ${inspection.createdAt ? new Date(inspection.createdAt).toLocaleTimeString('en-IN') : 'N/A'}`);
+      doc.text(`Inspector: ${user?.firstName || ''} ${user?.lastName || ''} (${user?.email || ''})`);
+      doc.text(`Status: ${inspection.status ? inspection.status.toUpperCase() : 'N/A'}`);
+      doc.moveDown(1);
+      
+      // Observations
+      if (inspection.observations && typeof inspection.observations === 'object') {
+        doc.fontSize(14).text('OBSERVATIONS', { underline: true });
+        doc.moveDown(0.5);
+        doc.fontSize(12);
+        
+        const observations = inspection.observations as any;
+        let observationCount = 1;
+        
+        Object.entries(observations).forEach(([key, value]) => {
+          if (key !== 'summary' && value) {
+            doc.text(`${observationCount}. ${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`);
+            observationCount++;
+          }
+        });
+        
+        if (observations.summary) {
+          doc.moveDown(0.5);
+          doc.text(`Summary: ${observations.summary}`);
+        }
+        
+        doc.moveDown(1);
+      }
+      
+      // Footer
+      doc.fontSize(10);
+      doc.text('This is a computer-generated report from the Northern Railway Delhi Division Digital Inspection Platform.', 
+        { align: 'center' });
+      doc.text(`Generated on: ${new Date().toLocaleString('en-IN')}`, { align: 'center' });
+      
+      // Add page numbers
+      const range = doc.bufferedPageRange();
+      for (let i = range.start; i < (range.start + range.count); i++) {
+        doc.switchToPage(i);
+        doc.text(`Page ${i + 1} of ${range.count}`, 
+          doc.page.width - 100, doc.page.height - 50, { align: 'right' });
+      }
+      
+      doc.end();
+      
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      res.status(500).json({ message: "Failed to generate PDF" });
     }
   });
 
