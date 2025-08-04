@@ -96,12 +96,16 @@ export const insertInspectionSchema = createInsertSchema(inspections).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  inspectionDate: z.string().transform((str) => new Date(str)),
 });
 
 export const insertInspectionAssignmentSchema = createInsertSchema(inspectionAssignments).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  dueDate: z.string().transform((str) => new Date(str)),
 });
 
 export const insertShortlistedItemSchema = createInsertSchema(shortlistedItems).omit({

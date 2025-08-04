@@ -140,7 +140,7 @@ export default function Home() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {Array.isArray(inspections) && inspections.length > 0 ? (
+            {inspections && Array.isArray(inspections) && inspections.length > 0 ? (
               <div className="space-y-4">
                 {inspections.slice(0, 5).map((inspection: any) => (
                   <div key={inspection.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
