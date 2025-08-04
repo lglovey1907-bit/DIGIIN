@@ -6,6 +6,8 @@ import {
   fileUploads,
   type User,
   type UpsertUser,
+  type RegisterUser,
+  type LoginUser,
   type Inspection,
   type InsertInspection,
   type InspectionAssignment,
@@ -17,11 +19,20 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, like, or, desc } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  
+  // Authentication operations
+  registerUser(userData: RegisterUser): Promise<User>;
+  authenticateUser(email: string, password: string): Promise<User | null>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  approveUser(userId: string, approvedBy: string): Promise<User>;
+  getAllPendingUsers(): Promise<User[]>;
+  getAllCMIs(): Promise<User[]>;
   
   // Inspection operations
   createInspection(inspection: InsertInspection): Promise<Inspection>;
@@ -65,6 +76,67 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  // Authentication operations
+  async registerUser(userData: RegisterUser): Promise<User> {
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...userData,
+        password: hashedPassword,
+        isApproved: userData.email === 'commercialcmig@gmail.com' && userData.role === 'admin',
+      })
+      .returning();
+    return user;
+  }
+
+  async authenticateUser(email: string, password: string): Promise<User | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.email, email), eq(users.isApproved, true)));
+    
+    if (!user || !user.password) return null;
+    
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    return isPasswordValid ? user : null;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async approveUser(userId: string, approvedBy: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        isApproved: true,
+        approvedBy,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async getAllPendingUsers(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(eq(users.isApproved, false))
+      .orderBy(desc(users.createdAt));
+  }
+
+  async getAllCMIs(): Promise<User[]> {
+    return await db
+      .select()
+      .from(users)
+      .where(and(eq(users.role, 'cmi'), eq(users.isApproved, true)))
+      .orderBy(users.name);
   }
 
   // Inspection operations

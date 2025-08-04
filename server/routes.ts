@@ -2,12 +2,20 @@ import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertInspectionSchema, insertInspectionAssignmentSchema, insertShortlistedItemSchema } from "@shared/schema";
+import { setupAuth, isAuthenticated as replitAuth } from "./replitAuth";
+import { setupLocalAuth, isAuthenticated, requireAdmin, requireCMI } from "./auth";
+import { 
+  insertInspectionSchema, 
+  insertInspectionAssignmentSchema, 
+  insertShortlistedItemSchema,
+  registerUserSchema,
+  loginUserSchema,
+} from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import PDFDocument from "pdfkit";
+import passport from "passport";
 
 // Configure multer for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -34,18 +42,144 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  // Setup both authentication systems
+  await setupAuth(app); // Replit Auth (keep for backward compatibility)
+  await setupLocalAuth(app); // Local Auth (new system)
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Local authentication routes
+  app.post('/api/register', async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
+      const validatedData = registerUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+      
+      const user = await storage.registerUser(validatedData);
+      res.json({ 
+        message: user.isApproved ? "Registration successful" : "Registration successful. Waiting for admin approval.",
+        user: { id: user.id, email: user.email, name: user.name, role: user.role, isApproved: user.isApproved }
+      });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      res.status(400).json({ message: "Registration failed", error: error.message });
+    }
+  });
+
+  app.post('/api/login', (req, res, next) => {
+    try {
+      const validatedData = loginUserSchema.parse(req.body);
+      
+      passport.authenticate('local', (err: any, user: any, info: any) => {
+        if (err) {
+          return res.status(500).json({ message: "Authentication error" });
+        }
+        
+        if (!user) {
+          return res.status(401).json({ message: info?.message || "Invalid credentials" });
+        }
+        
+        req.logIn(user, (err) => {
+          if (err) {
+            return res.status(500).json({ message: "Login error" });
+          }
+          
+          res.json({
+            message: "Login successful",
+            user: { 
+              id: user.id, 
+              email: user.email, 
+              name: user.name, 
+              role: user.role,
+              designation: user.designation,
+              stationSection: user.stationSection
+            }
+          });
+        });
+      })(req, res, next);
     } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      res.status(400).json({ message: "Invalid login data" });
+    }
+  });
+
+  app.post('/api/logout', (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Logout error" });
+      }
+      res.json({ message: "Logout successful" });
+    });
+  });
+
+  // Auth routes (supports both systems)
+  app.get('/api/auth/user', (req: any, res) => {
+    if (req.user) {
+      // Local auth user
+      if (req.user.role) {
+        return res.json({
+          id: req.user.id,
+          email: req.user.email,
+          name: req.user.name,
+          role: req.user.role,
+          designation: req.user.designation,
+          stationSection: req.user.stationSection,
+        });
+      }
+      // Replit auth user (backward compatibility)
+      else if (req.user.claims) {
+        return res.json({
+          id: req.user.claims.sub,
+          email: req.user.claims.email,
+          name: `${req.user.claims.first_name || ''} ${req.user.claims.last_name || ''}`.trim(),
+          role: 'admin', // Default role for Replit auth users
+        });
+      }
+    }
+    res.status(401).json({ message: "Unauthorized" });
+  });
+
+  // Admin routes for user management
+  app.get('/api/admin/pending-users', requireAdmin, async (req, res) => {
+    try {
+      const pendingUsers = await storage.getAllPendingUsers();
+      res.json(pendingUsers.map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        designation: user.designation,
+        stationSection: user.stationSection,
+        role: user.role,
+        createdAt: user.createdAt,
+      })));
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch pending users" });
+    }
+  });
+
+  app.post('/api/admin/approve-user/:id', requireAdmin, async (req: any, res) => {
+    try {
+      const user = await storage.approveUser(req.params.id, req.user.id);
+      res.json({ message: "User approved successfully", user });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to approve user" });
+    }
+  });
+
+  app.get('/api/admin/cmis', requireAdmin, async (req, res) => {
+    try {
+      const cmis = await storage.getAllCMIs();
+      res.json(cmis.map(cmi => ({
+        id: cmi.id,
+        name: cmi.name,
+        email: cmi.email,
+        designation: cmi.designation,
+        stationSection: cmi.stationSection,
+        createdAt: cmi.createdAt,
+      })));
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch CMIs" });
     }
   });
 

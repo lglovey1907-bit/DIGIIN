@@ -1,130 +1,180 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NorthernRailwayLogo } from "@/components/northern-railway-logo";
-import { useState } from "react";
+import { UserPlus } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginUserSchema, type LoginUser } from "@shared/schema";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Link, useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Landing() {
-  const [userType, setUserType] = useState<'general' | 'admin'>('general');
+  const [loginType, setLoginType] = useState<'cmi' | 'admin'>('cmi');
+  const [isLoading, setIsLoading] = useState(false);
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  
+  const form = useForm<LoginUser>({
+    resolver: zodResolver(loginUserSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
-  const handleLogin = () => {
-    window.location.href = "/api/login";
-  };
-
-  const handleRegister = () => {
-    // For now, redirect to login as Replit handles registration
-    window.location.href = "/api/login";
+  const onSubmit = async (data: LoginUser) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.message || "Login failed");
+      }
+      
+      toast({
+        title: "Login Successful",
+        description: `Welcome, ${result.user.name}!`,
+      });
+      
+      // Redirect based on role
+      if (result.user.role === 'admin') {
+        setLocation("/admin");
+      } else {
+        setLocation("/home");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Please check your credentials and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+    <div className="min-h-screen bg-nr-bg flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="shadow-2xl">
-          <CardContent className="p-8">
-            {/* Logo and Title */}
-            <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <NorthernRailwayLogo size={100} />
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <NorthernRailwayLogo size={100} />
+          </div>
+          <h1 className="text-2xl font-bold text-nr-navy mb-2">
+            Welcome to Delhi Division
+          </h1>
+          <h2 className="text-lg text-nr-blue font-semibold">
+            Digital Inspection Platform
+          </h2>
+        </div>
+
+        <Card className="shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-center text-nr-navy">Login</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Login Type Selection */}
+            <div className="mb-6">
+              <Label className="text-sm font-medium mb-3 block">Login Type</Label>
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setLoginType('cmi')}
+                  className={`flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-colors ${
+                    loginType === 'cmi'
+                      ? 'bg-nr-blue text-white border-nr-blue'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  CMI
+                </button>
+                <button
+                  onClick={() => setLoginType('admin')}
+                  className={`flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-colors ${
+                    loginType === 'admin'
+                      ? 'bg-nr-blue text-white border-nr-blue'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Administrator
+                </button>
               </div>
-              <h1 className="text-2xl font-bold text-nr-navy mb-2">
-                Welcome to Delhi Division
-              </h1>
-              <h2 className="text-lg text-nr-blue font-semibold">
-                Digital Inspection Platform
-              </h2>
             </div>
 
             {/* Login Form */}
-            <div className="space-y-6">
-              {/* User Type Selection */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Login Type</Label>
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => setUserType('general')}
-                    className={`flex-1 py-2 px-4 text-sm rounded-md border transition-colors ${
-                      userType === 'general'
-                        ? 'bg-nr-blue text-white border-nr-blue'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    General User
-                  </button>
-                  <button
-                    onClick={() => setUserType('admin')}
-                    className={`flex-1 py-2 px-4 text-sm rounded-md border transition-colors ${
-                      userType === 'admin'
-                        ? 'bg-nr-blue text-white border-nr-blue'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    Administrator
-                  </button>
-                </div>
-              </div>
-
-              {/* User ID */}
-              <div className="space-y-2">
-                <Label htmlFor="userId" className="text-sm font-medium">
-                  User ID
-                </Label>
-                <Input
-                  id="userId"
-                  placeholder="Enter your User ID"
-                  className="w-full"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>User ID / Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          placeholder="Enter your User ID or Email" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              {/* Password */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your Password"
-                  className="w-full"
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Enter your password" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              {/* Buttons */}
-              <div className="space-y-3">
                 <Button 
-                  onClick={handleLogin}
-                  className="w-full bg-nr-blue hover:bg-blue-800 text-white py-2"
+                  type="submit" 
+                  className="w-full bg-nr-blue hover:bg-blue-800"
+                  disabled={isLoading}
                 >
-                  Login
+                  {isLoading ? "Logging in..." : `Login as ${loginType === 'cmi' ? 'CMI' : 'Administrator'}`}
                 </Button>
-                
-                <Button 
-                  onClick={handleRegister}
-                  variant="outline"
-                  className="w-full border-nr-blue text-nr-blue hover:bg-nr-blue hover:text-white py-2"
-                >
-                  Register
-                </Button>
-              </div>
+              </form>
+            </Form>
 
-              {/* User Type Description */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-600">
-                  {userType === 'general' 
-                    ? 'General Users: CMIs and inspection personnel can create and submit inspection reports.'
-                    : 'Administrators: Can manage inspection assignments, view all reports, and access dashboard analytics.'
-                  }
-                </p>
-              </div>
+            <div className="mt-6 text-center">
+              <Link href="/register">
+                <Button variant="outline" className="w-full border-nr-navy text-nr-navy hover:bg-nr-navy hover:text-white">
+                  <UserPlus size={16} className="mr-2" />
+                  New User Registration
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
 
-        {/* Footer */}
-        <div className="text-center mt-6">
-          <p className="text-sm text-gray-600">
-            &copy; 2025 Northern Railway Delhi Division. All rights reserved.
-          </p>
+        <div className="mt-4 text-center text-sm text-gray-600">
+          <p>For technical support, contact: Northern Railway Delhi Division</p>
         </div>
       </div>
     </div>

@@ -24,14 +24,21 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// User storage table (mandatory for Replit Auth)
+// User storage table with local authentication
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
+  password: varchar("password"), // Hashed password (nullable for migration)
+  name: varchar("name"), // Nullable for migration
+  designation: varchar("designation"), // Nullable for migration
+  stationSection: varchar("station_section"), // Nullable for migration
+  role: varchar("role").default("cmi"), // 'admin' or 'cmi'
+  isApproved: boolean("is_approved").default(false),
+  approvedBy: varchar("approved_by"),
+  profileImageUrl: varchar("profile_image_url"),
+  // Keep for backward compatibility with Replit Auth
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
-  role: varchar("role").default("cmi"), // 'admin' or 'cmi'
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -117,9 +124,26 @@ export const insertFileUploadSchema = createInsertSchema(fileUploads).omit({
   createdAt: true,
 });
 
+// Authentication schemas
+export const registerUserSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  designation: z.string().min(2, "Designation is required"),
+  stationSection: z.string().min(2, "Station/Section is required"),
+  email: z.string().email("Valid email is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  role: z.enum(["admin", "cmi"]),
+});
+
+export const loginUserSchema = z.object({
+  email: z.string().email("Valid email is required"),
+  password: z.string().min(1, "Password is required"),
+});
+
 // Types
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type RegisterUser = z.infer<typeof registerUserSchema>;
+export type LoginUser = z.infer<typeof loginUserSchema>;
 export type InsertInspection = z.infer<typeof insertInspectionSchema>;
 export type Inspection = typeof inspections.$inferSelect;
 export type InsertInspectionAssignment = z.infer<typeof insertInspectionAssignmentSchema>;
