@@ -72,9 +72,7 @@ export default function Register() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-20 h-20 bg-nr-navy rounded-full flex items-center justify-center">
-              <Train className="text-white" size={40} />
-            </div>
+            <NorthernRailwayLogo size={80} />
           </div>
           <h1 className="text-2xl font-bold text-nr-navy mb-2">Register</h1>
           <p className="text-gray-600">Delhi Division Digital Inspection Platform</p>

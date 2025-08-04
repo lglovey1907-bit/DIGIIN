@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { NorthernRailwayLogo } from "@/components/northern-railway-logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
@@ -173,9 +174,7 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-nr-navy rounded-full flex items-center justify-center">
-                <Settings className="text-white" size={24} />
-              </div>
+              <NorthernRailwayLogo size={48} />
               <div>
                 <h1 className="text-xl font-bold text-nr-navy">Administrator Dashboard</h1>
                 <p className="text-sm text-gray-600">Welcome, {user?.name}</p>
