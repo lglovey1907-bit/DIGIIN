@@ -1,0 +1,63 @@
+ct as an web application developer and create a web app write in python with following features:
+
+When application opened it shows the page with following design Northern Railway Logo In middle of the page, below it write " Welcome to Delhi Division Digital Inspection Platform".
+
+User ID
+
+Password
+
+Login
+
+Register 
+
+At the top in middle of the page write Heading – Northern Railway Delhi Division - Digital Inspection Form Give an option to Export (the file into PDF) and the file downloaded will fill the data in the given format as doc file uploaded Key Features of the web app:
+
+     1.         Inspection Details Subject , Station Code(make drop down list of station of Delhi Division) station list with CMIs uploaded as pdf, Inspection Date,  Control Message Number/Reference Letter No.(Optional)
+
+     2.         Area of Inspection Options - Catering, Sanitation, Publicity, UTS/PRS, Parking. The option will be displayed as first select area
+
+     3.         If area is selected – Catering then
+
+              i.         then write about the Name of Company M/s then write type of unit and its number, at Platform number. 
+
+Its observation point wise by point wise along with photo after each point.
+
+a)     Point one asked about the name of the vendor
+
+b)    Was he wearing proper uniform or not and holding proper ID Card, Medical Card, Police Verification, If yes detail of each.
+
+c)     Food License is available or not, if available details of the same
+
+d)    Rate List & No Bill Food is Free  was proper displayed or not
+
+e)     Bill Machine is available or not, if available issuing bill from that or not, number of bills issued at the time of inspection or asked for the number of bills issued in last two days.
+
+f)      Digital Payment is accepting or not
+
+g)    Whether found any overcharging on any item, If yes then name of items , MRP Price in Rs., Selling Price in Rs. ( add an option to add more items)
+
+h)     Whether found selling any un approved items give an option to write the items name with add more button– and while writing the name of the items it automatically check/verify it with the Shortlisted items list uploaded in pdf.
+
+                                          ii.         Give an option to add more points with photo (optional) then observation of one M/s is complete then ask for Action Taken By.
+
+                                        iii.         Make an smart search option to check the Shortlisted items (the list of the items uploaded as  pdf  with following details  S.No., Brand, Items. Flavour, Quantity, MRS(Rs.). ( Smart search list  act as by typing any thing either S.No. Brand, Items etc it give details) Just like excel filter option work. 
+
+ 
+
+3.     Then again an option to select another Area of Inspection then again the above instruction in 2 serial number will followed but observations and points are different from catering.
+
+ 
+
+4.     At last at the right side of the page Ask for name below to it Designation, if inspection conducted by single person but if inspection conducted by more then 1 person then the name and below to it designation aligned like left to right. 
+
+ 
+
+5.     At the bottom of the inspection asked to upload the photo of the QR code in which all images of the inspection is uploaded and QR Scanner showing same heading scan me to see all pics of the inspection.(Optional)
+
+ 
+
+6.     An separate dashboard also created to see how much inspection was conducted by particular officer/ Inspector against the assigned to them. Dashboard can be operated by administration only in which the can assign number of inspections to be conducted by CMIs in a week, Month). 
+
+To access the Dashboard login ID and password is necessary.
+
+On the Dashboard it show the following features like To Do List. Number of inspection to be conducted by a particular inspection this week and overdue inspection details.# CMIS 1d1...3177.pdf # Shortlis...tems.pdf # DLI.docx 
