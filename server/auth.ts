@@ -25,6 +25,7 @@ export function getSession() {
       httpOnly: true,
       secure: false, // Set to true in production with HTTPS
       maxAge: sessionTtl,
+      sameSite: 'lax' // Better compatibility with modern browsers
     },
   });
 }

@@ -42,9 +42,8 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup both authentication systems
-  await setupAuth(app); // Replit Auth (keep for backward compatibility)
-  await setupLocalAuth(app); // Local Auth (new system)
+  // Setup local authentication only (disable Replit Auth to avoid conflicts)
+  await setupLocalAuth(app); // Local Auth (primary system)
 
   // Local authentication routes
   app.post('/api/register', async (req, res) => {
@@ -113,29 +112,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Auth routes (supports both systems)
+  // Auth routes (local auth only)
   app.get('/api/auth/user', (req: any, res) => {
-    if (req.user) {
-      // Local auth user
-      if (req.user.role) {
-        return res.json({
-          id: req.user.id,
-          email: req.user.email,
-          name: req.user.name,
-          role: req.user.role,
-          designation: req.user.designation,
-          stationSection: req.user.stationSection,
-        });
-      }
-      // Replit auth user (backward compatibility)
-      else if (req.user.claims) {
-        return res.json({
-          id: req.user.claims.sub,
-          email: req.user.claims.email,
-          name: `${req.user.claims.first_name || ''} ${req.user.claims.last_name || ''}`.trim(),
-          role: 'admin', // Default role for Replit auth users
-        });
-      }
+    if (req.isAuthenticated() && req.user) {
+      return res.json({
+        id: req.user.id,
+        email: req.user.email,
+        name: req.user.name,
+        role: req.user.role,
+        designation: req.user.designation,
+        stationSection: req.user.stationSection,
+      });
     }
     res.status(401).json({ message: "Unauthorized" });
   });
