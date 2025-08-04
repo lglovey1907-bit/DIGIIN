@@ -472,6 +472,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve uploaded files
   app.use('/uploads', express.static(uploadDir));
 
+  // Assignment routes (mock data for now)
+  app.get('/api/assignments', isAuthenticated, async (req: any, res) => {
+    // Return mock assignments for demo purposes
+    const assignments = [
+      {
+        id: '1',
+        cmiId: req.user?.id,
+        stationCode: 'NDLS',
+        area: 'Catering',
+        dueDate: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      },
+      {
+        id: '2',
+        cmiId: req.user?.id,
+        stationCode: 'DLI',
+        area: 'Sanitation',
+        dueDate: new Date(Date.now() - 86400000).toISOString(), // Yesterday (overdue)
+        status: 'overdue',
+        createdAt: new Date(Date.now() - 172800000).toISOString(),
+      },
+      {
+        id: '3',
+        cmiId: req.user?.id,
+        stationCode: 'TKJ',
+        area: 'UTS/PRS',
+        dueDate: new Date(Date.now() + 172800000).toISOString(), // Day after tomorrow
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      }
+    ];
+    res.json(assignments);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

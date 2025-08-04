@@ -25,6 +25,7 @@ function Router() {
         <>
           <Route path="/" component={Home} />
           <Route path="/home" component={Home} />
+          <Route path="/cmi" component={CMIDashboard} />
           <Route path="/inspection" component={InspectionForm} />
           <Route path="/admin" component={AdminDashboard} />
         </>
