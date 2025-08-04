@@ -59,9 +59,11 @@ Preferred communication style: Simple, everyday language.
 - **Validation Rules**: Area-specific validation and required fields
 
 ## PDF Generation & Export
-- **Report Generation**: Server-side PDF creation for inspection reports
-- **Template System**: Structured templates for different inspection types
-- **Data Population**: Dynamic population of form data into PDF templates
+- **Report Generation**: Server-side PDF creation using PDFKit library for inspection reports
+- **Template System**: Northern Railway branded PDF templates with professional formatting
+- **Data Population**: Dynamic population of inspection data, observations, and metadata
+- **Download Integration**: PDF download buttons integrated into dashboard inspection listings
+- **Export Route**: `/api/inspections/:id/export-pdf` endpoint for authenticated PDF generation
 
 ## Development Tools
 - **Build System**: Vite for fast development and optimized production builds
