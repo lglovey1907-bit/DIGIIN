@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { SmartSearch } from "./smart-search";
 import { EnhancedSmartSearch } from "./enhanced-smart-search";
+import { ValidatedUnapprovedSearch } from "./validated-unapproved-search";
 import { Upload, Plus, Trash2, Utensils } from "lucide-react";
 
 interface CateringFormProps {
@@ -426,41 +427,52 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                     </div>
                   </div>
 
-                  {/* 7B: Unapproved Items */}
+                  {/* 7B: Unapproved Items with Validation */}
                   <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <h6 className="font-medium text-red-800 mb-2 flex items-center">
+                    <h6 className="font-medium text-red-800 mb-3 flex items-center">
                       <span className="bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs mr-2">B</span>
-                      Unapproved Items (if found)
+                      Unapproved Items (Auto-validates against 7A)
                     </h6>
                     {company.unapprovedItems.map((item, itemIndex) => (
-                      <div key={itemIndex} className="flex gap-2 mb-2">
-                        <SmartSearch
-                          value={item}
-                          onChange={(value) => updateCompanyUnapprovedItem(companyIndex, itemIndex, value)}
-                          placeholder="Enter unapproved item details..."
-                          className="flex-1"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addCompanyUnapprovedItem(companyIndex)}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                        {company.unapprovedItems.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeCompanyUnapprovedItem(companyIndex, itemIndex)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                      <div key={itemIndex} className="mb-4">
+                        <div className="flex gap-2 items-start">
+                          <div className="flex-1">
+                            <ValidatedUnapprovedSearch
+                              value={item}
+                              onChange={(value) => updateCompanyUnapprovedItem(companyIndex, itemIndex, value)}
+                              placeholder="Enter item name to validate against approved catalog..."
+                              className="w-full"
+                            />
+                          </div>
+                          <div className="flex gap-1 mt-0">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addCompanyUnapprovedItem(companyIndex)}
+                              title="Add another unapproved item"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                            {company.unapprovedItems.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeCompanyUnapprovedItem(companyIndex, itemIndex)}
+                                title="Remove this item"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     ))}
-                    <p className="text-xs text-red-600 mt-2">Record any items found that are not in the approved shortlist</p>
+                    <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                      <strong>Smart Validation:</strong> Each item entered here is automatically checked against the approved shortlisted items (7A). 
+                      Only items NOT found in the approved catalog can be recorded as unapproved items.
+                    </div>
                   </div>
                   
                   <Input type="file" accept="image/*" className="mt-3 text-sm" />
@@ -474,10 +486,11 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   </h5>
                   {company.overchargingItems.map((item, itemIndex) => (
                     <div key={itemIndex} className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
-                      <SmartSearch
-                        value={item.name}
-                        onChange={(value) => updateCompanyOverchargingItem(companyIndex, itemIndex, 'name', value)}
+                      <Input
+                        type="text"
                         placeholder="Item name..."
+                        value={item.name}
+                        onChange={(e) => updateCompanyOverchargingItem(companyIndex, itemIndex, 'name', e.target.value)}
                       />
                       <Input
                         type="number"
