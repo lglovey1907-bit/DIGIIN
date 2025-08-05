@@ -398,41 +398,68 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
                 </div>
 
-                {/* Point 7: Unapproved Items */}
+                {/* Point 7: Item Verification */}
                 <div className="border border-gray-200 rounded-lg p-3">
-                  <h5 className="font-medium text-nr-navy mb-2 flex items-center">
+                  <h5 className="font-medium text-nr-navy mb-4 flex items-center">
                     <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">7</span>
-                    Unapproved Items (if found)
+                    Item Verification
                   </h5>
-                  {company.unapprovedItems.map((item, itemIndex) => (
-                    <div key={itemIndex} className="flex gap-2 mb-2">
+                  
+                  {/* 7A: Shortlisted Items Search */}
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <h6 className="font-medium text-green-800 mb-2 flex items-center">
+                      <span className="bg-green-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs mr-2">A</span>
+                      Shortlisted Items (Approved)
+                    </h6>
+                    <div className="space-y-2">
                       <SmartSearch
-                        value={item}
-                        onChange={(value) => updateCompanyUnapprovedItem(companyIndex, itemIndex, value)}
-                        placeholder="Search for unapproved item..."
-                        className="flex-1"
+                        value=""
+                        onChange={(value) => {}}
+                        placeholder="Search approved shortlisted items..."
+                        className="w-full"
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addCompanyUnapprovedItem(companyIndex)}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                      {company.unapprovedItems.length > 1 && (
+                      <p className="text-xs text-green-600">Search and verify items from the approved shortlisted catalog</p>
+                    </div>
+                  </div>
+
+                  {/* 7B: Unapproved Items */}
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <h6 className="font-medium text-red-800 mb-2 flex items-center">
+                      <span className="bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs mr-2">B</span>
+                      Unapproved Items (if found)
+                    </h6>
+                    {company.unapprovedItems.map((item, itemIndex) => (
+                      <div key={itemIndex} className="flex gap-2 mb-2">
+                        <SmartSearch
+                          value={item}
+                          onChange={(value) => updateCompanyUnapprovedItem(companyIndex, itemIndex, value)}
+                          placeholder="Enter unapproved item details..."
+                          className="flex-1"
+                        />
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => removeCompanyUnapprovedItem(companyIndex, itemIndex)}
+                          onClick={() => addCompanyUnapprovedItem(companyIndex)}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Plus className="w-4 h-4" />
                         </Button>
-                      )}
-                    </div>
-                  ))}
-                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                        {company.unapprovedItems.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeCompanyUnapprovedItem(companyIndex, itemIndex)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <p className="text-xs text-red-600 mt-2">Record any items found that are not in the approved shortlist</p>
+                  </div>
+                  
+                  <Input type="file" accept="image/*" className="mt-3 text-sm" />
                 </div>
 
                 {/* Point 8: Overcharging Items */}
