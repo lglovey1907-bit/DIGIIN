@@ -10,11 +10,20 @@ export default function Home() {
     if (!isLoading && user) {
       // Redirect based on user role
       const userRole = (user as any)?.role;
+      console.log('User data:', user);
+      console.log('User role:', userRole);
+      
       if (userRole === 'admin') {
+        console.log('Redirecting to admin dashboard');
         setLocation('/admin');
       } else if (userRole === 'cmi') {
+        console.log('Redirecting to CMI dashboard');
         setLocation('/cmi');
+      } else {
+        console.log('Unknown role or no role found');
       }
+    } else {
+      console.log('Loading or no user:', { isLoading, user });
     }
   }, [user, isLoading, setLocation]);
 
