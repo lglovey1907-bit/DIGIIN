@@ -379,19 +379,14 @@ export async function generateDocumentText(convertedDoc: ConvertedDocument): Pro
   documentText += `S.No.|Observations|Action Taken By|Images of the Inspection\n`;
   
   convertedDoc.observations.forEach((obs, index) => {
-    // Company heading row
-    documentText += `${obs.serialNumber}|${obs.companyHeading}|${obs.actionTakenBy.split('\n')[0] || ''}|${obs.photographs || 'As per annexure'}\n`;
-    
-    // Observation content rows
-    obs.observations.forEach((observation) => {
-      documentText += `|${observation}|||\n`;
+    // Format all observations in one cell with numbering and indentation
+    let observationsCell = `**${obs.companyHeading}**\n`;
+    obs.observations.forEach((observation, obsIndex) => {
+      observationsCell += `    ${obsIndex + 1}. ${observation}\n`;
     });
     
-    // Action taken lines (remaining)
-    const actionLines = obs.actionTakenBy.split('\n').filter(line => line.trim());
-    for (let i = 1; i < actionLines.length; i++) {
-      documentText += `||${actionLines[i]}||\n`;
-    }
+    // Single row with all observations grouped in one cell
+    documentText += `${obs.serialNumber}|${observationsCell}|${obs.actionTakenBy}|${obs.photographs || 'As per annexure'}\n`;
   });
   
   documentText += `TABLE_END\n\n\n`;
@@ -609,13 +604,38 @@ export function generateRTFDocument(plainText: string): string {
       const parts = line.split('|');
       
       if (parts.length >= 4) {
-        // Start table row
+        // Start table row with borders
         rtfContent += '\\trowd\\trgaph108\\trleft-108';
         
+        // Add table borders (all borders)
+        rtfContent += '\\trbrdrt\\brdrs\\brdrw10\\brdrcf1';  // Top border
+        rtfContent += '\\trbrdrb\\brdrs\\brdrw10\\brdrcf1';  // Bottom border
+        rtfContent += '\\trbrdrl\\brdrs\\brdrw10\\brdrcf1';  // Left border
+        rtfContent += '\\trbrdrr\\brdrs\\brdrw10\\brdrcf1';  // Right border
+        
         // Define column widths (in twips: 1 inch = 1440 twips, total ~10000)
+        rtfContent += '\\clbrdrt\\brdrs\\brdrw10\\brdrcf1';  // Cell top border
+        rtfContent += '\\clbrdrb\\brdrs\\brdrw10\\brdrcf1';  // Cell bottom border
+        rtfContent += '\\clbrdrl\\brdrs\\brdrw10\\brdrcf1';  // Cell left border
+        rtfContent += '\\clbrdrr\\brdrs\\brdrw10\\brdrcf1';  // Cell right border
         rtfContent += '\\cellx1000';      // S.No. - 1000 twips
+        
+        rtfContent += '\\clbrdrt\\brdrs\\brdrw10\\brdrcf1';  
+        rtfContent += '\\clbrdrb\\brdrs\\brdrw10\\brdrcf1';  
+        rtfContent += '\\clbrdrl\\brdrs\\brdrw10\\brdrcf1';  
+        rtfContent += '\\clbrdrr\\brdrs\\brdrw10\\brdrcf1';  
         rtfContent += '\\cellx6500';      // Observations - 5500 twips wide  
+        
+        rtfContent += '\\clbrdrt\\brdrs\\brdrw10\\brdrcf1';  
+        rtfContent += '\\clbrdrb\\brdrs\\brdrw10\\brdrcf1';  
+        rtfContent += '\\clbrdrl\\brdrs\\brdrw10\\brdrcf1';  
+        rtfContent += '\\clbrdrr\\brdrs\\brdrw10\\brdrcf1';  
         rtfContent += '\\cellx8500';      // Action Taken By - 2000 twips
+        
+        rtfContent += '\\clbrdrt\\brdrs\\brdrw10\\brdrcf1';  
+        rtfContent += '\\clbrdrb\\brdrs\\brdrw10\\brdrcf1';  
+        rtfContent += '\\clbrdrl\\brdrs\\brdrw10\\brdrcf1';  
+        rtfContent += '\\clbrdrr\\brdrs\\brdrw10\\brdrcf1';  
         rtfContent += '\\cellx10000';     // Images - 1500 twips
         
         // Table header row
@@ -638,9 +658,38 @@ export function generateRTFDocument(plainText: string): string {
             rtfContent += '\\pard\\intbl\\cell';
           }
           
-          // Observations cell with justify formatting (Ctrl+J equivalent)
+          // Observations cell with justify formatting and special formatting for bold and numbered lists
           if (parts[1].trim()) {
-            rtfContent += '\\pard\\intbl\\qj\\fs22 ' + escapeRTF(parts[1]) + '\\cell';
+            let cellContent = parts[1];
+            
+            // Process the content line by line to handle formatting
+            const lines = cellContent.split('\n');
+            let formattedContent = '';
+            
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i];
+              
+              // Handle bold headings (**text**)
+              if (line.includes('**')) {
+                const boldFormatted = line.replace(/\*\*(.*?)\*\*/g, '\\b $1\\b0');
+                formattedContent += boldFormatted;
+              }
+              // Handle numbered lists with indentation
+              else if (line.match(/^\s+\d+\./)) {
+                formattedContent += '\\li720 ' + line.trim(); // 720 twips = 0.5 inch indent
+              }
+              // Regular content
+              else if (line.trim()) {
+                formattedContent += line;
+              }
+              
+              // Add paragraph break except for last line
+              if (i < lines.length - 1 && line.trim()) {
+                formattedContent += '\\par ';
+              }
+            }
+            
+            rtfContent += '\\pard\\intbl\\qj\\fs22 ' + escapeRTF(formattedContent) + '\\cell';
           } else {
             rtfContent += '\\pard\\intbl\\cell';
           }
