@@ -20,14 +20,14 @@ export function getSession() {
     secret: process.env.SESSION_SECRET || 'railway-inspection-secret',
     store: sessionStore,
     resave: false,
-    saveUninitialized: true, // Allow session creation
-    name: 'connect.sid', // Standard session name
+    saveUninitialized: false,
+    name: 'sessionId',
     cookie: {
-      httpOnly: false, // Allow JS access for debugging
-      secure: false, // Always false for development
+      httpOnly: true,
+      secure: false, // false for development
       maxAge: sessionTtl,
-      sameSite: 'none', // Required for cross-origin requests
-      path: '/' // Ensure cookie is available for all paths
+      sameSite: 'lax',
+      path: '/'
     },
   });
 }
