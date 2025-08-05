@@ -253,10 +253,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/inspections', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const validatedData = insertInspectionSchema.parse({
+      
+      // Transform multi-area data to the database format
+      const inspectionData = {
         ...req.body,
         userId,
-      });
+        // Convert inspectionAreas to observations and primary area
+        area: req.body.inspectionAreas?.[0]?.type || 'catering', // Use first area as primary
+        observations: req.body.inspectionAreas?.reduce((acc: any, area: any) => {
+          acc[area.type] = {
+            ...area.observations,
+            actionTaken: area.actionTaken
+          };
+          return acc;
+        }, {}) || {},
+        // Remove the inspectionAreas field as it's transformed
+        inspectionAreas: undefined
+      };
+      
+      const validatedData = insertInspectionSchema.parse(inspectionData);
       
       const inspection = await storage.createInspection(validatedData);
       res.json(inspection);
