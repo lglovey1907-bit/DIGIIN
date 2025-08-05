@@ -499,9 +499,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let observationCount = 1;
         
         Object.entries(observations).forEach(([key, value]) => {
-          if (key !== 'summary' && value) {
-            doc.text(`${observationCount}. ${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`);
-            observationCount++;
+          // Exclude shortlisted items search data from PDF report (it's just a reference tool)
+          // Also exclude summary as it's handled separately
+          if (key !== 'summary' && key !== 'shortlistedItemsSearch' && value) {
+            // Handle multiple companies in catering inspections
+            if (key === 'companies' && Array.isArray(value)) {
+              value.forEach((company: any, companyIndex: number) => {
+                doc.text(`${observationCount}. Company ${companyIndex + 1}:`);
+                observationCount++;
+                
+                // Add company details
+                if (company.vendorName) doc.text(`   - Vendor Name: ${company.vendorName}`);
+                if (company.uniformCheck) doc.text(`   - Uniform Check: ${company.uniformCheck}`);
+                if (company.foodLicense) doc.text(`   - Food License: ${company.foodLicense}`);
+                if (company.rateList) doc.text(`   - Rate List: ${company.rateList}`);
+                if (company.billingMachine) doc.text(`   - Billing Machine: ${company.billingMachine}`);
+                if (company.digitalPayment) doc.text(`   - Digital Payment: ${company.digitalPayment}`);
+                
+                // Include unapproved items (but not shortlisted items search)
+                if (company.unapprovedItems && company.unapprovedItems.length > 0) {
+                  const nonEmptyItems = company.unapprovedItems.filter((item: string) => item.trim());
+                  if (nonEmptyItems.length > 0) {
+                    doc.text(`   - Unapproved Items Found: ${nonEmptyItems.join(', ')}`);
+                  }
+                }
+                
+                // Include overcharging items
+                if (company.overchargingItems && company.overchargingItems.length > 0) {
+                  const validItems = company.overchargingItems.filter((item: any) => item.name.trim());
+                  if (validItems.length > 0) {
+                    doc.text(`   - Overcharging Items:`);
+                    validItems.forEach((item: any) => {
+                      doc.text(`     * ${item.name}: MRP ₹${item.mrpPrice}, Selling ₹${item.sellingPrice}`);
+                    });
+                  }
+                }
+                doc.moveDown(0.3);
+              });
+            } else {
+              doc.text(`${observationCount}. ${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}`);
+              observationCount++;
+            }
           }
         });
         

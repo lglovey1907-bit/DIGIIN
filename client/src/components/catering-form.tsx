@@ -418,7 +418,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                         placeholder="Search approved shortlisted items..."
                         className="w-full"
                       />
-                      <p className="text-xs text-green-600">Search and verify items from the approved shortlisted catalog</p>
+                      <p className="text-xs text-green-600">Search and verify items from the approved shortlisted catalog (Reference tool - not included in report)</p>
                     </div>
                   </div>
 
