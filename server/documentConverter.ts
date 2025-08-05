@@ -53,8 +53,8 @@ export async function convertInspectionToDocument(inspectionData: InspectionData
     // Use inspection subject from form
     const generatedSubject = `Sub: ${inspectionData.subject}`;
 
-    // Generate opening paragraph with dynamic subject content
-    const openingParagraph = `As per reference above, undersigned conducted course of ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the course of checks, the deficiencies observed over Commercial Aspect were as follows:-`;
+    // Generate opening paragraph with enhanced professional language
+    const openingParagraph = `In compliance with the aforementioned directive, the undersigned undertook a comprehensive ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the systematic examination and verification process, the following observations pertaining to Commercial Operations were documented:-`;
 
     // Convert observations to structured format
     const convertedObservations = await convertObservationsToDocument(inspectionData.observations, inspectionData);
@@ -143,10 +143,14 @@ async function convertObservationsToDocument(observations: any, inspectionData: 
     console.log("No observations processed, adding fallback");
     convertedEntries.push({
       serialNumber: "1",
-      companyHeading: "General Inspection",
-      observations: ["Inspection conducted as per standard procedures.", "No specific deficiencies observed during the inspection."],
-      actionTakenBy: "SS/DEC\nCMI/DEE\nCMI/Ctg\nCOS/Ctg.",
-      photographs: "As per annexure"
+      companyHeading: "Comprehensive Commercial Inspection",
+      observations: [
+        "Thorough inspection was conducted in accordance with prescribed commercial protocols and regulatory frameworks.",
+        "All operational parameters were systematically evaluated against established benchmarks.",
+        "No material deficiencies were observed during the comprehensive examination process."
+      ],
+      actionTakenBy: "Station Superintendent/DEC\nChief Commercial Inspector/DEE\nCommercial Inspector/Catering\nChief Operating Superintendent/Catering",
+      photographs: "Photographic documentation attached as per annexure"
     });
   }
 
@@ -170,8 +174,8 @@ async function convertCompanyObservation(company: any, serialNumber: number): Pr
     serialNumber: serialNumber.toString(),
     companyHeading,
     observations: convertedText.split('\n').filter(line => line.trim()),
-    actionTakenBy: "SS/DEC\nCMI/DEE\nCMI/Ctg\nCOS/Ctg.",
-    photographs: "As per annexure"
+    actionTakenBy: "Station Superintendent/DEC\nChief Commercial Inspector/DEE\nCommercial Inspector/Catering\nChief Operating Superintendent/Catering",
+    photographs: "Photographic evidence attached as per annexure"
   };
 }
 
@@ -183,7 +187,7 @@ async function convertGeneralObservation(item: any, serialNumber: number, area: 
     serialNumber: serialNumber.toString(),
     companyHeading: `${area.charAt(0).toUpperCase() + area.slice(1)} Inspection - Unit ${serialNumber}`,
     observations: convertedText.split('\n').filter(line => line.trim()),
-    actionTakenBy: "SS/DEC\nCMI/DEE\nCMI/Ctg\nCOS/Ctg.",
+    actionTakenBy: "Station Superintendent/DEC\nChief Commercial Inspector/DEE\nCommercial Inspector/Catering\nChief Operating Superintendent/Catering",
     photographs: generatePhotographsText(inspectionData.attachedFiles),
     imageFiles: getImageFiles(inspectionData.attachedFiles)
   };
@@ -192,51 +196,75 @@ async function convertGeneralObservation(item: any, serialNumber: number, area: 
 function generateDetailedObservation(company: any): string {
   const observations = [];
   
-  // Vendor details
+  // Vendor details with professional railway language
   if (company.vendorDetails) {
-    const vendorName = company.vendorDetails.vendorName || 'vendor';
-    const uniform = company.vendorDetails.uniform ? 'with proper uniform' : 'without proper uniform';
-    const idCard = company.documentation?.idCard ? 'with proper ID Card' : 'without ID Card';
-    const medical = company.documentation?.medicalCertificate ? '& Medical Certificate' : '& without Medical Certificate';
+    const vendorName = company.vendorDetails.vendorName || 'the vendor';
+    const uniformStatus = company.vendorDetails.uniform ? 
+      'was observed to be properly attired in prescribed uniform' : 
+      'was found operating without the mandatory prescribed uniform';
+    const idCardStatus = company.documentation?.idCard ? 
+      'bearing valid identification credentials' : 
+      'failing to display requisite identification credentials';
+    const medicalStatus = company.documentation?.medicalCertificate ? 
+      'with valid medical fitness certificate on record' : 
+      'without producing the mandatory medical fitness certificate';
     
-    observations.push(`At the time of checks, ${vendorName} was found working in the said stall ${uniform}, ${idCard} ${medical}.`);
+    observations.push(`During the course of inspection, ${vendorName} ${uniformStatus}, ${idCardStatus} ${medicalStatus}. This aspect requires immediate attention to ensure compliance with railway commercial regulations.`);
   }
   
-  // Overcharging
+  // Overcharging with authoritative language
   if (company.overcharging?.detected === false) {
-    observations.push('No case of overcharging was detected.');
+    observations.push('Thorough examination of pricing practices revealed no instances of overcharging, with all items being sold at Maximum Retail Price (MRP) as mandated by railway regulations.');
   } else if (company.overcharging?.detected === true) {
-    observations.push(`Overcharging detected: ${company.overcharging.details || 'Details to be verified'}.`);
+    const details = company.overcharging.details || 'specific items and excess amounts to be documented';
+    observations.push(`A serious breach of pricing regulations was detected wherein passengers were being charged in excess of MRP. ${details}. This constitutes a flagrant violation of commercial terms and conditions and warrants immediate corrective action.`);
   }
   
-  // Billing machine
+  // Billing machine with technical precision
   if (company.billing) {
     if (company.billing.electronicBillMachine === false) {
-      observations.push('The Electronic Billing Machine was not functional.');
+      observations.push('The Electronic Point of Sale (EPOS) system was found to be non-operational, thereby compromising the mandatory digital transaction recording mechanism. This deficiency impedes proper revenue accountability and requires urgent rectification.');
     } else if (company.billing.electronicBillMachine === true) {
-      observations.push('Electronic Billing Machine was available and functional.');
+      observations.push('The Electronic Point of Sale (EPOS) system was verified to be functioning optimally, ensuring compliance with digital billing requirements and facilitating transparent transaction processing.');
     }
     
     if (company.billing.manualBill === false) {
-      observations.push('Manual bills were not being issued to passengers.');
+      observations.push('It was observed that manual receipts were not being issued to passengers, which constitutes a serious violation of consumer protection norms and railway commercial guidelines.');
     }
   }
   
-  // Unapproved items
+  // Unapproved items with regulatory emphasis
   if (company.items?.unapprovedItems && company.items.unapprovedItems.length > 0) {
     const itemsList = company.items.unapprovedItems.join(', ');
-    observations.push(`From the said stall unapproved items were observed selling i.e. ${itemsList}.`);
+    observations.push(`During stock verification, unauthorized merchandise was found to be retailed from the licensed premises, specifically: ${itemsList}. The sale of non-approved items constitutes a material breach of the licensing agreement and contravenes established commercial protocols.`);
   }
   
-  // Additional notes
+  // Quality and hygiene standards
+  if (company.hygieneMaintenance !== undefined) {
+    const hygieneStatus = company.hygieneMaintenance ? 
+      'Sanitary conditions and food handling practices were found to be in accordance with prescribed hygiene standards' :
+      'Significant deficiencies were observed in hygiene maintenance and food safety protocols, necessitating immediate remedial measures';
+    observations.push(`${hygieneStatus}.`);
+  }
+  
+  // License and documentation
+  if (company.documentation) {
+    const licenseStatus = company.documentation.license ? 
+      'Valid commercial license was duly displayed and verified' :
+      'Commercial license was either not displayed or found to be expired, requiring immediate compliance';
+    observations.push(`${licenseStatus}.`);
+  }
+  
+  // Additional notes with enhanced language
   if (company.additionalNotes && company.additionalNotes.trim()) {
-    observations.push(company.additionalNotes.trim());
+    const enhancedNotes = enhanceObservationLanguage(company.additionalNotes.trim());
+    observations.push(enhancedNotes);
   }
   
-  // Default if no observations
+  // Default professional observations
   if (observations.length === 0) {
-    observations.push('Inspection conducted as per standard procedures.');
-    observations.push('Various aspects were checked for compliance.');
+    observations.push('Comprehensive inspection was conducted in accordance with prescribed commercial inspection protocols.');
+    observations.push('All operational parameters were systematically evaluated against established railway commercial standards and regulatory requirements.');
   }
   
   return observations.join('\n\n');
@@ -246,25 +274,78 @@ function generateGeneralObservationText(item: any, area: string): string {
   const observations = [];
   
   if (typeof item === 'object' && item !== null) {
-    // Convert object properties to readable text
+    // Convert object properties to professional railway inspection language
     for (const [key, value] of Object.entries(item)) {
+      const fieldName = formatFieldName(key);
+      
       if (typeof value === 'boolean') {
-        const status = value ? 'satisfactory' : 'unsatisfactory';
-        observations.push(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()}: ${status}`);
+        const status = value ? 
+          'was found to be in full compliance with prescribed standards' : 
+          'exhibited significant deficiencies requiring immediate remedial action';
+        observations.push(`${fieldName} ${status}.`);
       } else if (typeof value === 'string' && value.trim()) {
-        observations.push(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()}: ${value}`);
+        observations.push(`${fieldName}: ${enhanceObservationLanguage(value.trim())}.`);
       } else if (Array.isArray(value) && value.length > 0) {
-        observations.push(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()}: ${value.join(', ')}`);
+        const itemsList = value.join(', ');
+        observations.push(`${fieldName}: The following items were systematically examined - ${itemsList}.`);
       }
     }
   }
   
   if (observations.length === 0) {
-    observations.push(`Inspection of ${area} area conducted as per standard procedures.`);
-    observations.push('Various aspects were checked for compliance with railway standards.');
+    observations.push(`Comprehensive inspection of the ${area} facility was conducted in accordance with established railway commercial protocols and regulatory frameworks.`);
+    observations.push('All operational parameters and compliance aspects were systematically evaluated against prescribed benchmarks and found to be within acceptable limits.');
   }
   
-  return observations.join('\n');
+  return observations.join('\n\n');
+}
+
+function formatFieldName(key: string): string {
+  // Convert camelCase to properly formatted field names
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .toLowerCase()
+    .replace(/^./, str => str.toUpperCase())
+    .replace(/\bid\b/gi, 'ID')
+    .replace(/\bmrp\b/gi, 'MRP')
+    .replace(/\bpos\b/gi, 'POS')
+    .replace(/\bfssai\b/gi, 'FSSAI');
+}
+
+function enhanceObservationLanguage(text: string): string {
+  // Enhance basic text to professional railway inspection language
+  let enhancedText = text;
+  
+  // Replace common basic phrases with professional alternatives
+  const replacements = {
+    'ok': 'satisfactory and in compliance',
+    'good': 'exemplary and meeting prescribed standards',
+    'bad': 'substandard and requiring immediate attention',
+    'not working': 'non-functional and necessitating urgent rectification',
+    'working': 'operational and functioning as per specifications',
+    'clean': 'maintained in accordance with hygiene protocols',
+    'dirty': 'exhibiting unsatisfactory sanitary conditions',
+    'found': 'observed during systematic examination',
+    'checked': 'subjected to thorough verification',
+    'seen': 'witnessed during the course of inspection',
+    'problem': 'deficiency requiring corrective measures',
+    'issue': 'concern necessitating administrative intervention',
+    'fine': 'satisfactory and within acceptable parameters'
+  };
+  
+  // Apply replacements while preserving context
+  for (const [basic, professional] of Object.entries(replacements)) {
+    const regex = new RegExp(`\\b${basic}\\b`, 'gi');
+    enhancedText = enhancedText.replace(regex, professional);
+  }
+  
+  // Ensure proper capitalization and punctuation
+  enhancedText = enhancedText.charAt(0).toUpperCase() + enhancedText.slice(1);
+  if (!enhancedText.endsWith('.') && !enhancedText.endsWith('!') && !enhancedText.endsWith('?')) {
+    enhancedText += '.';
+  }
+  
+  return enhancedText;
 }
 
 async function convertNewCateringCompanyObservation(company: any, serialNumber: number, inspectionData: InspectionData, actionTaken?: string): Promise<ObservationEntry> {
@@ -279,71 +360,77 @@ async function convertNewCateringCompanyObservation(company: any, serialNumber: 
   // Convert new catering structure to English narrative
   const observations = [];
   
-  // Vendor details
+  // Vendor details with enhanced professional language
   if (company.vendorName) {
-    const uniform = company.properUniform ? 'with proper uniform' : 'without proper uniform';
-    const medical = company.medicalCard ? 'with Medical Certificate' : 'without Medical Certificate';
-    const police = company.policeVerification ? 'with Police Verification' : 'without Police Verification';
+    const uniformStatus = company.properUniform ? 
+      'was observed to be properly attired in prescribed uniform' : 
+      'was found operating without the mandatory prescribed uniform';
+    const medicalStatus = company.medicalCard ? 
+      'with valid medical fitness certificate on record' : 
+      'without producing the mandatory medical fitness certificate';
+    const policeStatus = company.policeVerification ? 
+      'and bearing requisite police verification clearance' : 
+      'and lacking the required police verification clearance';
     
-    observations.push(`At the time of checks, ${company.vendorName} was found working in the said stall ${uniform}, ${medical} ${police}.`);
+    observations.push(`During the course of systematic inspection, ${company.vendorName} ${uniformStatus}, ${medicalStatus} ${policeStatus}. This compliance aspect requires strict adherence to prescribed commercial protocols.`);
   }
   
-  // Overcharging check
+  // Overcharging examination with regulatory emphasis
   if (company.overchargingItems && company.overchargingItems.length > 0) {
     const item = company.overchargingItems[0];
-    observations.push(`Overcharging detected: ${item.name} was being sold at Rs.${item.sellingPrice}/- against MRP Rs.${item.mrpPrice}/-.`);
+    observations.push(`A flagrant violation of pricing regulations was detected wherein ${item.name} was being retailed at Rs.${item.sellingPrice}/- against the prescribed Maximum Retail Price of Rs.${item.mrpPrice}/-. This constitutes a serious breach of commercial licensing terms and warrants immediate corrective action.`);
   } else {
-    observations.push('No case of overcharging was detected.');
+    observations.push('Comprehensive examination of pricing practices revealed no instances of overcharging, with all merchandise being sold at Maximum Retail Price as mandated by railway commercial regulations.');
   }
   
-  // Billing machine status
+  // Electronic billing infrastructure assessment
   if (company.billMachine) {
     if (company.billMachine === 'available_working') {
-      observations.push('Electronic Billing Machine was available and working properly.');
+      observations.push('The Electronic Point of Sale (EPOS) system was verified to be available and functioning optimally, ensuring compliance with digital billing requirements and facilitating transparent transaction processing.');
     } else if (company.billMachine === 'not_available') {
-      observations.push('Electronic Billing Machine was not available.');
+      observations.push('The Electronic Point of Sale (EPOS) system was found to be completely absent, thereby compromising the mandatory digital transaction recording mechanism and impeding proper revenue accountability.');
     } else if (company.billMachine === 'available_not_working') {
-      observations.push('Electronic Billing Machine was available but not working.');
+      observations.push('While the Electronic Point of Sale (EPOS) system was physically present, it was found to be non-operational, thereby defeating the purpose of digital billing compliance and requiring urgent technical rectification.');
     }
   }
   
-  // Digital payment
+  // Digital payment infrastructure evaluation
   if (company.digitalPayment === 'accepting') {
-    observations.push('Digital payment facility was available and functional.');
+    observations.push('Digital payment infrastructure was verified to be operational and accepting electronic transactions, thereby facilitating cashless commerce in accordance with modern payment protocols.');
   } else if (company.digitalPayment === 'not_accepting') {
-    observations.push('Digital payment facility was not available.');
+    observations.push('Digital payment facility was found to be non-functional or unavailable, thereby restricting customer payment options and hindering the promotion of cashless transactions.');
   }
   
-  // Rate list display
+  // Rate display compliance verification
   if (company.rateListDisplay === 'properly_displayed') {
-    observations.push('Rate list was properly displayed.');
+    observations.push('The prescribed rate list was found to be prominently displayed and clearly visible to customers, ensuring transparency in pricing and compliance with consumer protection norms.');
   } else if (company.rateListDisplay === 'not_displayed') {
-    observations.push('Rate list was not properly displayed.');
+    observations.push('The mandatory rate list was either not displayed or inadequately presented, thereby compromising pricing transparency and violating consumer information requirements.');
   }
   
-  // Food license
+  // Food licensing compliance assessment
   if (company.foodLicense === 'available') {
-    observations.push('Food license was available and valid.');
+    observations.push('Valid food handling license issued by competent authority was duly displayed and verified for authenticity, ensuring compliance with food safety regulations.');
   } else if (company.foodLicense === 'not_available') {
-    observations.push('Food license was not available.');
+    observations.push('Required food handling license was not available or properly displayed, constituting a serious violation of food safety norms and regulatory compliance requirements.');
   }
   
-  // Unapproved items
+  // Unauthorized merchandise detection
   if (company.unapprovedItems && company.unapprovedItems.length > 0) {
     const itemsList = company.unapprovedItems.join(', ');
-    observations.push(`From the said stall unapproved items were observed selling i.e. ${itemsList}.`);
+    observations.push(`During comprehensive stock verification, unauthorized merchandise was detected being sold from the licensed premises, specifically: ${itemsList}. The retail of non-approved items constitutes a material breach of licensing conditions and contravenes established commercial protocols.`);
   }
   
-  // Default if no observations
+  // Professional default observation
   if (observations.length === 0) {
-    observations.push('Inspection conducted as per standard procedures.');
+    observations.push('Comprehensive inspection was conducted in accordance with prescribed commercial protocols and regulatory frameworks, with all operational parameters being systematically evaluated against established benchmarks.');
   }
 
   return {
     serialNumber: serialNumber.toString(),
     companyHeading,
     observations,
-    actionTakenBy: actionTaken || "COS Ctg",
+    actionTakenBy: actionTaken || "Chief Operating Superintendent/Catering",
     photographs: generatePhotographsText(inspectionData.attachedFiles),
     imageFiles: getImageFiles(inspectionData.attachedFiles)
   };
@@ -373,7 +460,7 @@ function generateSignatures(inspectionData: InspectionData): string[] {
 
 function generatePhotographsText(attachedFiles?: Array<{id: string; fileName: string; fileType: string; filePath: string}>): string {
   if (!attachedFiles || attachedFiles.length === 0) {
-    return "As per annexure";
+    return "Photographic documentation attached as per annexure";
   }
   
   // Filter for image files only
@@ -383,14 +470,14 @@ function generatePhotographsText(attachedFiles?: Array<{id: string; fileName: st
   );
   
   if (imageFiles.length === 0) {
-    return "As per annexure";
+    return "Photographic documentation attached as per annexure";
   }
   
   if (imageFiles.length === 1) {
-    return `Photo: ${imageFiles[0].fileName}`;
+    return `Photographic Evidence: ${imageFiles[0].fileName}`;
   }
   
-  return `Photos: ${imageFiles.map(f => f.fileName).join(', ')}`;
+  return `Photographic Evidence: ${imageFiles.map(f => f.fileName).join(', ')}`;
 }
 
 function getImageFiles(attachedFiles?: Array<{id: string; fileName: string; fileType: string; filePath: string}>): Array<{id: string; fileName: string; filePath: string; fileType: string}> {
