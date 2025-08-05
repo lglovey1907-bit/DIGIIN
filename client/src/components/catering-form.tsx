@@ -22,6 +22,25 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
   const [unapprovedItems, setUnapprovedItems] = useState([""]);
   
   const [additionalPoints, setAdditionalPoints] = useState([]);
+  
+  // Multiple companies state
+  const [companies, setCompanies] = useState([
+    {
+      companyName: "",
+      unitType: "",
+      platformNo: "",
+      vendorName: "",
+      billMachine: "",
+      foodLicense: "",
+      medicalCard: false,
+      properUniform: false,
+      digitalPayment: "",
+      rateListDisplay: "",
+      policeVerification: false,
+      unapprovedItems: [""],
+      overchargingItems: [{ name: "", mrpPrice: "", sellingPrice: "" }]
+    }
+  ]);
 
   const updateObservation = (point: string, data: any) => {
     onObservationsChange({
@@ -64,6 +83,115 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
     updateObservation('unapprovedItems', updated);
   };
 
+  // Multiple companies functions
+  const addCompany = () => {
+    const newCompany = {
+      companyName: "",
+      unitType: "",
+      platformNo: "",
+      vendorName: "",
+      billMachine: "",
+      foodLicense: "",
+      medicalCard: false,
+      properUniform: false,
+      digitalPayment: "",
+      rateListDisplay: "",
+      policeVerification: false,
+      unapprovedItems: [""],
+      overchargingItems: [{ name: "", mrpPrice: "", sellingPrice: "" }]
+    };
+    const updatedCompanies = [...companies, newCompany];
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  const removeCompany = (companyIndex: number) => {
+    if (companies.length > 1) {
+      const updatedCompanies = companies.filter((_, i) => i !== companyIndex);
+      setCompanies(updatedCompanies);
+      updateObservation('companies', updatedCompanies);
+    }
+  };
+
+  const updateCompany = (companyIndex: number, field: string, value: any) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex ? { ...company, [field]: value } : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  const addCompanyUnapprovedItem = (companyIndex: number) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex 
+        ? { ...company, unapprovedItems: [...company.unapprovedItems, ""] }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  const removeCompanyUnapprovedItem = (companyIndex: number, itemIndex: number) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex && company.unapprovedItems.length > 1
+        ? { ...company, unapprovedItems: company.unapprovedItems.filter((_, j) => j !== itemIndex) }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  const updateCompanyUnapprovedItem = (companyIndex: number, itemIndex: number, value: string) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex 
+        ? { 
+            ...company, 
+            unapprovedItems: company.unapprovedItems.map((item, j) => j === itemIndex ? value : item)
+          }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  const addCompanyOverchargingItem = (companyIndex: number) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex 
+        ? { 
+            ...company, 
+            overchargingItems: [...company.overchargingItems, { name: "", mrpPrice: "", sellingPrice: "" }]
+          }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  const removeCompanyOverchargingItem = (companyIndex: number, itemIndex: number) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex && company.overchargingItems.length > 1
+        ? { ...company, overchargingItems: company.overchargingItems.filter((_, j) => j !== itemIndex) }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  const updateCompanyOverchargingItem = (companyIndex: number, itemIndex: number, field: string, value: string) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex 
+        ? { 
+            ...company, 
+            overchargingItems: company.overchargingItems.map((item, j) => 
+              j === itemIndex ? { ...item, [field]: value } : item
+            )
+          }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
   return (
     <Card className="mb-8">
       <CardHeader>
@@ -73,348 +201,303 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Vendor Details */}
-        <div className="bg-gray-50 rounded-lg p-4 mb-6">
-          <h3 className="text-lg font-medium text-nr-navy mb-4">Vendor Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label>Name of Company</Label>
-              <Input
-                placeholder="M/s Company Name"
-                value={observations.companyName || ""}
-                onChange={(e) => updateObservation('companyName', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Type of Unit & Number</Label>
-              <Input
-                placeholder="e.g., SMU Stall No.1"
-                value={observations.unitType || ""}
-                onChange={(e) => updateObservation('unitType', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Platform Number</Label>
-              <Input
-                placeholder="Platform No."
-                value={observations.platformNo || ""}
-                onChange={(e) => updateObservation('platformNo', e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Observation Points */}
-        <div className="space-y-6">
-          {/* Point 1: Vendor Name */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-nr-navy mb-3 flex items-center">
-              <span className="bg-nr-blue text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3">1</span>
-              Name of the Vendor
-            </h4>
-            <Input
-              placeholder="Enter vendor name"
-              value={observations.vendorName || ""}
-              onChange={(e) => updateObservation('vendorName', e.target.value)}
-            />
-            <div className="mt-3">
-              <Label>Upload Photo</Label>
-              <Input type="file" accept="image/*" className="mt-1" />
-            </div>
-          </div>
-
-          {/* Point 2: Uniform & Documentation */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-nr-navy mb-3 flex items-center">
-              <span className="bg-nr-blue text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3">2</span>
-              Uniform & Documentation Check
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="properUniform"
-                  checked={observations.properUniform || false}
-                  onCheckedChange={(checked) => updateObservation('properUniform', checked)}
-                />
-                <Label htmlFor="properUniform">Wearing Proper Uniform</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="idCard"
-                  checked={observations.idCard || false}
-                  onCheckedChange={(checked) => updateObservation('idCard', checked)}
-                />
-                <Label htmlFor="idCard">Holding ID Card</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="medicalCard"
-                  checked={observations.medicalCard || false}
-                  onCheckedChange={(checked) => updateObservation('medicalCard', checked)}
-                />
-                <Label htmlFor="medicalCard">Medical Card Available</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="policeVerification"
-                  checked={observations.policeVerification || false}
-                  onCheckedChange={(checked) => updateObservation('policeVerification', checked)}
-                />
-                <Label htmlFor="policeVerification">Police Verification</Label>
-              </div>
-            </div>
-            <div className="mt-3">
-              <Label>Details (if available)</Label>
-              <Textarea
-                placeholder="Enter details of documentation"
-                value={observations.documentationDetails || ""}
-                onChange={(e) => updateObservation('documentationDetails', e.target.value)}
-                rows={2}
-              />
-            </div>
-            <div className="mt-3">
-              <Input type="file" accept="image/*" />
-            </div>
-          </div>
-
-          {/* Point 3: Food License */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-nr-navy mb-3 flex items-center">
-              <span className="bg-nr-blue text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3">3</span>
-              Food License
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <RadioGroup 
-                value={observations.foodLicense || ""}
-                onValueChange={(value) => updateObservation('foodLicense', value)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="available" id="license-available" />
-                  <Label htmlFor="license-available">Available</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="not_available" id="license-not-available" />
-                  <Label htmlFor="license-not-available">Not Available</Label>
-                </div>
-              </RadioGroup>
-              <div>
-                <Label>License Details</Label>
-                <Textarea
-                  placeholder="Enter license details and validity"
-                  value={observations.licenseDetails || ""}
-                  onChange={(e) => updateObservation('licenseDetails', e.target.value)}
-                  rows={2}
-                />
-              </div>
-            </div>
-            <div className="mt-3">
-              <Input type="file" accept="image/*" />
-            </div>
-          </div>
-
-          {/* Point 4: Rate List Display */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-nr-navy mb-3 flex items-center">
-              <span className="bg-nr-blue text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3">4</span>
-              Rate List & "No Bill Food is Free" Display
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <RadioGroup 
-                value={observations.rateListDisplay || ""}
-                onValueChange={(value) => updateObservation('rateListDisplay', value)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="properly_displayed" id="rate-displayed" />
-                  <Label htmlFor="rate-displayed">Properly Displayed</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="not_displayed" id="rate-not-displayed" />
-                  <Label htmlFor="rate-not-displayed">Not Displayed</Label>
-                </div>
-              </RadioGroup>
-              <div>
-                <Input type="file" accept="image/*" />
-              </div>
-            </div>
-          </div>
-
-          {/* Point 5: Bill Machine */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-nr-navy mb-3 flex items-center">
-              <span className="bg-nr-blue text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3">5</span>
-              Electronic Billing Machine
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <RadioGroup 
-                value={observations.billMachine || ""}
-                onValueChange={(value) => updateObservation('billMachine', value)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="available_working" id="bill-working" />
-                  <Label htmlFor="bill-working">Available & Working</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="available_not_working" id="bill-not-working" />
-                  <Label htmlFor="bill-not-working">Available but Not Working</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="not_available" id="bill-not-available" />
-                  <Label htmlFor="bill-not-available">Not Available</Label>
-                </div>
-              </RadioGroup>
-              <div>
-                <Label>Bills at Inspection Time</Label>
-                <Input
-                  type="number"
-                  placeholder="Number of bills"
-                  value={observations.billsAtInspection || ""}
-                  onChange={(e) => updateObservation('billsAtInspection', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label>Bills in Last 2 Days</Label>
-                <Input
-                  type="number"
-                  placeholder="Number of bills"
-                  value={observations.billsLast2Days || ""}
-                  onChange={(e) => updateObservation('billsLast2Days', e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="mt-3">
-              <Input type="file" accept="image/*" />
-            </div>
-          </div>
-
-          {/* Point 6: Digital Payment */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-nr-navy mb-3 flex items-center">
-              <span className="bg-nr-blue text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3">6</span>
-              Digital Payment Acceptance
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <RadioGroup 
-                value={observations.digitalPayment || ""}
-                onValueChange={(value) => updateObservation('digitalPayment', value)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="accepting" id="digital-accepting" />
-                  <Label htmlFor="digital-accepting">Accepting Digital Payment</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="not_accepting" id="digital-not-accepting" />
-                  <Label htmlFor="digital-not-accepting">Not Accepting Digital Payment</Label>
-                </div>
-              </RadioGroup>
-              <div>
-                <Input type="file" accept="image/*" />
-              </div>
-            </div>
-          </div>
-
-          {/* Point 7: Overcharging Detection */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-nr-navy mb-3 flex items-center">
-              <span className="bg-nr-blue text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3">7</span>
-              Overcharging Detection
-            </h4>
-            <div className="space-y-4">
-              {overchargingItems.map((item, index) => (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <Label>Item Name</Label>
-                    <Input
-                      placeholder="Enter item name"
-                      value={item.name}
-                      onChange={(e) => updateOverchargingItem(index, 'name', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label>MRP Price (₹)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={item.mrpPrice}
-                      onChange={(e) => updateOverchargingItem(index, 'mrpPrice', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label>Selling Price (₹)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={item.sellingPrice}
-                      onChange={(e) => updateOverchargingItem(index, 'sellingPrice', e.target.value)}
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <Button
-                      onClick={() => removeOverchargingItem(index)}
-                      variant="destructive"
-                      size="sm"
-                      className="w-full"
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Button 
-              onClick={addOverchargingItem}
-              className="mt-3 bg-nr-blue hover:bg-blue-800"
+        {/* Multiple Companies */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-nr-navy">Company Inspections</h3>
+            <Button
+              type="button"
+              onClick={addCompany}
+              className="bg-nr-blue hover:bg-nr-navy"
             >
-              <Plus className="mr-2" size={16} />
-              Add More Items
+              <Plus className="w-4 h-4 mr-2" />
+              Add Another Company
             </Button>
-            <div className="mt-3">
-              <Input type="file" accept="image/*" />
-            </div>
           </div>
-
-          {/* Point 8: Unapproved Items */}
-          <div className="border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-nr-navy mb-3 flex items-center">
-              <span className="bg-nr-blue text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-3">8</span>
-              Unapproved Items Detection
-            </h4>
-            
-            {/* Smart Search Component */}
-            <SmartSearch />
-
-            <div className="space-y-3 mt-4">
-              {unapprovedItems.map((item, index) => (
-                <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <Input
-                    placeholder="Enter unapproved item name"
-                    value={item}
-                    onChange={(e) => updateUnapprovedItem(index, e.target.value)}
-                    className="flex-1"
-                  />
+          
+          {companies.map((company, companyIndex) => (
+            <div key={companyIndex} className="bg-gray-50 rounded-lg p-4 mb-6 relative">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-md font-medium text-nr-navy">
+                  Company {companyIndex + 1} - Vendor Information
+                </h4>
+                {companies.length > 1 && (
                   <Button
-                    onClick={() => removeUnapprovedItem(index)}
-                    variant="destructive"
+                    type="button"
+                    variant="outline"
                     size="sm"
+                    onClick={() => removeCompany(companyIndex)}
+                    className="text-red-600 hover:text-red-800 hover:bg-red-50"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <Label>Name of Company</Label>
+                  <Input
+                    placeholder="M/s Company Name"
+                    value={company.companyName || ""}
+                    onChange={(e) => updateCompany(companyIndex, 'companyName', e.target.value)}
+                  />
                 </div>
-              ))}
+                <div>
+                  <Label>Type of Unit & Number</Label>
+                  <Input
+                    placeholder="e.g., SMU Stall No.1"
+                    value={company.unitType || ""}
+                    onChange={(e) => updateCompany(companyIndex, 'unitType', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Platform Number</Label>
+                  <Input
+                    placeholder="Platform No."
+                    value={company.platformNo || ""}
+                    onChange={(e) => updateCompany(companyIndex, 'platformNo', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Company-specific Observation Points */}
+              <div className="space-y-4">
+                {/* Point 1: Vendor Name */}
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <h5 className="font-medium text-nr-navy mb-2 flex items-center">
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">1</span>
+                    Name of the Vendor
+                  </h5>
+                  <Input
+                    placeholder="Enter vendor name"
+                    value={company.vendorName || ""}
+                    onChange={(e) => updateCompany(companyIndex, 'vendorName', e.target.value)}
+                  />
+                  <div className="mt-2">
+                    <Input type="file" accept="image/*" className="text-sm" />
+                  </div>
+                </div>
+
+                {/* Point 2: Uniform & Documentation */}
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <h5 className="font-medium text-nr-navy mb-2 flex items-center">
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">2</span>
+                    Uniform & Documentation Check
+                  </h5>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`properUniform-${companyIndex}`}
+                        checked={company.properUniform || false}
+                        onCheckedChange={(checked) => updateCompany(companyIndex, 'properUniform', checked)}
+                      />
+                      <Label htmlFor={`properUniform-${companyIndex}`}>Proper Uniform</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`medicalCard-${companyIndex}`}
+                        checked={company.medicalCard || false}
+                        onCheckedChange={(checked) => updateCompany(companyIndex, 'medicalCard', checked)}
+                      />
+                      <Label htmlFor={`medicalCard-${companyIndex}`}>Medical Card</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`policeVerification-${companyIndex}`}
+                        checked={company.policeVerification || false}
+                        onCheckedChange={(checked) => updateCompany(companyIndex, 'policeVerification', checked)}
+                      />
+                      <Label htmlFor={`policeVerification-${companyIndex}`}>Police Verification</Label>
+                    </div>
+                  </div>
+                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                </div>
+
+                {/* Point 3: Food License */}
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <h5 className="font-medium text-nr-navy mb-2 flex items-center">
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">3</span>
+                    Food License
+                  </h5>
+                  <RadioGroup 
+                    value={company.foodLicense || ""}
+                    onValueChange={(value) => updateCompany(companyIndex, 'foodLicense', value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="available" id={`license-available-${companyIndex}`} />
+                      <Label htmlFor={`license-available-${companyIndex}`}>Available</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="not_available" id={`license-not-available-${companyIndex}`} />
+                      <Label htmlFor={`license-not-available-${companyIndex}`}>Not Available</Label>
+                    </div>
+                  </RadioGroup>
+                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                </div>
+
+                {/* Point 4: Rate List Display */}
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <h5 className="font-medium text-nr-navy mb-2 flex items-center">
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">4</span>
+                    Rate List & "No Bill Food is Free" Display
+                  </h5>
+                  <RadioGroup 
+                    value={company.rateListDisplay || ""}
+                    onValueChange={(value) => updateCompany(companyIndex, 'rateListDisplay', value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="properly_displayed" id={`rate-displayed-${companyIndex}`} />
+                      <Label htmlFor={`rate-displayed-${companyIndex}`}>Properly Displayed</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="not_displayed" id={`rate-not-displayed-${companyIndex}`} />
+                      <Label htmlFor={`rate-not-displayed-${companyIndex}`}>Not Displayed</Label>
+                    </div>
+                  </RadioGroup>
+                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                </div>
+
+                {/* Point 5: Bill Machine */}
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <h5 className="font-medium text-nr-navy mb-2 flex items-center">
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">5</span>
+                    Electronic Billing Machine
+                  </h5>
+                  <RadioGroup 
+                    value={company.billMachine || ""}
+                    onValueChange={(value) => updateCompany(companyIndex, 'billMachine', value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="available_working" id={`bill-working-${companyIndex}`} />
+                      <Label htmlFor={`bill-working-${companyIndex}`}>Available & Working</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="available_not_working" id={`bill-not-working-${companyIndex}`} />
+                      <Label htmlFor={`bill-not-working-${companyIndex}`}>Available but Not Working</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="not_available" id={`bill-not-available-${companyIndex}`} />
+                      <Label htmlFor={`bill-not-available-${companyIndex}`}>Not Available</Label>
+                    </div>
+                  </RadioGroup>
+                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                </div>
+
+                {/* Point 6: Digital Payment */}
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <h5 className="font-medium text-nr-navy mb-2 flex items-center">
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">6</span>
+                    Digital Payment Acceptance
+                  </h5>
+                  <RadioGroup 
+                    value={company.digitalPayment || ""}
+                    onValueChange={(value) => updateCompany(companyIndex, 'digitalPayment', value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="accepting" id={`digital-accepting-${companyIndex}`} />
+                      <Label htmlFor={`digital-accepting-${companyIndex}`}>Accepting</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="not_accepting" id={`digital-not-accepting-${companyIndex}`} />
+                      <Label htmlFor={`digital-not-accepting-${companyIndex}`}>Not Accepting</Label>
+                    </div>
+                  </RadioGroup>
+                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                </div>
+
+                {/* Point 7: Unapproved Items */}
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <h5 className="font-medium text-nr-navy mb-2 flex items-center">
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">7</span>
+                    Unapproved Items (if found)
+                  </h5>
+                  {company.unapprovedItems.map((item, itemIndex) => (
+                    <div key={itemIndex} className="flex gap-2 mb-2">
+                      <SmartSearch
+                        value={item}
+                        onChange={(value) => updateCompanyUnapprovedItem(companyIndex, itemIndex, value)}
+                        placeholder="Search for unapproved item..."
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addCompanyUnapprovedItem(companyIndex)}
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                      {company.unapprovedItems.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeCompanyUnapprovedItem(companyIndex, itemIndex)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                </div>
+
+                {/* Point 8: Overcharging Items */}
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <h5 className="font-medium text-nr-navy mb-2 flex items-center">
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">8</span>
+                    Overcharging Items (if found)
+                  </h5>
+                  {company.overchargingItems.map((item, itemIndex) => (
+                    <div key={itemIndex} className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
+                      <SmartSearch
+                        value={item.name}
+                        onChange={(value) => updateCompanyOverchargingItem(companyIndex, itemIndex, 'name', value)}
+                        placeholder="Item name..."
+                      />
+                      <Input
+                        type="number"
+                        placeholder="MRP Price"
+                        value={item.mrpPrice}
+                        onChange={(e) => updateCompanyOverchargingItem(companyIndex, itemIndex, 'mrpPrice', e.target.value)}
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Selling Price"
+                        value={item.sellingPrice}
+                        onChange={(e) => updateCompanyOverchargingItem(companyIndex, itemIndex, 'sellingPrice', e.target.value)}
+                      />
+                      <div className="flex gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addCompanyOverchargingItem(companyIndex)}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                        {company.overchargingItems.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeCompanyOverchargingItem(companyIndex, itemIndex)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                </div>
+              </div>
             </div>
-            <Button 
-              onClick={addUnapprovedItem}
-              className="mt-3 bg-nr-blue hover:bg-blue-800"
-            >
-              <Plus className="mr-2" size={16} />
-              Add More Items
-            </Button>
-            <div className="mt-3">
-              <Input type="file" accept="image/*" />
-            </div>
-          </div>
+          ))}
         </div>
+
+
       </CardContent>
     </Card>
   );
