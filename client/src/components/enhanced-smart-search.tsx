@@ -51,19 +51,19 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
         results.push({ ...item, matchType: "Serial Number", matchField: `S.No ${item.sno}` });
       }
       // Search by Brand
-      else if (item.brand.toLowerCase().includes(term)) {
+      else if (item.brand?.toLowerCase().includes(term)) {
         results.push({ ...item, matchType: "Brand", matchField: item.brand });
       }
       // Search by Item/Category
-      else if (item.item.toLowerCase().includes(term) || item.category.toLowerCase().includes(term)) {
+      else if (item.item?.toLowerCase().includes(term) || item.category?.toLowerCase().includes(term)) {
         results.push({ ...item, matchType: "Category", matchField: `${item.category} - ${item.item}` });
       }
       // Search by Flavour
-      else if (item.flavour.toLowerCase().includes(term)) {
+      else if (item.flavour?.toLowerCase().includes(term)) {
         results.push({ ...item, matchType: "Flavour", matchField: item.flavour });
       }
       // Search by Quantity
-      else if (item.quantity.toLowerCase().includes(term)) {
+      else if (item.quantity?.toLowerCase().includes(term)) {
         results.push({ ...item, matchType: "Quantity", matchField: item.quantity });
       }
       // Search by MRP
@@ -88,7 +88,7 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
   }, [searchTerm, searchResults]);
 
   const selectItem = (item: ShortlistedItem) => {
-    const selectedText = `S.No ${item.sno}: ${item.brand} ${item.item} ${item.flavour} (${item.quantity}) - ₹${item.mrp}`;
+    const selectedText = `S.No ${item.sno}: ${item.brand || ''} ${item.item || ''} ${item.flavour || ''} (${item.quantity || ''}) - ₹${item.mrp || 0}`;
     setSearchTerm(selectedText);
     onChange(selectedText);
     setShowResults(false);
@@ -175,7 +175,7 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
                     {item.brand} {item.item}
                   </div>
                   <div className="text-sm text-gray-600">
-                    {item.flavour} • {item.quantity} • ₹{item.mrp}
+                    {item.flavour || 'N/A'} • {item.quantity || 'N/A'} • ₹{item.mrp || 0}
                   </div>
                 </div>
                 <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
