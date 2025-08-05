@@ -117,7 +117,7 @@ Preferred communication style: Simple, everyday language.
 - **Multi-File Support**: Handles single or multiple uploaded images with clear, underlined filename references
 - **Reliable Document Generation**: Ensures Word documents always generate successfully without corruption across all Microsoft Office versions
 - **Consistent Formatting**: Professional photo reference format that works reliably in Word, LibreOffice, and Google Docs
-- **Inspector Signature Table**: Dynamic borderless table at document end with rows equal to number of inspectors, containing Name (first column, bold) and Designation (second column), with positioning logic: 1st inspector right-aligned, 2nd inspector center-aligned, 3rd+ inspectors left-aligned, no heading, fixed to properly pass inspector data from database to document converter
+- **Inspector Signature Table**: Dynamic formatting at document end - single inspector displays name and designation as stacked paragraphs (right-aligned), multiple inspectors use borderless table with Name/Designation columns and positioning logic: 1st inspector right-aligned, 2nd inspector center-aligned, 3rd+ inspectors left-aligned, no heading, fixed to properly pass inspector data from database to document converter
 - **Professional Language**: Transforms technical inspection data into formal Railway correspondence language
 - **Microsoft Office Compatibility**: Native .docx format ensures seamless opening in Microsoft Word, LibreOffice, and Google Docs
 - **Image Processing Debugging**: Comprehensive logging and error handling for image embedding troubleshooting

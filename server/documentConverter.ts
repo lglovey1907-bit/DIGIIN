@@ -1104,62 +1104,77 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
             spacing: { after: 300 }
           }),
 
-          // Create inspector signature table - rows = number of inspectors, 2 columns (Name, Designation)
-          new Table({
-            rows: convertedDoc.signatures.map((signature, index) => {
-              const lines = signature.split('\n');
-              const name = lines[0] || '';
-              const designation = lines[1] || '';
-              
-              // Determine alignment based on inspector order: 1st=right, 2nd=center, 3rd+=left
-              const alignment = 
-                index === 0 ? AlignmentType.RIGHT :
-                index === 1 ? AlignmentType.CENTER :
-                AlignmentType.LEFT;
-              
-              return new TableRow({
-                children: [
-                  // Name column
-                  new TableCell({
-                    children: [
-                      new Paragraph({
-                        children: [new TextRun({ text: name, bold: true, size: 22 })],
-                        alignment: alignment,
-                        spacing: { after: 50 }
-                      })
-                    ],
-                    width: { size: 50, type: WidthType.PERCENTAGE },
-                    margins: { top: 100, bottom: 50, left: 100, right: 100 },
-                    borders: {
-                      top: { style: BorderStyle.NONE },
-                      bottom: { style: BorderStyle.NONE },
-                      left: { style: BorderStyle.NONE },
-                      right: { style: BorderStyle.NONE }
-                    }
-                  }),
-                  // Designation column
-                  new TableCell({
-                    children: [
-                      new Paragraph({
-                        children: [new TextRun({ text: designation, size: 20 })],
-                        alignment: alignment,
-                        spacing: { after: 50 }
-                      })
-                    ],
-                    width: { size: 50, type: WidthType.PERCENTAGE },
-                    margins: { top: 50, bottom: 100, left: 100, right: 100 },
-                    borders: {
-                      top: { style: BorderStyle.NONE },
-                      bottom: { style: BorderStyle.NONE },
-                      left: { style: BorderStyle.NONE },
-                      right: { style: BorderStyle.NONE }
-                    }
-                  })
-                ]
-              });
+          // Special handling for single inspector: name and designation in one column, right-aligned
+          ...(convertedDoc.signatures.length === 1 ? [
+            // Single inspector: name and designation stacked vertically, right-aligned
+            new Paragraph({
+              children: [new TextRun({ text: convertedDoc.signatures[0].split('\n')[0] || '', bold: true, size: 22 })],
+              alignment: AlignmentType.RIGHT,
+              spacing: { after: 50 }
             }),
-            width: { size: 100, type: WidthType.PERCENTAGE }
-          })
+            new Paragraph({
+              children: [new TextRun({ text: convertedDoc.signatures[0].split('\n')[1] || '', size: 20 })],
+              alignment: AlignmentType.RIGHT,
+              spacing: { after: 200 }
+            })
+          ] : [
+            // Multiple inspectors: table format with 2 columns (Name, Designation)
+            new Table({
+              rows: convertedDoc.signatures.map((signature, index) => {
+                const lines = signature.split('\n');
+                const name = lines[0] || '';
+                const designation = lines[1] || '';
+                
+                // Determine alignment based on inspector order: 1st=right, 2nd=center, 3rd+=left
+                const alignment = 
+                  index === 0 ? AlignmentType.RIGHT :
+                  index === 1 ? AlignmentType.CENTER :
+                  AlignmentType.LEFT;
+                
+                return new TableRow({
+                  children: [
+                    // Name column
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [new TextRun({ text: name, bold: true, size: 22 })],
+                          alignment: alignment,
+                          spacing: { after: 50 }
+                        })
+                      ],
+                      width: { size: 50, type: WidthType.PERCENTAGE },
+                      margins: { top: 100, bottom: 50, left: 100, right: 100 },
+                      borders: {
+                        top: { style: BorderStyle.NONE },
+                        bottom: { style: BorderStyle.NONE },
+                        left: { style: BorderStyle.NONE },
+                        right: { style: BorderStyle.NONE }
+                      }
+                    }),
+                    // Designation column
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [new TextRun({ text: designation, size: 20 })],
+                          alignment: alignment,
+                          spacing: { after: 50 }
+                        })
+                      ],
+                      width: { size: 50, type: WidthType.PERCENTAGE },
+                      margins: { top: 50, bottom: 100, left: 100, right: 100 },
+                      borders: {
+                        top: { style: BorderStyle.NONE },
+                        bottom: { style: BorderStyle.NONE },
+                        left: { style: BorderStyle.NONE },
+                        right: { style: BorderStyle.NONE }
+                      }
+                    })
+                  ]
+                });
+              }),
+              width: { size: 100, type: WidthType.PERCENTAGE }
+            })
+          ])
         ] : []),
 
         // Copy to section
