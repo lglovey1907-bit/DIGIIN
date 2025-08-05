@@ -367,12 +367,8 @@ function generateSignatures(inspectionData: InspectionData): string[] {
       .map(inspector => `${inspector.name}\n${inspector.designation}`);
   }
   
-  // Fallback to default signatures if no inspectors in form
-  return [
-    "Sanjay Kumar Singh\nCMI/YTSK",
-    "Lovey Gandhi\nCMI/G.",
-    "Vivek Kumar\nCMI/Ctg/VIP"
-  ];
+  // Return empty array if no inspectors in form - no auto-generated defaults
+  return [];
 }
 
 function generatePhotographsText(attachedFiles?: Array<{id: string; fileName: string; fileType: string; filePath: string}>): string {
@@ -1099,74 +1095,76 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
           spacing: { after: 600 }
         }),
 
-        // Inspector signatures with proper alignment
-        new Paragraph({
-          children: [new TextRun({ text: "", size: 22 })],
-          spacing: { after: 300 }
-        }),
-
-        // Create inspector signature table - rows = number of inspectors, 2 columns (Name, Designation)
-        new Table({
-          rows: convertedDoc.signatures.map((signature, index) => {
-            const lines = signature.split('\n');
-            const name = lines[0] || '';
-            const designation = lines[1] || '';
-            
-            // Determine alignment based on inspector order
-            let alignment = AlignmentType.CENTER;
-            if (convertedDoc.signatures.length === 1) {
-              alignment = AlignmentType.RIGHT;
-            } else if (convertedDoc.signatures.length === 2) {
-              alignment = index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER;
-            } else if (convertedDoc.signatures.length >= 3) {
-              if (index === 0) alignment = AlignmentType.RIGHT;
-              else if (index === 1) alignment = AlignmentType.CENTER;
-              else alignment = AlignmentType.LEFT;
-            }
-            
-            return new TableRow({
-              children: [
-                // Name column
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      children: [new TextRun({ text: name, bold: true, size: 22 })],
-                      alignment: alignment,
-                      spacing: { after: 50 }
-                    })
-                  ],
-                  width: { size: 50, type: WidthType.PERCENTAGE },
-                  margins: { top: 100, bottom: 50, left: 100, right: 100 },
-                  borders: {
-                    top: { style: BorderStyle.NONE },
-                    bottom: { style: BorderStyle.NONE },
-                    left: { style: BorderStyle.NONE },
-                    right: { style: BorderStyle.NONE }
-                  }
-                }),
-                // Designation column
-                new TableCell({
-                  children: [
-                    new Paragraph({
-                      children: [new TextRun({ text: designation, size: 20 })],
-                      alignment: alignment,
-                      spacing: { after: 50 }
-                    })
-                  ],
-                  width: { size: 50, type: WidthType.PERCENTAGE },
-                  margins: { top: 50, bottom: 100, left: 100, right: 100 },
-                  borders: {
-                    top: { style: BorderStyle.NONE },
-                    bottom: { style: BorderStyle.NONE },
-                    left: { style: BorderStyle.NONE },
-                    right: { style: BorderStyle.NONE }
-                  }
-                })
-              ]
-            });
+        // Inspector signatures with proper alignment (only if signatures exist)
+        ...(convertedDoc.signatures.length > 0 ? [
+          new Paragraph({
+            children: [new TextRun({ text: "", size: 22 })],
+            spacing: { after: 300 }
           }),
-          width: { size: 100, type: WidthType.PERCENTAGE }
-        }),
+
+          // Create inspector signature table - rows = number of inspectors, 2 columns (Name, Designation)
+          new Table({
+            rows: convertedDoc.signatures.map((signature, index) => {
+              const lines = signature.split('\n');
+              const name = lines[0] || '';
+              const designation = lines[1] || '';
+              
+              // Determine alignment based on inspector order
+              let alignment = AlignmentType.CENTER;
+              if (convertedDoc.signatures.length === 1) {
+                alignment = AlignmentType.RIGHT;
+              } else if (convertedDoc.signatures.length === 2) {
+                alignment = index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER;
+              } else if (convertedDoc.signatures.length >= 3) {
+                if (index === 0) alignment = AlignmentType.RIGHT;
+                else if (index === 1) alignment = AlignmentType.CENTER;
+                else alignment = AlignmentType.LEFT;
+              }
+              
+              return new TableRow({
+                children: [
+                  // Name column
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun({ text: name, bold: true, size: 22 })],
+                        alignment: alignment,
+                        spacing: { after: 50 }
+                      })
+                    ],
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    margins: { top: 100, bottom: 50, left: 100, right: 100 },
+                    borders: {
+                      top: { style: BorderStyle.NONE },
+                      bottom: { style: BorderStyle.NONE },
+                      left: { style: BorderStyle.NONE },
+                      right: { style: BorderStyle.NONE }
+                    }
+                  }),
+                  // Designation column
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun({ text: designation, size: 20 })],
+                        alignment: alignment,
+                        spacing: { after: 50 }
+                      })
+                    ],
+                    width: { size: 50, type: WidthType.PERCENTAGE },
+                    margins: { top: 50, bottom: 100, left: 100, right: 100 },
+                    borders: {
+                      top: { style: BorderStyle.NONE },
+                      bottom: { style: BorderStyle.NONE },
+                      left: { style: BorderStyle.NONE },
+                      right: { style: BorderStyle.NONE }
+                    }
+                  })
+                ]
+              });
+            }),
+            width: { size: 100, type: WidthType.PERCENTAGE }
+          })
+        ] : []),
 
         // Copy to section
         new Paragraph({
