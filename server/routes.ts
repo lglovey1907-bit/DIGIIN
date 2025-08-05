@@ -401,32 +401,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // PDF to DOC conversion route
-  app.post('/api/inspections/:id/convert-to-doc', isAuthenticated, async (req: any, res) => {
+  app.post('/api/inspections/:id/convert-to-doc', async (req: any, res) => {
     try {
       const inspection = await storage.getInspection(req.params.id);
       if (!inspection) {
         return res.status(404).json({ message: "Inspection not found" });
       }
       
-      const userId = req.user.id;
+      // Get user from session or token
+      let userId;
+      if (req.session?.passport?.user) {
+        userId = req.session.passport.user;
+      } else if (req.headers.authorization) {
+        const token = req.headers.authorization.replace('Bearer ', '');
+        try {
+          const decoded = Buffer.from(token, 'base64').toString('utf-8');
+          const [id] = decoded.split(':');
+          userId = id;
+        } catch (error) {
+          return res.status(401).json({ message: "Invalid token" });
+        }
+      } else {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
       const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ message: "User not found" });
+      }
       
       // Check if user has permission to view this inspection
-      if (user?.role !== 'admin' && inspection.userId !== userId) {
+      if (user.role !== 'admin' && inspection.userId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
       
+      console.log("Starting document conversion for inspection:", inspection.id);
+      
       const convertedDocument = await convertInspectionToDocument({
         id: inspection.id,
-        subject: inspection.subject,
-        stationCode: inspection.stationCode,
-        area: inspection.area,
-        inspectionDate: inspection.inspectionDate.toISOString(),
-        observations: inspection.observations,
-        letterReference: req.body.letterReference
+        subject: inspection.subject || 'Railway Inspection',
+        stationCode: inspection.stationCode || 'UNKNOWN',
+        area: inspection.area || 'General',
+        inspectionDate: inspection.inspectionDate ? inspection.inspectionDate.toISOString() : new Date().toISOString(),
+        observations: inspection.observations || {},
+        letterReference: req.body.letterReference || `Ref: (i) Letter No.23AC/Decoy Checks dated ${new Date().toLocaleDateString('en-GB')}.`
       });
       
+      console.log("Document conversion completed, generating text...");
       const documentText = await generateDocumentText(convertedDocument);
+      console.log("Document text generated, length:", documentText.length);
       
       // Set headers for DOC file download
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');

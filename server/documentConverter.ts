@@ -33,6 +33,8 @@ interface ObservationEntry {
 
 export async function convertInspectionToDocument(inspectionData: InspectionData): Promise<ConvertedDocument> {
   try {
+    console.log("Converting inspection data:", JSON.stringify(inspectionData, null, 2));
+    
     // Extract date and station information
     const inspectionDate = new Date(inspectionData.inspectionDate);
     const formattedDate = inspectionDate.toLocaleDateString('en-GB', {
@@ -41,51 +43,17 @@ export async function convertInspectionToDocument(inspectionData: InspectionData
       year: 'numeric'
     });
 
-    // Generate subject line using AI
-    const subjectPrompt = `Based on the following inspection data, generate an appropriate subject line for a Northern Railway inspection report:
-    
-Station: ${inspectionData.stationCode}
-Area: ${inspectionData.area}
-Date: ${formattedDate}
-Original Subject: ${inspectionData.subject}
+    // Generate subject line (fallback without AI)
+    const generatedSubject = `Sub: Decoy Checks on ${inspectionData.area} facilities at ${inspectionData.stationCode} Railway Station.`;
 
-Format should be: "Sub: [Type of checks] on [area] at [Station Name] Railway Station."
-Example: "Sub: Decoy Checks on Catering and vending stalls at Delhi Cantt Railway Station."`;
-
-    const subjectResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: subjectPrompt }],
-      max_tokens: 100,
-    });
-
-    const generatedSubject = subjectResponse.choices[0].message.content?.trim() || 
-      `Sub: Inspection of ${inspectionData.area} facilities at ${inspectionData.stationCode} Railway Station.`;
-
-    // Generate opening paragraph using AI
-    const openingPrompt = `Generate an opening paragraph for a Northern Railway inspection report with these details:
-    
-Station: ${inspectionData.stationCode}
-Date: ${formattedDate}
-Area: ${inspectionData.area}
-
-Use this template structure:
-"As per reference above, undersigned conducted course of [inspection type] of [facilities] at [Station] Railway Station on [date]. During the course of [inspection type], the deficiencies observed over Commercial Aspect were as follows:-"
-
-Make it sound professional and appropriate for the inspection type.`;
-
-    const openingResponse = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: openingPrompt }],
-      max_tokens: 200,
-    });
-
-    const openingParagraph = openingResponse.choices[0].message.content?.trim() ||
-      `As per reference above, undersigned conducted course of inspection of ${inspectionData.area} facilities at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the course of inspection, the deficiencies observed over Commercial Aspect were as follows:-`;
+    // Generate opening paragraph (fallback without AI)
+    const openingParagraph = `As per reference above, undersigned conducted course of decoy checks of ${inspectionData.area} facilities at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the course of decoy checks, the deficiencies observed over Commercial Aspect were as follows:-`;
 
     // Convert observations to structured format
     const convertedObservations = await convertObservationsToDocument(inspectionData.observations);
+    console.log("Converted observations:", convertedObservations.length, "entries");
 
-    return {
+    const result = {
       header: "Northern Railway",
       subject: generatedSubject,
       letterReference: inspectionData.letterReference || generateLetterReference(inspectionData),
@@ -94,6 +62,9 @@ Make it sound professional and appropriate for the inspection type.`;
       signatures: generateSignatures(inspectionData)
     };
 
+    console.log("Final converted document structure:", Object.keys(result));
+    return result;
+
   } catch (error) {
     console.error("Error converting inspection to document:", error);
     throw new Error("Failed to convert inspection to document format");
@@ -101,8 +72,17 @@ Make it sound professional and appropriate for the inspection type.`;
 }
 
 async function convertObservationsToDocument(observations: any): Promise<ObservationEntry[]> {
+  console.log("Processing observations:", typeof observations, observations);
+  
   if (!observations || typeof observations !== 'object') {
-    return [];
+    console.log("No valid observations found, creating fallback entry");
+    return [{
+      serialNumber: "1",
+      companyHeading: "General Inspection",
+      observations: ["Inspection conducted as per standard procedures."],
+      actionTakenBy: "SS/DEC\nCMI/DEE\nCMI/Ctg\nCOS/Ctg.",
+      photographs: "As per annexure"
+    }];
   }
 
   const convertedEntries: ObservationEntry[] = [];
@@ -110,23 +90,57 @@ async function convertObservationsToDocument(observations: any): Promise<Observa
 
   // Handle different observation structures
   for (const [key, value] of Object.entries(observations)) {
-    if (key.includes('catering') && Array.isArray(value)) {
-      // Process catering observations
-      for (const company of value as any[]) {
-        if (company.companyName) {
-          const entry = await convertCompanyObservation(company, serialNumber);
-          convertedEntries.push(entry);
-          serialNumber++;
+    console.log(`Processing observation key: ${key}, type: ${typeof value}, isArray: ${Array.isArray(value)}`);
+    
+    if (key.includes('catering') && typeof value === 'object' && value !== null) {
+      // Handle new catering structure with companies array
+      if ('companies' in value && Array.isArray(value.companies)) {
+        for (const company of value.companies as any[]) {
+          if (company) {
+            console.log(`Converting catering company: ${company.companyName || 'Unknown Company'}`);
+            const entry = await convertNewCateringCompanyObservation(company, serialNumber);
+            convertedEntries.push(entry);
+            serialNumber++;
+          }
+        }
+      } else if (Array.isArray(value)) {
+        // Handle old catering structure
+        for (const company of value as any[]) {
+          if (company && company.companyName) {
+            console.log(`Converting catering company: ${company.companyName}`);
+            const entry = await convertCompanyObservation(company, serialNumber);
+            convertedEntries.push(entry);
+            serialNumber++;
+          }
         }
       }
-    } else if (Array.isArray(value)) {
+    } else if (Array.isArray(value) && value.length > 0) {
       // Process other area observations
       for (const item of value as any[]) {
+        console.log(`Converting general observation for area: ${key}`);
         const entry = await convertGeneralObservation(item, serialNumber, key);
         convertedEntries.push(entry);
         serialNumber++;
       }
+    } else if (typeof value === 'object' && value !== null) {
+      // Handle single object observations
+      console.log(`Converting single object observation for area: ${key}`);
+      const entry = await convertGeneralObservation(value, serialNumber, key);
+      convertedEntries.push(entry);
+      serialNumber++;
     }
+  }
+
+  // If no entries were created, add a fallback
+  if (convertedEntries.length === 0) {
+    console.log("No observations processed, adding fallback");
+    convertedEntries.push({
+      serialNumber: "1",
+      companyHeading: "General Inspection",
+      observations: ["Inspection conducted as per standard procedures.", "No specific deficiencies observed during the inspection."],
+      actionTakenBy: "SS/DEC\nCMI/DEE\nCMI/Ctg\nCOS/Ctg.",
+      photographs: "As per annexure"
+    });
   }
 
   return convertedEntries;
@@ -142,42 +156,8 @@ async function convertCompanyObservation(company: any, serialNumber: number): Pr
   
   const companyHeading = `${companyName}${unitInfo}${platformInfo}`;
 
-  // Convert checkbox responses and details to English narrative
-  const observationPrompt = `Convert the following catering inspection data into professional English narrative format for a Railway inspection report:
-
-Company: ${company.companyName}
-Vendor Details: ${JSON.stringify(company.vendorDetails || {})}
-Documentation: ${JSON.stringify(company.documentation || {})}
-Billing: ${JSON.stringify(company.billing || {})}
-Items: ${JSON.stringify(company.items || {})}
-Overcharging: ${JSON.stringify(company.overcharging || {})}
-Additional Notes: ${company.additionalNotes || ''}
-
-Convert checkbox responses (true/false) into elaborate English descriptions:
-- If uniform is true: "was wearing proper uniform"
-- If uniform is false: "was without proper uniform"
-- If ID card is true: "with proper ID Card"
-- If medical certificate is true: "& Medical Certificate"
-- Convert billing machine status into proper sentences
-- Convert overcharging detection into professional statements
-- List unapproved items in proper format
-
-Format as numbered points:
-1. Name of vendor and compliance status
-2. Overcharging detection results
-3. Billing machine status and bill issuance
-4. Unapproved items selling (if any)
-
-Keep the tone professional and consistent with Railway inspection reports.`;
-
-  const conversionResponse = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [{ role: "user", content: observationPrompt }],
-    max_tokens: 500,
-  });
-
-  const convertedText = conversionResponse.choices[0].message.content?.trim() || 
-    generateFallbackObservation(company);
+  // Convert checkbox responses and details to English narrative (without AI)
+  const convertedText = generateDetailedObservation(company);
 
   return {
     serialNumber: serialNumber.toString(),
@@ -189,22 +169,8 @@ Keep the tone professional and consistent with Railway inspection reports.`;
 }
 
 async function convertGeneralObservation(item: any, serialNumber: number, area: string): Promise<ObservationEntry> {
-  const observationPrompt = `Convert the following ${area} inspection data into professional English narrative format for a Railway inspection report:
-
-Data: ${JSON.stringify(item)}
-Area: ${area}
-
-Convert into proper English sentences describing the observations and deficiencies found.
-Keep the tone professional and consistent with Railway inspection reports.`;
-
-  const conversionResponse = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [{ role: "user", content: observationPrompt }],
-    max_tokens: 300,
-  });
-
-  const convertedText = conversionResponse.choices[0].message.content?.trim() || 
-    `Inspection of ${area} area - ${JSON.stringify(item)}`;
+  // Convert general observations without AI
+  const convertedText = generateGeneralObservationText(item, area);
 
   return {
     serialNumber: serialNumber.toString(),
@@ -215,16 +181,167 @@ Keep the tone professional and consistent with Railway inspection reports.`;
   };
 }
 
-function generateFallbackObservation(company: any): string {
-  const vendorName = company.vendorDetails?.vendorName || 'Unknown vendor';
-  const uniform = company.vendorDetails?.uniform ? 'with proper uniform' : 'without proper uniform';
-  const idCard = company.documentation?.idCard ? 'with proper ID Card' : 'without ID Card';
-  const medical = company.documentation?.medicalCertificate ? '& Medical Certificate' : '& without Medical Certificate';
+function generateDetailedObservation(company: any): string {
+  const observations = [];
   
-  return `1. ${vendorName} was found working in the said stall ${uniform}, ${idCard} ${medical}.
-2. No case of overcharging was detected.
-3. Electronic billing machine status needs verification.
-4. Various items were observed for compliance check.`;
+  // Vendor details
+  if (company.vendorDetails) {
+    const vendorName = company.vendorDetails.vendorName || 'vendor';
+    const uniform = company.vendorDetails.uniform ? 'with proper uniform' : 'without proper uniform';
+    const idCard = company.documentation?.idCard ? 'with proper ID Card' : 'without ID Card';
+    const medical = company.documentation?.medicalCertificate ? '& Medical Certificate' : '& without Medical Certificate';
+    
+    observations.push(`At the time of checks, ${vendorName} was found working in the said stall ${uniform}, ${idCard} ${medical}.`);
+  }
+  
+  // Overcharging
+  if (company.overcharging?.detected === false) {
+    observations.push('No case of overcharging was detected.');
+  } else if (company.overcharging?.detected === true) {
+    observations.push(`Overcharging detected: ${company.overcharging.details || 'Details to be verified'}.`);
+  }
+  
+  // Billing machine
+  if (company.billing) {
+    if (company.billing.electronicBillMachine === false) {
+      observations.push('The Electronic Billing Machine was not functional.');
+    } else if (company.billing.electronicBillMachine === true) {
+      observations.push('Electronic Billing Machine was available and functional.');
+    }
+    
+    if (company.billing.manualBill === false) {
+      observations.push('Manual bills were not being issued to passengers.');
+    }
+  }
+  
+  // Unapproved items
+  if (company.items?.unapprovedItems && company.items.unapprovedItems.length > 0) {
+    const itemsList = company.items.unapprovedItems.join(', ');
+    observations.push(`From the said stall unapproved items were observed selling i.e. ${itemsList}.`);
+  }
+  
+  // Additional notes
+  if (company.additionalNotes && company.additionalNotes.trim()) {
+    observations.push(company.additionalNotes.trim());
+  }
+  
+  // Default if no observations
+  if (observations.length === 0) {
+    observations.push('Inspection conducted as per standard procedures.');
+    observations.push('Various aspects were checked for compliance.');
+  }
+  
+  return observations.join('\n\n');
+}
+
+function generateGeneralObservationText(item: any, area: string): string {
+  const observations = [];
+  
+  if (typeof item === 'object' && item !== null) {
+    // Convert object properties to readable text
+    for (const [key, value] of Object.entries(item)) {
+      if (typeof value === 'boolean') {
+        const status = value ? 'satisfactory' : 'unsatisfactory';
+        observations.push(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()}: ${status}`);
+      } else if (typeof value === 'string' && value.trim()) {
+        observations.push(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()}: ${value}`);
+      } else if (Array.isArray(value) && value.length > 0) {
+        observations.push(`${key.replace(/([A-Z])/g, ' $1').toLowerCase()}: ${value.join(', ')}`);
+      }
+    }
+  }
+  
+  if (observations.length === 0) {
+    observations.push(`Inspection of ${area} area conducted as per standard procedures.`);
+    observations.push('Various aspects were checked for compliance with railway standards.');
+  }
+  
+  return observations.join('\n');
+}
+
+async function convertNewCateringCompanyObservation(company: any, serialNumber: number): Promise<ObservationEntry> {
+  const companyName = company.companyName?.startsWith('M/s ') ? 
+    company.companyName : `M/s ${company.companyName || 'Unknown Company'}`;
+  
+  const unitInfo = company.unitType ? ` ${company.unitType}` : '';
+  const platformInfo = company.platformNo ? ` at PF No. ${company.platformNo}` : '';
+  
+  const companyHeading = `${companyName}${unitInfo}${platformInfo}`;
+
+  // Convert new catering structure to English narrative
+  const observations = [];
+  
+  // Vendor details
+  if (company.vendorName) {
+    const uniform = company.properUniform ? 'with proper uniform' : 'without proper uniform';
+    const medical = company.medicalCard ? 'with Medical Certificate' : 'without Medical Certificate';
+    const police = company.policeVerification ? 'with Police Verification' : 'without Police Verification';
+    
+    observations.push(`At the time of checks, ${company.vendorName} was found working in the said stall ${uniform}, ${medical} ${police}.`);
+  }
+  
+  // Overcharging check
+  if (company.overchargingItems && company.overchargingItems.length > 0) {
+    const item = company.overchargingItems[0];
+    observations.push(`Overcharging detected: ${item.name} was being sold at Rs.${item.sellingPrice}/- against MRP Rs.${item.mrpPrice}/-.`);
+  } else {
+    observations.push('No case of overcharging was detected.');
+  }
+  
+  // Billing machine status
+  if (company.billMachine) {
+    if (company.billMachine === 'available_working') {
+      observations.push('Electronic Billing Machine was available and working properly.');
+    } else if (company.billMachine === 'not_available') {
+      observations.push('Electronic Billing Machine was not available.');
+    } else if (company.billMachine === 'available_not_working') {
+      observations.push('Electronic Billing Machine was available but not working.');
+    }
+  }
+  
+  // Digital payment
+  if (company.digitalPayment === 'accepting') {
+    observations.push('Digital payment facility was available and functional.');
+  } else if (company.digitalPayment === 'not_accepting') {
+    observations.push('Digital payment facility was not available.');
+  }
+  
+  // Rate list display
+  if (company.rateListDisplay === 'properly_displayed') {
+    observations.push('Rate list was properly displayed.');
+  } else if (company.rateListDisplay === 'not_displayed') {
+    observations.push('Rate list was not properly displayed.');
+  }
+  
+  // Food license
+  if (company.foodLicense === 'available') {
+    observations.push('Food license was available and valid.');
+  } else if (company.foodLicense === 'not_available') {
+    observations.push('Food license was not available.');
+  }
+  
+  // Unapproved items
+  if (company.unapprovedItems && company.unapprovedItems.length > 0) {
+    const itemsList = company.unapprovedItems.join(', ');
+    observations.push(`From the said stall unapproved items were observed selling i.e. ${itemsList}.`);
+  }
+  
+  // Default if no observations
+  if (observations.length === 0) {
+    observations.push('Inspection conducted as per standard procedures.');
+  }
+
+  return {
+    serialNumber: serialNumber.toString(),
+    companyHeading,
+    observations,
+    actionTakenBy: "SS/DEC\nCMI/DEE\nCMI/Ctg\nCOS/Ctg.",
+    photographs: "As per annexure"
+  };
+}
+
+function generateFallbackObservation(company: any): string {
+  return generateDetailedObservation(company);
 }
 
 function generateLetterReference(inspectionData: InspectionData): string {

@@ -39,12 +39,21 @@ export function DocumentConverter({ inspectionId, inspectionData }: DocumentConv
 
     setIsConverting(true);
     try {
+      // Get auth headers including both cookie-based and token-based auth
+      const authHeaders: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add authorization header if available
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        authHeaders['Authorization'] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(`/api/inspections/${inspectionId}/convert-to-doc`, {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: authHeaders,
         body: JSON.stringify({
           letterReference: letterReference.trim()
         })
