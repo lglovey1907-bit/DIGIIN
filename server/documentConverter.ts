@@ -410,7 +410,9 @@ function getImageFiles(attachedFiles?: Array<{id: string; fileName: string; file
 }
 
 async function generateImageCellContent(obs: ObservationEntry): Promise<Paragraph[]> {
-  // If no image files, show fallback text
+  // For now, revert to showing filenames to prevent document corruption
+  // This ensures reliable document generation while we work on image embedding
+  
   if (!obs.imageFiles || obs.imageFiles.length === 0) {
     return [new Paragraph({
       children: [new TextRun({ text: "As per annexure", size: 22 })],
@@ -420,52 +422,13 @@ async function generateImageCellContent(obs: ObservationEntry): Promise<Paragrap
 
   const imageContent: Paragraph[] = [];
 
-  // Try to embed each image, fallback to filename if image can't be loaded
+  // Show file names for each image with better formatting
   for (const imageFile of obs.imageFiles) {
-    try {
-      // Check if file exists
-      if (fs.existsSync(imageFile.filePath)) {
-        // Read the image file
-        const imageBuffer = fs.readFileSync(imageFile.filePath);
-        
-        // Add the embedded image
-        imageContent.push(new Paragraph({
-          children: [
-            new ImageRun({
-              data: imageBuffer,
-              transformation: {
-                width: 150,  // Max width 150 pixels
-                height: 150, // Max height 150 pixels
-              }
-            })
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 100 }
-        }));
-        
-        // Add filename below the image
-        imageContent.push(new Paragraph({
-          children: [new TextRun({ text: imageFile.fileName, size: 18 })],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 }
-        }));
-      } else {
-        // File doesn't exist, show filename only
-        imageContent.push(new Paragraph({
-          children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 100 }
-        }));
-      }
-    } catch (error) {
-      console.error(`Error loading image ${imageFile.fileName}:`, error);
-      // Fallback to filename if image can't be loaded
-      imageContent.push(new Paragraph({
-        children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 100 }
-      }));
-    }
+    imageContent.push(new Paragraph({
+      children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 100 }
+    }));
   }
 
   return imageContent;
