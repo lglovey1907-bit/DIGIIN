@@ -635,13 +635,13 @@ export function generateRTFDocument(plainText: string): string {
         rtfContent += '\\clbrdrb\\brdrs\\brdrw10\\brdrcf1';  
         rtfContent += '\\clbrdrl\\brdrs\\brdrw10\\brdrcf1';  
         rtfContent += '\\clbrdrr\\brdrs\\brdrw10\\brdrcf1';  
-        rtfContent += '\\cellx6500';      // Observations - 5500 twips wide  
+        rtfContent += '\\cellx7200';      // Observations - 6200 twips wide for better content display  
         
         rtfContent += '\\clbrdrt\\brdrs\\brdrw10\\brdrcf1';  
         rtfContent += '\\clbrdrb\\brdrs\\brdrw10\\brdrcf1';  
         rtfContent += '\\clbrdrl\\brdrs\\brdrw10\\brdrcf1';  
         rtfContent += '\\clbrdrr\\brdrs\\brdrw10\\brdrcf1';  
-        rtfContent += '\\cellx8500';      // Action Taken By - 2000 twips
+        rtfContent += '\\cellx8700';      // Action Taken By - 1500 twips
         
         rtfContent += '\\clbrdrt\\brdrs\\brdrw10\\brdrcf1';  
         rtfContent += '\\clbrdrb\\brdrs\\brdrw10\\brdrcf1';  
@@ -685,25 +685,24 @@ export function generateRTFDocument(plainText: string): string {
               
               // Handle bold headings (**text**)
               if (line.includes('**')) {
-                const boldFormatted = line.replace(/\*\*(.*?)\*\*/g, '{\\b $1}');
+                const boldFormatted = line.replace(/\*\*(.*?)\*\*/g, '\\b $1\\b0');
                 formattedContent += boldFormatted;
+                if (i < lines.length - 1) formattedContent += '\\par ';
               }
-              // Handle numbered lists with indentation
+              // Handle numbered lists with proper indentation and spacing
               else if (line.match(/^\s+\d+\./)) {
-                formattedContent += '\\li720 ' + line.trim(); // 720 twips = 0.5 inch indent
+                const cleanLine = line.trim();
+                formattedContent += '\\li720\\fi-360 ' + cleanLine; // Hanging indent for numbered lists
+                if (i < lines.length - 1) formattedContent += '\\par ';
               }
               // Regular content
               else if (line.trim()) {
-                formattedContent += line;
-              }
-              
-              // Add paragraph break except for last line
-              if (i < lines.length - 1 && line.trim()) {
-                formattedContent += '\\par ';
+                formattedContent += line.trim();
+                if (i < lines.length - 1) formattedContent += '\\par ';
               }
             }
             
-            rtfContent += '\\pard\\intbl\\qj\\fs22 ' + escapeRTF(formattedContent) + '\\cell';
+            rtfContent += '\\pard\\intbl\\ql\\fs22 ' + formattedContent + '\\cell';
           } else {
             rtfContent += '\\pard\\intbl\\cell';
           }

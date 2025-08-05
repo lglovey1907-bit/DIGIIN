@@ -553,9 +553,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documentText = await generateDocumentText(convertedDocument);
       console.log("Document text generated, length:", documentText.length);
       
-      // Enhanced Microsoft Office compatibility headers for latest Word versions
-      res.setHeader('Content-Type', 'application/msword');
-      res.setHeader('Content-Disposition', `attachment; filename="Inspection_Report_${inspection.stationCode}_${new Date(inspection.inspectionDate).toISOString().split('T')[0]}.doc"`);
+      // RTF document headers for proper Microsoft Word compatibility
+      res.setHeader('Content-Type', 'application/rtf');
+      res.setHeader('Content-Disposition', `attachment; filename="Inspection_Report_${inspection.stationCode}_${new Date(inspection.inspectionDate).toISOString().split('T')[0]}.rtf"`);
       res.setHeader('Content-Transfer-Encoding', 'binary');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
