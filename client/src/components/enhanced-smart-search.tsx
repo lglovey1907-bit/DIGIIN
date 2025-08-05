@@ -26,66 +26,63 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
   const [showResults, setShowResults] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
 
-  // Fetch all shortlisted items
-  const { data: allItems = [] } = useQuery<ShortlistedItem[]>({
-    queryKey: ["/api/shortlisted-items"],
+  // Use backend search API for better performance and scalability
+  const { data: searchResults = [] } = useQuery<ShortlistedItem[]>({
+    queryKey: ["/api/shortlisted-items/search", searchTerm],
+    queryFn: async () => {
+      if (!searchTerm.trim() || searchTerm.length < 1) return [];
+      
+      const response = await fetch(`/api/shortlisted-items/search?q=${encodeURIComponent(searchTerm.trim())}`);
+      if (!response.ok) throw new Error('Search failed');
+      return response.json();
+    },
+    enabled: searchTerm.trim().length >= 1,
   });
 
-  // Enhanced search logic
-  const searchResults = useMemo(() => {
-    if (!searchTerm.trim() || searchTerm.length < 1) return [];
-
+  // Add match type and field information to search results
+  const enhancedResults = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    
     const term = searchTerm.toLowerCase().trim();
-    const results: Array<ShortlistedItem & { matchType: string; matchField: string }> = [];
+    return searchResults.map((item) => {
+      let matchType = "General";
+      let matchField = "";
 
-    allItems.forEach((item) => {
-      // Search by Serial Number (S.No, SN, etc.)
+      // Determine match type based on what field matched
       if (term.match(/^(s\.?no\.?|sn\.?|serial)\s*(\d+)$/i)) {
         const snoMatch = term.match(/(\d+)/);
         if (snoMatch && item.sno === parseInt(snoMatch[1])) {
-          results.push({ ...item, matchType: "Serial Number", matchField: `S.No ${item.sno}` });
+          matchType = "Serial Number";
+          matchField = `S.No ${item.sno}`;
         }
+      } else if (term.match(/^\d+$/) && item.sno === parseInt(term)) {
+        matchType = "Serial Number";
+        matchField = `S.No ${item.sno}`;
+      } else if (item.brand?.toLowerCase().includes(term)) {
+        matchType = "Brand";
+        matchField = item.brand;
+      } else if (item.item?.toLowerCase().includes(term) || item.category?.toLowerCase().includes(term)) {
+        matchType = "Category";
+        matchField = `${item.category} - ${item.item}`;
+      } else if (item.flavour?.toLowerCase().includes(term)) {
+        matchType = "Flavour";
+        matchField = item.flavour;
+      } else if (item.quantity?.toLowerCase().includes(term)) {
+        matchType = "Quantity";
+        matchField = item.quantity;
+      } else if (term.match(/^\d+$/) && item.mrp === parseFloat(term)) {
+        matchType = "Price";
+        matchField = `₹${item.mrp}`;
       }
-      // Direct serial number search
-      else if (term.match(/^\d+$/) && item.sno === parseInt(term)) {
-        results.push({ ...item, matchType: "Serial Number", matchField: `S.No ${item.sno}` });
-      }
-      // Search by Brand
-      else if (item.brand?.toLowerCase().includes(term)) {
-        results.push({ ...item, matchType: "Brand", matchField: item.brand });
-      }
-      // Search by Item/Category
-      else if (item.item?.toLowerCase().includes(term) || item.category?.toLowerCase().includes(term)) {
-        results.push({ ...item, matchType: "Category", matchField: `${item.category} - ${item.item}` });
-      }
-      // Search by Flavour
-      else if (item.flavour?.toLowerCase().includes(term)) {
-        results.push({ ...item, matchType: "Flavour", matchField: item.flavour });
-      }
-      // Search by Quantity
-      else if (item.quantity?.toLowerCase().includes(term)) {
-        results.push({ ...item, matchType: "Quantity", matchField: item.quantity });
-      }
-      // Search by MRP
-      else if (term.match(/^\d+$/) && item.mrp === parseFloat(term)) {
-        results.push({ ...item, matchType: "Price", matchField: `₹${item.mrp}` });
-      }
+
+      return { ...item, matchType, matchField };
     });
-
-    // Remove duplicates and sort by relevance
-    const uniqueResults = results.filter((item, index, self) =>
-      index === self.findIndex(t => t.id === item.id)
-    );
-
-    // Sort by match type priority: Serial Number > Brand > Category > Flavour > Quantity > Price
-    const priority = { "Serial Number": 1, "Brand": 2, "Category": 3, "Flavour": 4, "Quantity": 5, "Price": 6 };
-    return uniqueResults.sort((a, b) => (priority[a.matchType as keyof typeof priority] || 10) - (priority[b.matchType as keyof typeof priority] || 10));
-  }, [searchTerm, allItems]);
+  }, [searchResults, searchTerm]);
 
   useEffect(() => {
-    setShowResults(searchTerm.length >= 1 && searchResults.length > 0);
+    setShowResults(searchTerm.length >= 1 && enhancedResults.length > 0);
     setFocusedIndex(-1);
-  }, [searchTerm, searchResults]);
+  }, [searchTerm, enhancedResults]);
 
   const selectItem = (item: ShortlistedItem) => {
     const selectedText = `S.No ${item.sno}: ${item.brand || ''} ${item.item || ''} ${item.flavour || ''} (${item.quantity || ''}) - ₹${item.mrp || 0}`;
@@ -106,16 +103,16 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setFocusedIndex(prev => (prev < searchResults.length - 1 ? prev + 1 : 0));
+        setFocusedIndex(prev => (prev < enhancedResults.length - 1 ? prev + 1 : 0));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setFocusedIndex(prev => (prev > 0 ? prev - 1 : searchResults.length - 1));
+        setFocusedIndex(prev => (prev > 0 ? prev - 1 : enhancedResults.length - 1));
         break;
       case 'Enter':
         e.preventDefault();
-        if (focusedIndex >= 0 && searchResults[focusedIndex]) {
-          selectItem(searchResults[focusedIndex]);
+        if (focusedIndex >= 0 && enhancedResults[focusedIndex]) {
+          selectItem(enhancedResults[focusedIndex]);
         }
         break;
       case 'Escape':
@@ -143,7 +140,7 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
           value={searchTerm}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onFocus={() => searchTerm.length >= 1 && searchResults.length > 0 && setShowResults(true)}
+          onFocus={() => searchTerm.length >= 1 && enhancedResults.length > 0 && setShowResults(true)}
           className="pr-10"
         />
         <Search className="absolute right-3 top-3 text-gray-400" size={16} />
@@ -153,9 +150,9 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
       {showResults && (
         <div className="absolute z-50 mt-1 w-full max-h-80 overflow-y-auto border border-gray-300 rounded-lg bg-white shadow-xl">
           <div className="p-2 bg-gray-50 border-b text-xs text-gray-600">
-            {searchResults.length} item{searchResults.length !== 1 ? 's' : ''} found
+            {enhancedResults.length} item{enhancedResults.length !== 1 ? 's' : ''} found
           </div>
-          {searchResults.map((item, index) => (
+          {enhancedResults.map((item, index) => (
             <div
               key={item.id}
               onClick={() => selectItem(item)}
