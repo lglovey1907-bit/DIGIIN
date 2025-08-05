@@ -49,10 +49,11 @@ export default function Landing() {
         description: `Welcome, ${result.user.name}!`,
       });
       
-      // Force refresh authentication state
-      // Use a delay to ensure session is properly established
+      // Navigate to home page and refresh auth state
       setTimeout(() => {
-        window.location.href = '/';
+        setLocation('/');
+        // Force page reload to ensure session is properly loaded
+        window.location.reload();
       }, 500);
     } catch (error: any) {
       toast({
