@@ -105,15 +105,16 @@ Preferred communication style: Simple, everyday language.
 - **Fallback System**: Graceful fallback to rule-based suggestions when AI service is unavailable
 
 ## Document Conversion Feature
-- **PDF to DOC Conversion**: Transform PDF inspection reports into formatted English text DOC files with standardized Railway document structure
-- **Reliable Operation**: Works without AI dependency for consistent document generation
-- **Professional Formatting**: Centered Northern Railway header, proper table structure with aligned columns
+- **Modern Word Format**: Generates inspection reports in latest Microsoft Word .docx format for full Office compatibility
+- **Reliable Operation**: Works without AI dependency for consistent document generation using the docx library
+- **Professional Formatting**: Centered Northern Railway header with underline, proper table structure with precise column alignment
 - **Dynamic Reference Handling**: Uses "Reference Letter No." field from inspection form; displays "Ref: NIL" when empty
 - **Smart Data Processing**: Converts checkbox responses and technical data into elaborate English descriptions
 - **Company-wise Organization**: Structures observations by company with proper M/s prefixes and unit/platform details
 - **Tabular Format Output**: S.No., Observations, Action Taken By, and Photographs columns with content properly aligned
-- **Inspector Signature Alignment**: 1st inspector (right), 2nd inspector (middle), 3rd inspector (left)
+- **Inspector Signature Alignment**: 1st inspector (left), 2nd inspector (center), 3rd inspector (right)
 - **Professional Language**: Transforms technical inspection data into formal Railway correspondence language
+- **Microsoft Office Compatibility**: Native .docx format ensures seamless opening in Microsoft Word, LibreOffice, and Google Docs
 
 ## Development Tools
 - **Build System**: Vite for fast development and optimized production builds

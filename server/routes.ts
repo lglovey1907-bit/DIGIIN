@@ -18,7 +18,7 @@ import fs from "fs";
 import PDFDocument from "pdfkit";
 import passport from "passport";
 import { generateReportLayoutSuggestions, analyzeInspectionTrends } from "./aiService";
-import { convertInspectionToDocument, generateDocumentText, generateRTFDocument } from "./documentConverter";
+import { convertInspectionToDocument, generateDocumentText, generateRTFDocument, generateWordDocument } from "./documentConverter";
 
 // Extend Express types
 declare global {
@@ -549,21 +549,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         referenceNo: inspection.referenceNo || undefined
       });
       
-      console.log("Document conversion completed, generating text...");
-      const documentText = await generateDocumentText(convertedDocument);
-      console.log("Document text generated, length:", documentText.length);
+      console.log("Document conversion completed, generating Word document...");
+      const wordBuffer = await generateWordDocument(convertedDocument);
+      console.log("Word document generated, buffer size:", wordBuffer.length);
       
-      // RTF document headers for proper Microsoft Word compatibility
-      res.setHeader('Content-Type', 'application/rtf');
-      res.setHeader('Content-Disposition', `attachment; filename="Inspection_Report_${inspection.stationCode}_${new Date(inspection.inspectionDate).toISOString().split('T')[0]}.rtf"`);
+      // DOCX document headers for Microsoft Word format
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="Inspection_Report_${inspection.stationCode}_${new Date(inspection.inspectionDate).toISOString().split('T')[0]}.docx"`);
       res.setHeader('Content-Transfer-Encoding', 'binary');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       
-      // Generate RTF format for better Microsoft Office compatibility
-      const rtfDocument = generateRTFDocument(documentText);
-      res.send(rtfDocument);
+      // Send the Word document buffer
+      res.send(wordBuffer);
     } catch (error) {
       console.error("Error converting inspection to DOC:", error);
       res.status(500).json({ message: "Failed to convert inspection to DOC format" });

@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType, HeadingLevel } from "docx";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -840,4 +841,225 @@ function formatInspectorSignatures(signatures: string[]): string {
   }
   
   return result;
+}
+
+export async function generateWordDocument(convertedDoc: ConvertedDocument): Promise<Buffer> {
+  const doc = new Document({
+    sections: [{
+      properties: {},
+      children: [
+        // Header - Centered and Underlined
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: convertedDoc.header,
+              bold: true,
+              size: 32, // 16pt
+              underline: { type: "single" }
+            })
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 400 }
+        }),
+
+        // Subject - Bold
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: convertedDoc.subject,
+              bold: true,
+              size: 26 // 13pt
+            })
+          ],
+          spacing: { after: 300 }
+        }),
+
+        // Reference
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: convertedDoc.letterReference,
+              size: 22 // 11pt
+            })
+          ],
+          spacing: { after: 400 }
+        }),
+
+        // Opening paragraph - Justified
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: convertedDoc.openingParagraph,
+              size: 22 // 11pt
+            })
+          ],
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { after: 400 }
+        }),
+
+        // Create the observations table
+        new Table({
+          columnWidths: [1000, 6200, 1500, 1300], // Column widths in twentieths of a point
+          rows: [
+            // Header row
+            new TableRow({
+              children: [
+                new TableCell({
+                  children: [new Paragraph({
+                    children: [new TextRun({ text: "S.No.", bold: true, size: 22 })],
+                    alignment: AlignmentType.CENTER
+                  })],
+                  width: { size: 10, type: WidthType.PERCENTAGE }
+                }),
+                new TableCell({
+                  children: [new Paragraph({
+                    children: [new TextRun({ text: "Observations", bold: true, size: 22 })],
+                    alignment: AlignmentType.CENTER
+                  })],
+                  width: { size: 60, type: WidthType.PERCENTAGE }
+                }),
+                new TableCell({
+                  children: [new Paragraph({
+                    children: [new TextRun({ text: "Action Taken By", bold: true, size: 22 })],
+                    alignment: AlignmentType.CENTER
+                  })],
+                  width: { size: 15, type: WidthType.PERCENTAGE }
+                }),
+                new TableCell({
+                  children: [new Paragraph({
+                    children: [new TextRun({ text: "Images of the Inspection", bold: true, size: 22 })],
+                    alignment: AlignmentType.CENTER
+                  })],
+                  width: { size: 15, type: WidthType.PERCENTAGE }
+                })
+              ]
+            }),
+            // Data rows
+            ...convertedDoc.observations.map(obs => 
+              new TableRow({
+                children: [
+                  new TableCell({
+                    children: [new Paragraph({
+                      children: [new TextRun({ text: obs.serialNumber, bold: true, size: 22 })],
+                      alignment: AlignmentType.CENTER
+                    })],
+                    width: { size: 10, type: WidthType.PERCENTAGE }
+                  }),
+                  new TableCell({
+                    children: [
+                      // Company heading in bold
+                      new Paragraph({
+                        children: [new TextRun({ text: obs.companyHeading, bold: true, size: 22 })],
+                        spacing: { after: 100 }
+                      }),
+                      // Observations with numbering and indentation
+                      ...obs.observations.map((observation, index) => 
+                        new Paragraph({
+                          children: [new TextRun({ text: `${index + 1}. ${observation}`, size: 22 })],
+                          indent: { left: 720, hanging: 360 }, // Hanging indent
+                          spacing: { after: 100 }
+                        })
+                      )
+                    ],
+                    width: { size: 60, type: WidthType.PERCENTAGE }
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({
+                      children: [new TextRun({ text: obs.actionTakenBy, size: 22 })],
+                      alignment: AlignmentType.CENTER
+                    })],
+                    width: { size: 15, type: WidthType.PERCENTAGE }
+                  }),
+                  new TableCell({
+                    children: [new Paragraph({
+                      children: [new TextRun({ text: obs.photographs || "As per annexure", size: 22 })],
+                      alignment: AlignmentType.CENTER
+                    })],
+                    width: { size: 15, type: WidthType.PERCENTAGE }
+                  })
+                ]
+              })
+            )
+          ]
+        }),
+
+        // Spacing after table
+        new Paragraph({
+          children: [new TextRun({ text: "", size: 22 })],
+          spacing: { after: 600 }
+        }),
+
+        // Inspector signatures
+        ...convertedDoc.signatures.map((signature, index) => {
+          const alignment = index === 0 ? AlignmentType.LEFT : 
+                           index === 1 ? AlignmentType.CENTER : 
+                           AlignmentType.RIGHT;
+          
+          return new Paragraph({
+            children: [
+              new TextRun({
+                text: signature.split('\n')[0], // Name
+                bold: true,
+                size: 22
+              }),
+              new TextRun({
+                text: `\n${signature.split('\n')[1] || ''}`, // Designation
+                size: 22
+              })
+            ],
+            alignment: alignment,
+            spacing: { after: 200 }
+          });
+        }),
+
+        // Copy to section
+        new Paragraph({
+          children: [new TextRun({ text: "", size: 22 })],
+          spacing: { after: 300 }
+        }),
+
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Copy to:",
+              bold: true,
+              size: 22
+            })
+          ],
+          spacing: { after: 100 }
+        }),
+
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "Sr.DCM/PS: For kind information please.",
+              size: 22
+            })
+          ],
+          spacing: { after: 100 }
+        }),
+
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "DCM/PS: For kind information please.",
+              size: 22
+            })
+          ],
+          spacing: { after: 200 }
+        }),
+
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: "For images of the Decoy Check",
+              size: 22
+            })
+          ]
+        })
+      ]
+    }]
+  });
+
+  return await Packer.toBuffer(doc);
 }
