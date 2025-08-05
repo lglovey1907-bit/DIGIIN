@@ -27,7 +27,8 @@ export function getSession() {
       secure: false, // false for development
       maxAge: sessionTtl,
       sameSite: 'lax',
-      path: '/'
+      path: '/',
+      domain: undefined // Let browser handle domain automatically
     },
   });
 }
