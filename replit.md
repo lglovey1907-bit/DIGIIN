@@ -125,7 +125,14 @@ Preferred communication style: Simple, everyday language.
   - UI Integration: Edit and delete buttons appear in both CMI and admin dashboards for draft inspections only
   - Backend API: DELETE /api/inspections/:id route with proper authentication and authorization
   - Database operations: deleteInspection method in storage layer with soft delete protection
-- **Professional Language**: Transforms technical inspection data into formal Railway correspondence language
+- **Professional Language Enhancement**: Comprehensive language transformation system that converts basic inspection data into sophisticated, commanding Railway inspection terminology
+  - Language Sophistication: Transforms basic phrases to professional equivalents ("working" → "operational and functioning as per specifications", "not working" → "non-functional and necessitating urgent rectification")
+  - Regulatory Emphasis: Incorporates proper railway commercial protocol references and legal precision
+  - Authoritative Tone: Uses commanding language suitable for official Northern Railway documentation
+  - Technical Precision: Employs proper technical terminology (Electronic Point of Sale instead of billing machine)
+  - Enhanced Designations: Full official titles instead of abbreviations (Station Superintendent/DEC vs SS/DEC)
+  - Professional Observation Structure: Structured observations with regulatory compliance references
+  - Enhanced Language Functions: Comprehensive text enhancement system with context-aware professional phrase replacement
 - **Microsoft Office Compatibility**: Native .docx format ensures seamless opening in Microsoft Word, LibreOffice, and Google Docs
 - **Image Processing Debugging**: Comprehensive logging and error handling for image embedding troubleshooting
 
