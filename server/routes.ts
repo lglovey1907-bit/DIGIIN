@@ -10,12 +10,25 @@ import {
   insertShortlistedItemSchema,
   registerUserSchema,
   loginUserSchema,
+  type User,
 } from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import PDFDocument from "pdfkit";
 import passport from "passport";
+
+// Extend Express types
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+    interface Session {
+      userId?: string;
+    }
+  }
+}
 
 // Configure multer for file uploads
 const uploadDir = path.join(process.cwd(), 'uploads');
@@ -69,18 +82,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Debug session endpoint
   app.get('/api/debug/session', (req, res) => {
+    const session = req.session as any;
     console.log('Session debug:', {
       sessionID: req.sessionID,
       session: req.session,
       cookies: req.headers.cookie,
-      isAuthenticated: !!req.session.userId
+      isAuthenticated: !!session.userId
     });
     res.json({
       sessionID: req.sessionID,
       hasSession: !!req.session,
-      userId: req.session.userId,
+      userId: session.userId,
       cookies: req.headers.cookie,
-      isAuthenticated: !!req.session.userId
+      isAuthenticated: !!session.userId
     });
   });
 
@@ -101,6 +115,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (err) {
             return res.status(500).json({ message: "Login error" });
           }
+          
+          // Set session userId for compatibility
+          (req.session as any).userId = user.id;
           
           res.json({
             message: "Login successful",
@@ -125,6 +142,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err) {
         return res.status(500).json({ message: "Logout error" });
       }
+      // Clear session userId
+      (req.session as any).userId = undefined;
       res.json({ message: "Logout successful" });
     });
   });
