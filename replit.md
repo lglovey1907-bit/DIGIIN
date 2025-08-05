@@ -52,16 +52,21 @@ Preferred communication style: Simple, everyday language.
 - **Search Fields**: Serial number, brand, item name, flavour, and quantity
 - **Validation**: Automatic verification of items against approved catalog
 
-## Area-Specific Forms
-- **Modular Design**: Specialized form components for each inspection area
-- **Dynamic Observations**: JSONB storage allows flexible observation structures
-- **Photo Integration**: Each observation point can include photo evidence
-- **Validation Rules**: Area-specific validation and required fields
-- **Multi-Company Support**: Catering inspections now support multiple companies in a single form
-  - Add/remove companies dynamically with minimum of 1 company required
-  - Each company has complete inspection checklist: vendor details, documentation, licenses, billing, payments, item verification
-  - Smart search integration for unapproved items detection per company
-  - Overcharging detection with MRP vs selling price comparison per company
+## Multi-Area Inspection System
+- **Multi-Area Support**: Single inspection can cover multiple areas (catering, sanitation, parking, publicity, UTS/PRS)
+- **Dynamic Area Management**: Add/remove inspection areas within the same inspection
+- **Individual Action Tracking**: Each area has its own "Action Taken" section after observations
+- **Area-Specific Forms**: Specialized form components for each inspection area
+- **Form Isolation**: Each area maintains independent observations and actions
+- **Smart Validation Integration**: 7B validation system works within each area's catering form
+
+## Catering Form Features
+- **Multi-Company Support**: Add/remove companies dynamically with minimum of 1 company required
+- **Complete Inspection Checklist**: Vendor details, documentation, licenses, billing, payments, item verification
+- **Smart Item Verification**: 7A search against 210+ shortlisted items database
+- **7B Validation System**: Automatically validates unapproved items against approved catalog
+- **M/s Prefix**: Company names automatically prefixed with "M/s"
+- **Overcharging Detection**: MRP vs selling price comparison per company
 
 ## PDF Generation & Export
 - **Report Generation**: Server-side PDF creation using PDFKit library for inspection reports

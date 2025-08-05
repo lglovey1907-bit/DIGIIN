@@ -40,6 +40,7 @@ interface InspectionArea {
   type: string;
   label: string;
   observations: any;
+  actionTaken: string;
   id: string;
 }
 
@@ -124,6 +125,7 @@ export default function InspectionForm() {
         type: selectedArea,
         label: inspectionAreas.find(area => area.value === selectedArea)?.label || selectedArea,
         observations: {},
+        actionTaken: "",
         id: Date.now().toString()
       };
       setFormData(prev => ({
@@ -148,6 +150,16 @@ export default function InspectionForm() {
       ...prev,
       inspectionAreas: prev.inspectionAreas.map(area => 
         area.id === areaId ? { ...area, observations } : area
+      )
+    }));
+  };
+
+  // Update area action taken
+  const updateAreaActionTaken = (areaId: string, actionTaken: string) => {
+    setFormData(prev => ({
+      ...prev,
+      inspectionAreas: prev.inspectionAreas.map(area => 
+        area.id === areaId ? { ...area, actionTaken } : area
       )
     }));
   };
@@ -354,79 +366,88 @@ export default function InspectionForm() {
             </div>
 
             {/* Area-specific forms */}
-            {area.type === 'catering' && (
-              <div className="border border-gray-200 rounded-b-lg">
-                <CateringForm 
-                  observations={area.observations}
-                  onObservationsChange={(observations) => 
-                    updateAreaObservations(area.id, observations)
-                  }
-                />
-              </div>
-            )}
-            
-            {area.type === 'sanitation' && (
-              <Card className="rounded-t-none border-t-0">
-                <CardContent className="p-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <p className="text-lg font-medium mb-2">Sanitation Inspection Form</p>
-                    <p>Form template will be available soon</p>
-                  </div>
+            <div className="space-y-4">
+              {area.type === 'catering' && (
+                <div className="border border-gray-200 rounded-b-lg">
+                  <CateringForm 
+                    observations={area.observations}
+                    onObservationsChange={(observations) => 
+                      updateAreaObservations(area.id, observations)
+                    }
+                  />
+                </div>
+              )}
+              
+              {area.type === 'sanitation' && (
+                <Card className="rounded-t-none border-t-0">
+                  <CardContent className="p-6">
+                    <div className="text-center py-12 text-gray-500">
+                      <p className="text-lg font-medium mb-2">Sanitation Inspection Form</p>
+                      <p>Form template will be available soon</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {area.type === 'parking' && (
+                <Card className="rounded-t-none border-t-0">
+                  <CardContent className="p-6">
+                    <div className="text-center py-12 text-gray-500">
+                      <p className="text-lg font-medium mb-2">Parking Inspection Form</p>
+                      <p>Form template will be available soon</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {area.type === 'publicity' && (
+                <Card className="rounded-t-none border-t-0">
+                  <CardContent className="p-6">
+                    <div className="text-center py-12 text-gray-500">
+                      <p className="text-lg font-medium mb-2">Publicity Inspection Form</p>
+                      <p>Form template will be available soon</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {area.type === 'uts_prs' && (
+                <Card className="rounded-t-none border-t-0">
+                  <CardContent className="p-6">
+                    <div className="text-center py-12 text-gray-500">
+                      <p className="text-lg font-medium mb-2">UTS/PRS Inspection Form</p>
+                      <p>Form template will be available soon</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Action Taken for this specific area */}
+              <Card className="border-t-4 border-t-orange-500">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-orange-700 flex items-center text-lg">
+                    <CheckCircle className="mr-2" size={20} />
+                    Action Taken - {area.label}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    placeholder={`Describe specific actions taken for ${area.label.toLowerCase()} inspection...`}
+                    value={area.actionTaken}
+                    onChange={(e) => updateAreaActionTaken(area.id, e.target.value)}
+                    rows={3}
+                    className="resize-none"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Document actions taken specifically for this {area.label.toLowerCase()} inspection area
+                  </p>
                 </CardContent>
               </Card>
-            )}
-            
-            {area.type === 'parking' && (
-              <Card className="rounded-t-none border-t-0">
-                <CardContent className="p-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <p className="text-lg font-medium mb-2">Parking Inspection Form</p>
-                    <p>Form template will be available soon</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            {area.type === 'publicity' && (
-              <Card className="rounded-t-none border-t-0">
-                <CardContent className="p-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <p className="text-lg font-medium mb-2">Publicity Inspection Form</p>
-                    <p>Form template will be available soon</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            {area.type === 'uts_prs' && (
-              <Card className="rounded-t-none border-t-0">
-                <CardContent className="p-6">
-                  <div className="text-center py-12 text-gray-500">
-                    <p className="text-lg font-medium mb-2">UTS/PRS Inspection Form</p>
-                    <p>Form template will be available soon</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            </div>
           </div>
         ))}
 
-        {/* Action Taken */}
-        {formData.inspectionAreas.length > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Action Taken</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                placeholder="Describe actions taken during inspection"
-                value={formData.actionTaken}
-                onChange={(e) => setFormData(prev => ({ ...prev, actionTaken: e.target.value }))}
-                rows={4}
-              />
-            </CardContent>
-          </Card>
-        )}
+        {/* Individual Action Taken sections are now integrated within each area above */}
 
         {/* Inspector Details */}
         <Card className="mb-8">
