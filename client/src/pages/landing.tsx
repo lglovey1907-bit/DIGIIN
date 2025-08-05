@@ -34,6 +34,7 @@ export default function Landing() {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Include cookies
         body: JSON.stringify(data),
       });
       
