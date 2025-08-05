@@ -34,7 +34,7 @@ const inspectionAreas = [
 ];
 
 export default function InspectionForm() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   
@@ -78,8 +78,8 @@ export default function InspectionForm() {
     });
   };
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleLogout = async () => {
+    await logout();
   };
 
   const addInspector = () => {

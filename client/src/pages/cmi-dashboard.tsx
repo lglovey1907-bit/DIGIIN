@@ -27,7 +27,7 @@ interface Inspection {
 }
 
 export default function CMIDashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   
   const { data: assignments = [] } = useQuery<Assignment[]>({
@@ -38,8 +38,8 @@ export default function CMIDashboard() {
     queryKey: ["/api/inspections"],
   });
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleLogout = async () => {
+    await logout();
   };
 
   const handleDownloadPDF = async (inspectionId: string) => {
