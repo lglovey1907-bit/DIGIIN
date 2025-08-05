@@ -177,7 +177,7 @@ export default function AdminDashboard() {
               <NorthernRailwayLogo size={48} />
               <div>
                 <h1 className="text-xl font-bold text-nr-navy">Administrator Dashboard</h1>
-                <p className="text-sm text-gray-600">Welcome, {user?.name}</p>
+                <p className="text-sm text-gray-600">Welcome, {(user as any)?.name}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
