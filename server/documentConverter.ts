@@ -1105,57 +1105,53 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
           spacing: { after: 300 }
         }),
 
-        // Create signature table for proper alignment - Names row first, then Designations row
+        // Create inspector signature table - single row with Name/Designation columns per inspector
         new Table({
           rows: [
-            // Names row
             new TableRow({
-              children: convertedDoc.signatures.map((signature, index) => {
+              children: convertedDoc.signatures.flatMap((signature, index) => {
                 const lines = signature.split('\n');
                 const name = lines[0] || '';
-                
-                return new TableCell({
-                  children: [
-                    new Paragraph({
-                      children: [new TextRun({ text: name, bold: true, size: 22 })],
-                      alignment: AlignmentType.CENTER,
-                      spacing: { after: 100 }
-                    })
-                  ],
-                  width: { size: Math.floor(100 / convertedDoc.signatures.length), type: WidthType.PERCENTAGE },
-                  margins: { top: 200, bottom: 50, left: 100, right: 100 },
-                  borders: {
-                    top: { style: BorderStyle.NONE },
-                    bottom: { style: BorderStyle.NONE },
-                    left: { style: BorderStyle.NONE },
-                    right: { style: BorderStyle.NONE }
-                  }
-                });
-              })
-            }),
-            // Designations row
-            new TableRow({
-              children: convertedDoc.signatures.map((signature, index) => {
-                const lines = signature.split('\n');
                 const designation = lines[1] || '';
                 
-                return new TableCell({
-                  children: [
-                    new Paragraph({
-                      children: [new TextRun({ text: designation, size: 20 })],
-                      alignment: AlignmentType.CENTER,
-                      spacing: { after: 100 }
-                    })
-                  ],
-                  width: { size: Math.floor(100 / convertedDoc.signatures.length), type: WidthType.PERCENTAGE },
-                  margins: { top: 0, bottom: 200, left: 100, right: 100 },
-                  borders: {
-                    top: { style: BorderStyle.NONE },
-                    bottom: { style: BorderStyle.NONE },
-                    left: { style: BorderStyle.NONE },
-                    right: { style: BorderStyle.NONE }
-                  }
-                });
+                return [
+                  // Name column
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun({ text: name, bold: true, size: 22 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 50 }
+                      })
+                    ],
+                    width: { size: Math.floor(50 / convertedDoc.signatures.length), type: WidthType.PERCENTAGE },
+                    margins: { top: 200, bottom: 200, left: 100, right: 50 },
+                    borders: {
+                      top: { style: BorderStyle.NONE },
+                      bottom: { style: BorderStyle.NONE },
+                      left: { style: BorderStyle.NONE },
+                      right: { style: BorderStyle.NONE }
+                    }
+                  }),
+                  // Designation column
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [new TextRun({ text: designation, size: 20 })],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 50 }
+                      })
+                    ],
+                    width: { size: Math.floor(50 / convertedDoc.signatures.length), type: WidthType.PERCENTAGE },
+                    margins: { top: 200, bottom: 200, left: 50, right: 100 },
+                    borders: {
+                      top: { style: BorderStyle.NONE },
+                      bottom: { style: BorderStyle.NONE },
+                      left: { style: BorderStyle.NONE },
+                      right: { style: BorderStyle.NONE }
+                    }
+                  })
+                ];
               })
             })
           ],
