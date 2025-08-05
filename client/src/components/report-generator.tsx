@@ -79,18 +79,18 @@ export function ReportGenerator({ inspections, onGenerateReport }: ReportGenerat
   const templateOptions = [
     { 
       value: 'standard', 
-      label: 'Standard Report',
-      description: 'Comprehensive report with all sections'
+      label: 'Standard Railway Format',
+      description: 'Official Northern Railway inspection report format with structured tables'
     },
     { 
       value: 'executive', 
       label: 'Executive Summary',
-      description: 'High-level overview for management'
+      description: 'High-level overview for management with key findings'
     },
     { 
       value: 'detailed', 
-      label: 'Detailed Analysis',
-      description: 'In-depth technical report with all data'
+      label: 'Detailed Technical Analysis',
+      description: 'Comprehensive technical report with charts and detailed observations'
     }
   ];
 
@@ -228,14 +228,17 @@ export function ReportGenerator({ inspections, onGenerateReport }: ReportGenerat
                   <SelectContent>
                     {templateOptions.map(template => (
                       <SelectItem key={template.value} value={template.value}>
-                        <div>
-                          <div className="font-medium">{template.label}</div>
-                          <div className="text-sm text-gray-500">{template.description}</div>
+                        <div className="py-2">
+                          <div className="font-medium text-sm">{template.label}</div>
+                          <div className="text-xs text-gray-500 mt-1">{template.description}</div>
                         </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Standard format matches official Northern Railway inspection documents
+                </p>
               </div>
 
               <div>

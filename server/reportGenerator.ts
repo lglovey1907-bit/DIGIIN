@@ -79,48 +79,61 @@ export class ReportGenerator {
   }
 
   private addHeader(title: string): void {
-    // Northern Railway Logo Area
-    this.doc
-      .fillColor('#1e40af')
-      .rect(this.pageMargin, this.currentY, 495, 80)
-      .fill();
-
-    // Logo placeholder (rectangle)
-    this.doc
-      .fillColor('#ffffff')
-      .rect(this.pageMargin + 10, this.currentY + 10, 60, 60)
-      .fill();
-
-    // Header text
-    this.doc
-      .fillColor('#ffffff')
-      .fontSize(24)
-      .font('Helvetica-Bold')
-      .text('Northern Railway Delhi Division', this.pageMargin + 80, this.currentY + 15)
-      .fontSize(16)
-      .font('Helvetica')
-      .text('Digital Inspection Report System', this.pageMargin + 80, this.currentY + 45);
-
-    this.currentY += 100;
-
-    // Report title
+    // Northern Railway Header - Clean professional format
     this.doc
       .fillColor('#000000')
-      .fontSize(20)
+      .fontSize(16)
       .font('Helvetica-Bold')
-      .text(title, this.pageMargin, this.currentY);
+      .text('Northern Railway', this.pageMargin, this.currentY, { align: 'center', width: 495 });
+
+    this.currentY += 30;
+
+    // Subject line with proper formatting
+    this.doc
+      .fontSize(14)
+      .font('Helvetica-Bold')
+      .text('Sub: ', this.pageMargin, this.currentY);
+    
+    this.doc
+      .font('Helvetica')
+      .text(title, this.pageMargin + 40, this.currentY, { 
+        width: 455,
+        align: 'left'
+      });
 
     this.currentY += 40;
 
-    // Generation info
+    // Reference section
     this.doc
-      .fontSize(10)
-      .font('Helvetica')
-      .fillColor('#666666')
-      .text(`Generated on: ${new Date().toLocaleString()}`, this.pageMargin)
-      .text(`Report ID: RPT-${Date.now()}`, this.pageMargin, this.currentY + 12);
+      .fontSize(12)
+      .font('Helvetica-Bold')
+      .text('Ref:', this.pageMargin, this.currentY);
 
-    this.currentY += 50;
+    this.currentY += 20;
+
+    const refText = `(i) Digital Inspection Report generated on ${new Date().toLocaleDateString('en-IN')}\n(ii) Northern Railway Delhi Division Inspection System`;
+    
+    this.doc
+      .fontSize(11)
+      .font('Helvetica')
+      .text(refText, this.pageMargin + 40, this.currentY, {
+        width: 455,
+        lineGap: 5
+      });
+
+    this.currentY += 60;
+
+    // Main content introduction
+    this.doc
+      .fontSize(12)
+      .font('Helvetica')
+      .text('As per reference above, the following inspection report has been compiled based on digital inspection data:', 
+            this.pageMargin, this.currentY, {
+        width: 495,
+        align: 'justify'
+      });
+
+    this.currentY += 40;
   }
 
   private addExecutiveSummary(data: ReportData): void {
@@ -344,67 +357,185 @@ export class ReportGenerator {
   private addInspectionDetails(data: ReportData): void {
     this.checkNewPage();
     
-    this.doc
-      .fontSize(16)
-      .font('Helvetica-Bold')
-      .fillColor('#1e40af')
-      .text('Detailed Inspection Data', this.pageMargin, this.currentY);
-
-    this.currentY += 30;
-
-    data.inspections.forEach((inspection, index) => {
-      this.checkNewPage();
-      this.addInspectionCard(inspection, index + 1);
-    });
-  }
-
-  private addInspectionCard(inspection: any, index: number): void {
-    // Inspection header
+    // Create structured table format similar to the uploaded document
     this.doc
       .fontSize(12)
       .font('Helvetica-Bold')
       .fillColor('#000000')
-      .text(`${index}. ${inspection.subject}`, this.pageMargin, this.currentY);
+      .text('During the course of inspections, the deficiencies observed over Commercial Aspects were as follows:-', 
+            this.pageMargin, this.currentY, {
+        width: 495,
+        align: 'justify'
+      });
 
-    this.currentY += 20;
+    this.currentY += 40;
 
-    // Inspection details
-    const details = [
-      `Station: ${inspection.stationCode}`,
-      `Date: ${new Date(inspection.inspectionDate).toLocaleDateString()}`,
-      `Reference: ${inspection.referenceNo}`,
-      `Status: ${inspection.status}`
-    ];
+    // Table header
+    this.addTableHeader();
+
+    data.inspections.forEach((inspection, index) => {
+      this.checkNewPage();
+      this.addStructuredInspectionRow(inspection, index + 1);
+    });
+  }
+
+  private addTableHeader(): void {
+    // Draw table header with borders
+    const tableWidth = 495;
+    const snWidth = 40;
+    const observationsWidth = 320;
+    const actionWidth = 135;
+
+    // Header background
+    this.doc
+      .fillColor('#f0f0f0')
+      .rect(this.pageMargin, this.currentY, tableWidth, 25)
+      .fill();
+
+    // Header borders
+    this.doc
+      .strokeColor('#000000')
+      .lineWidth(1)
+      .rect(this.pageMargin, this.currentY, snWidth, 25)
+      .stroke()
+      .rect(this.pageMargin + snWidth, this.currentY, observationsWidth, 25)
+      .stroke()
+      .rect(this.pageMargin + snWidth + observationsWidth, this.currentY, actionWidth, 25)
+      .stroke();
+
+    // Header text
+    this.doc
+      .fillColor('#000000')
+      .fontSize(11)
+      .font('Helvetica-Bold')
+      .text('SN', this.pageMargin + 15, this.currentY + 8)
+      .text('Deficiencies/Observations', this.pageMargin + snWidth + 10, this.currentY + 8)
+      .text('Action Taken By', this.pageMargin + snWidth + observationsWidth + 10, this.currentY + 8);
+
+    this.currentY += 25;
+  }
+
+  private addStructuredInspectionRow(inspection: any, index: number): void {
+    const tableWidth = 495;
+    const snWidth = 40;
+    const observationsWidth = 320;
+    const actionWidth = 135;
+    const startY = this.currentY;
+
+    // Prepare observation text
+    let observationText = `${inspection.subject}\n\n`;
+    observationText += `Station: ${inspection.stationCode}\n`;
+    observationText += `Date: ${new Date(inspection.inspectionDate).toLocaleDateString('en-IN')}\n`;
+    observationText += `Reference: ${inspection.referenceNo || 'N/A'}\n\n`;
+
+    // Process inspection areas and observations
+    if (inspection.observations && typeof inspection.observations === 'object') {
+      const observations = inspection.observations as any;
+      
+      // Add catering observations in structured format
+      if (observations.companies && Array.isArray(observations.companies)) {
+        observations.companies.forEach((company: any, companyIndex: number) => {
+          observationText += `${companyIndex + 1}. ${company.vendorName || 'Company'}\n\n`;
+          
+          if (company.uniformCheck) observationText += `Uniform Check: ${company.uniformCheck}\n`;
+          if (company.foodLicense) observationText += `Food License: ${company.foodLicense}\n`;
+          if (company.rateList) observationText += `Rate List: ${company.rateList}\n`;
+          if (company.billingMachine) observationText += `Billing Machine: ${company.billingMachine}\n`;
+          if (company.digitalPayment) observationText += `Digital Payment: ${company.digitalPayment}\n`;
+          
+          // Add unapproved items
+          if (company.unapprovedItems && company.unapprovedItems.length > 0) {
+            const items = company.unapprovedItems.filter((item: string) => item.trim());
+            if (items.length > 0) {
+              observationText += `Unapproved items: ${items.join(', ')}\n`;
+            }
+          }
+          
+          // Add overcharging items
+          if (company.overchargingItems && company.overchargingItems.length > 0) {
+            const validItems = company.overchargingItems.filter((item: any) => item.name.trim());
+            if (validItems.length > 0) {
+              observationText += `Overcharging detected:\n`;
+              validItems.forEach((item: any) => {
+                observationText += `- ${item.name}: MRP ₹${item.mrpPrice}, Selling ₹${item.sellingPrice}\n`;
+              });
+            }
+          }
+          
+          observationText += '\n';
+        });
+      }
+      
+      // Add other area observations
+      Object.entries(observations).forEach(([key, value]) => {
+        if (key !== 'companies' && key !== 'summary' && key !== 'shortlistedItemsSearch' && value) {
+          observationText += `${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}: ${value}\n`;
+        }
+      });
+      
+      if (observations.summary) {
+        observationText += `\nSummary: ${observations.summary}`;
+      }
+    }
+
+    // Action taken text
+    const actionText = `SS/${inspection.stationCode}\nCMI/DEE\nCMI/Ctg\nCOS/Ctg.`;
+
+    // Calculate required height for the row
+    const observationHeight = this.calculateTextHeight(observationText, observationsWidth - 20, 10);
+    const actionHeight = this.calculateTextHeight(actionText, actionWidth - 20, 10);
+    const rowHeight = Math.max(observationHeight, actionHeight, 40);
+
+    // Check if we need a new page
+    if (this.currentY + rowHeight > this.doc.page.height - 100) {
+      this.doc.addPage();
+      this.currentY = this.pageMargin;
+      this.addTableHeader();
+    }
+
+    // Draw row borders
+    this.doc
+      .strokeColor('#000000')
+      .lineWidth(1)
+      .rect(this.pageMargin, this.currentY, snWidth, rowHeight)
+      .stroke()
+      .rect(this.pageMargin + snWidth, this.currentY, observationsWidth, rowHeight)
+      .stroke()
+      .rect(this.pageMargin + snWidth + observationsWidth, this.currentY, actionWidth, rowHeight)
+      .stroke();
+
+    // Add content
+    this.doc
+      .fillColor('#000000')
+      .fontSize(11)
+      .font('Helvetica-Bold')
+      .text(index.toString(), this.pageMargin + 15, this.currentY + 10);
 
     this.doc
       .fontSize(10)
-      .font('Helvetica');
-
-    details.forEach(detail => {
-      this.doc.text(detail, this.pageMargin + 20, this.currentY);
-      this.currentY += 14;
-    });
-
-    // Areas inspected
-    if (inspection.observations && typeof inspection.observations === 'object') {
-      this.currentY += 10;
-      this.doc
-        .fontSize(11)
-        .font('Helvetica-Bold')
-        .text('Areas Inspected:', this.pageMargin + 20);
-
-      this.currentY += 15;
-
-      Object.keys(inspection.observations).forEach(area => {
-        this.doc
-          .fontSize(10)
-          .font('Helvetica')
-          .text(`• ${area}`, this.pageMargin + 40);
-        this.currentY += 12;
+      .font('Helvetica')
+      .text(observationText, this.pageMargin + snWidth + 10, this.currentY + 10, {
+        width: observationsWidth - 20,
+        align: 'left'
       });
-    }
 
-    this.currentY += 20;
+    this.doc
+      .fontSize(10)
+      .font('Helvetica')
+      .text(actionText, this.pageMargin + snWidth + observationsWidth + 10, this.currentY + 10, {
+        width: actionWidth - 20,
+        align: 'left'
+      });
+
+    this.currentY += rowHeight;
+  }
+
+  private calculateTextHeight(text: string, width: number, fontSize: number): number {
+    // Approximate height calculation based on text length and width
+    const averageCharWidth = fontSize * 0.6;
+    const charsPerLine = Math.floor(width / averageCharWidth);
+    const lines = Math.ceil(text.length / charsPerLine) + (text.split('\n').length - 1);
+    return Math.max(lines * (fontSize + 2) + 20, 40);
   }
 
   private addRecommendations(data: ReportData): void {
@@ -445,6 +576,58 @@ export class ReportGenerator {
   }
 
   private addFooter(): void {
+    this.currentY += 40;
+    
+    // Note section (if applicable)
+    this.doc
+      .fontSize(11)
+      .font('Helvetica-Bold')
+      .fillColor('#000000')
+      .text('Note:', this.pageMargin, this.currentY);
+    
+    this.doc
+      .font('Helvetica')
+      .text('(i) This report is generated from the Northern Railway Digital Inspection Platform.', 
+            this.pageMargin + 40, this.currentY, {
+        width: 455
+      });
+
+    this.currentY += 60;
+
+    // Signature section
+    this.doc
+      .fontSize(11)
+      .font('Helvetica')
+      .text('Sanjay Kumar Singh', this.pageMargin, this.currentY)
+      .text('Lovey Gandhi', this.pageMargin + 165, this.currentY)
+      .text('Vivek Kumar', this.pageMargin + 330, this.currentY);
+
+    this.currentY += 20;
+
+    this.doc
+      .text('CMI/YTSK', this.pageMargin + 15, this.currentY)
+      .text('CMI/G.', this.pageMargin + 180, this.currentY)
+      .text('CMI/Ctg/VIP', this.pageMargin + 340, this.currentY);
+
+    this.currentY += 40;
+
+    // Copy to section
+    this.doc
+      .fontSize(11)
+      .font('Helvetica-Bold')
+      .text('Copy to:', this.pageMargin, this.currentY);
+
+    this.currentY += 20;
+
+    this.doc
+      .fontSize(10)
+      .font('Helvetica')
+      .text('Sr.DCM/PS: For kind information please.', this.pageMargin, this.currentY)
+      .text('DCM/PS: For kind information please.', this.pageMargin, this.currentY + 15);
+
+    this.currentY += 50;
+
+    // Page numbers on each page
     const pageCount = this.doc.bufferedPageRange().count;
     
     for (let i = 0; i < pageCount; i++) {
@@ -457,13 +640,13 @@ export class ReportGenerator {
         .text(`Page ${i + 1} of ${pageCount}`, 
                this.pageMargin, 
                this.doc.page.height - 30, 
-               { align: 'center', width: 495 - this.pageMargin });
+               { align: 'center', width: 495 });
       
       this.doc
         .text('Northern Railway Delhi Division - Digital Inspection System', 
                this.pageMargin, 
                this.doc.page.height - 20, 
-               { align: 'center', width: 495 - this.pageMargin });
+               { align: 'center', width: 495 });
     }
   }
 

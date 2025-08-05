@@ -80,10 +80,11 @@ Preferred communication style: Simple, everyday language.
 
 ## One-Click Report Generation
 - **Custom Report Builder**: Interactive dialog for configuring comprehensive reports with visualization options
-- **Multi-Format Export**: PDF and Excel report generation with customizable templates (Standard, Executive, Detailed)
+- **Multi-Format Export**: PDF and Excel report generation with customizable templates (Standard Railway Format, Executive, Detailed)
+- **Official Format Compliance**: Standard template matches official Northern Railway inspection document structure with proper headers, structured tables, and signature sections
 - **Advanced Filtering**: Date range, station, and inspection type filters for targeted reporting
 - **Visualization Options**: Charts and graphs including overview statistics, trend analysis, compliance metrics, station comparisons
-- **Template System**: Professional Northern Railway branded templates with dynamic content population
+- **Professional Layout**: Structured table format with SN, Deficiencies/Observations, and Action Taken By columns
 - **One-Click Generation**: Streamlined report creation process from dashboard with instant download
 
 ## PDF Generation & Export
