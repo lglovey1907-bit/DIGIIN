@@ -108,7 +108,7 @@ Preferred communication style: Simple, everyday language.
 - **PDF to DOC Conversion**: Transform PDF inspection reports into formatted English text DOC files with standardized Railway document structure
 - **Reliable Operation**: Works without AI dependency for consistent document generation
 - **Professional Formatting**: Centered Northern Railway header, proper table structure with aligned columns
-- **Conditional Reference Section**: Reference tab only appears if user enters custom reference letter number
+- **Dynamic Reference Handling**: Uses "Reference Letter No." field from inspection form; displays "Ref: NIL" when empty
 - **Smart Data Processing**: Converts checkbox responses and technical data into elaborate English descriptions
 - **Company-wise Organization**: Structures observations by company with proper M/s prefixes and unit/platform details
 - **Tabular Format Output**: S.No., Observations, Action Taken By, and Photographs columns with content properly aligned

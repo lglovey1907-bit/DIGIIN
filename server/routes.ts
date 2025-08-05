@@ -546,7 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         area: inspection.area || 'General',
         inspectionDate: inspection.inspectionDate ? inspection.inspectionDate.toISOString() : new Date().toISOString(),
         observations: inspection.observations || {},
-        letterReference: req.body.letterReference || `Ref: (i) Letter No.23AC/Decoy Checks dated ${new Date().toLocaleDateString('en-GB')}.`
+        referenceNo: inspection.referenceNo || undefined
       });
       
       console.log("Document conversion completed, generating text...");

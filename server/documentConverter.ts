@@ -58,7 +58,7 @@ export async function convertInspectionToDocument(inspectionData: InspectionData
     const result = {
       header: "Northern Railway",
       subject: generatedSubject,
-      letterReference: inspectionData.letterReference || inspectionData.referenceNo || "NIL",
+      letterReference: inspectionData.referenceNo ? `Ref: ${inspectionData.referenceNo}` : "Ref: NIL",
       openingParagraph,
       observations: convertedObservations,
       signatures: generateSignatures(inspectionData)
