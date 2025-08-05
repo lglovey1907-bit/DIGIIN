@@ -395,8 +395,9 @@ export async function generateDocumentText(convertedDoc: ConvertedDocument): Pro
       observationsCell += `    ${obsIndex + 1}. ${observation}\n`;
     });
     
-    // Single row with all observations grouped in one cell
-    documentText += `${obs.serialNumber}|${observationsCell}|${obs.actionTakenBy}|${obs.photographs || 'As per annexure'}\n`;
+    // Single row with all observations grouped in one cell - replace newlines with special marker
+    const singleLineObservations = observationsCell.replace(/\n/g, '~~~NEWLINE~~~');
+    documentText += `${obs.serialNumber}|${singleLineObservations}|${obs.actionTakenBy}|${obs.photographs || 'As per annexure'}\n`;
   });
   
   documentText += `TABLE_END\n\n\n`;
@@ -672,6 +673,9 @@ export function generateRTFDocument(plainText: string): string {
           if (parts[1].trim()) {
             let cellContent = parts[1];
             
+            // Restore newlines from table generation
+            cellContent = cellContent.replace(/~~~NEWLINE~~~/g, '\n');
+            
             // Process the content line by line to handle formatting
             const lines = cellContent.split('\n');
             let formattedContent = '';
@@ -681,7 +685,7 @@ export function generateRTFDocument(plainText: string): string {
               
               // Handle bold headings (**text**)
               if (line.includes('**')) {
-                const boldFormatted = line.replace(/\*\*(.*?)\*\*/g, '\\b $1\\b0');
+                const boldFormatted = line.replace(/\*\*(.*?)\*\*/g, '{\\b $1}');
                 formattedContent += boldFormatted;
               }
               // Handle numbered lists with indentation
