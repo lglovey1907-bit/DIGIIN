@@ -57,6 +57,11 @@ Preferred communication style: Simple, everyday language.
 - **Dynamic Observations**: JSONB storage allows flexible observation structures
 - **Photo Integration**: Each observation point can include photo evidence
 - **Validation Rules**: Area-specific validation and required fields
+- **Multi-Company Support**: Catering inspections now support multiple companies in a single form
+  - Add/remove companies dynamically with minimum of 1 company required
+  - Each company has complete inspection checklist: vendor details, documentation, licenses, billing, payments, item verification
+  - Smart search integration for unapproved items detection per company
+  - Overcharging detection with MRP vs selling price comparison per company
 
 ## PDF Generation & Export
 - **Report Generation**: Server-side PDF creation using PDFKit library for inspection reports
