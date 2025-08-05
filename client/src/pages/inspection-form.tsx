@@ -422,24 +422,24 @@ export default function InspectionForm() {
                 </Card>
               )}
 
-              {/* Action Taken for this specific area */}
+              {/* Action Taken By for this specific area */}
               <Card className="border-t-4 border-t-orange-500">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-orange-700 flex items-center text-lg">
                     <CheckCircle className="mr-2" size={20} />
-                    Action Taken - {area.label}
+                    Action Taken By - {area.label}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Textarea
-                    placeholder={`Describe specific actions taken for ${area.label.toLowerCase()} inspection...`}
+                    placeholder={`Describe specific actions taken by inspector for ${area.label.toLowerCase()} inspection...`}
                     value={area.actionTaken}
                     onChange={(e) => updateAreaActionTaken(area.id, e.target.value)}
                     rows={3}
                     className="resize-none"
                   />
                   <p className="text-xs text-gray-500 mt-2">
-                    Document actions taken specifically for this {area.label.toLowerCase()} inspection area
+                    Document actions taken by inspector specifically for this {area.label.toLowerCase()} inspection area
                   </p>
                 </CardContent>
               </Card>
@@ -447,7 +447,7 @@ export default function InspectionForm() {
           </div>
         ))}
 
-        {/* Individual Action Taken sections are now integrated within each area above */}
+        {/* Individual Action Taken By sections are now integrated within each area above */}
 
         {/* Inspector Details */}
         <Card className="mb-8">

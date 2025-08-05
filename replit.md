@@ -55,7 +55,7 @@ Preferred communication style: Simple, everyday language.
 ## Multi-Area Inspection System
 - **Multi-Area Support**: Single inspection can cover multiple areas (catering, sanitation, parking, publicity, UTS/PRS)
 - **Dynamic Area Management**: Add/remove inspection areas within the same inspection
-- **Individual Action Tracking**: Each area has its own "Action Taken" section after observations
+- **Individual Action Tracking**: Each area has its own "Action Taken By" section after observations
 - **Area-Specific Forms**: Specialized form components for each inspection area
 - **Form Isolation**: Each area maintains independent observations and actions
 - **Smart Validation Integration**: 7B validation system works within each area's catering form
