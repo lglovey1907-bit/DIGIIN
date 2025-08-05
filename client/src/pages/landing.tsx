@@ -49,12 +49,11 @@ export default function Landing() {
         description: `Welcome, ${result.user.name}!`,
       });
       
-      // Redirect based on role
-      if (result.user.role === 'admin') {
-        setLocation("/admin");
-      } else {
-        setLocation("/home");
-      }
+      // Force refresh authentication state
+      // Use a delay to ensure session is properly established
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
     } catch (error: any) {
       toast({
         title: "Login Failed",
