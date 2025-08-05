@@ -54,9 +54,9 @@ export const inspections = pgTable("inspections", {
   referenceNo: text("reference_no"),
   area: varchar("area").notNull(), // 'catering', 'sanitation', 'publicity', 'uts_prs', 'parking'
   status: varchar("status").default("draft"), // 'draft', 'submitted', 'completed'
-  observations: jsonb("observations").notNull(),
+  observations: jsonb("observations").default(sql`'{}'::jsonb`),
   actionTaken: text("action_taken"),
-  inspectors: jsonb("inspectors").notNull(), // Array of {name, designation}
+  inspectors: jsonb("inspectors").default(sql`'[]'::jsonb`), // Array of {name, designation}
   qrCodeUrl: text("qr_code_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -106,6 +106,11 @@ export const insertInspectionSchema = createInsertSchema(inspections).omit({
   updatedAt: true,
 }).extend({
   inspectionDate: z.string().transform((str) => new Date(str)),
+  observations: z.record(z.any()).optional().default({}),
+  inspectors: z.array(z.object({
+    name: z.string(),
+    designation: z.string()
+  })).optional().default([])
 });
 
 export const insertInspectionAssignmentSchema = createInsertSchema(inspectionAssignments).omit({
