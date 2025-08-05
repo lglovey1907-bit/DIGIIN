@@ -1117,8 +1117,49 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
               alignment: AlignmentType.RIGHT,
               spacing: { after: 200 }
             })
+          ] : convertedDoc.signatures.length === 2 ? [
+            // Two inspectors: 2-row table, each row contains name and designation of one inspector
+            new Table({
+              rows: convertedDoc.signatures.map((signature, index) => {
+                const lines = signature.split('\n');
+                const name = lines[0] || '';
+                const designation = lines[1] || '';
+                
+                // First inspector: right-aligned, Second inspector: center-aligned
+                const alignment = index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER;
+                
+                return new TableRow({
+                  children: [
+                    // Single cell containing both name and designation stacked
+                    new TableCell({
+                      children: [
+                        new Paragraph({
+                          children: [new TextRun({ text: name, bold: true, size: 22 })],
+                          alignment: alignment,
+                          spacing: { after: 50 }
+                        }),
+                        new Paragraph({
+                          children: [new TextRun({ text: designation, size: 20 })],
+                          alignment: alignment,
+                          spacing: { after: 50 }
+                        })
+                      ],
+                      width: { size: 100, type: WidthType.PERCENTAGE },
+                      margins: { top: 100, bottom: 100, left: 100, right: 100 },
+                      borders: {
+                        top: { style: BorderStyle.NONE },
+                        bottom: { style: BorderStyle.NONE },
+                        left: { style: BorderStyle.NONE },
+                        right: { style: BorderStyle.NONE }
+                      }
+                    })
+                  ]
+                });
+              }),
+              width: { size: 100, type: WidthType.PERCENTAGE }
+            })
           ] : [
-            // Multiple inspectors: table format with 2 columns (Name, Designation)
+            // Three or more inspectors: table format with 2 columns (Name, Designation)
             new Table({
               rows: convertedDoc.signatures.map((signature, index) => {
                 const lines = signature.split('\n');
