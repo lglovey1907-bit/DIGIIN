@@ -67,6 +67,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug session endpoint
+  app.get('/api/debug/session', (req, res) => {
+    console.log('Session debug:', {
+      sessionID: req.sessionID,
+      session: req.session,
+      cookies: req.headers.cookie,
+      isAuthenticated: !!req.session.userId
+    });
+    res.json({
+      sessionID: req.sessionID,
+      hasSession: !!req.session,
+      userId: req.session.userId,
+      cookies: req.headers.cookie,
+      isAuthenticated: !!req.session.userId
+    });
+  });
+
   app.post('/api/login', (req, res, next) => {
     try {
       const validatedData = loginUserSchema.parse(req.body);
