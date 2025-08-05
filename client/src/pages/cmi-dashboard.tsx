@@ -44,9 +44,21 @@ export default function CMIDashboard() {
 
   const handleDownloadPDF = async (inspectionId: string) => {
     try {
+      // Get auth headers including both cookie-based and token-based auth
+      const authHeaders: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add authorization header if available
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        authHeaders['Authorization'] = `Bearer ${authToken}`;
+      }
+      
       const response = await fetch(`/api/inspections/${inspectionId}/export-pdf`, {
         method: 'GET',
         credentials: 'include',
+        headers: authHeaders,
       });
       
       if (!response.ok) {
