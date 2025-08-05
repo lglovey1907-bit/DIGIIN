@@ -487,10 +487,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subject: inspection.subject || 'Railway Inspection',
         stationCode: inspection.stationCode,
         area: inspection.area,
-        inspectionDate: inspection.inspectionDate,
+        inspectionDate: inspection.inspectionDate instanceof Date ? inspection.inspectionDate.toISOString() : inspection.inspectionDate,
         observations: inspection.observations,
         letterReference
-      }, letterReference);
+      });
       
       const plainText = await generateDocumentText(convertedDoc);
       

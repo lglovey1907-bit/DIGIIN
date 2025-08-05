@@ -47,18 +47,32 @@ export default function CMIDashboard() {
   });
 
   const refreshMutation = useMutation({
-    mutationFn: () => apiRequest("/api/inspections/refresh", {
-      method: "POST",
-    }),
-    onSuccess: (data) => {
+    mutationFn: async () => {
+      const response = await fetch("/api/inspections/refresh", {
+        method: "POST",
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Refresh failed: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data: any) => {
       toast({
         title: "Reports Refreshed",
-        description: `Successfully refreshed ${data.refreshedCount} inspection reports with updated formatting.`,
+        description: `Successfully refreshed ${data?.refreshedCount || 0} inspection reports with updated formatting.`,
       });
       // Refresh the inspections list
       queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
     },
     onError: (error: any) => {
+      console.error('Refresh error:', error);
       toast({
         title: "Refresh Failed", 
         description: error.message || "Failed to refresh reports",
@@ -68,7 +82,16 @@ export default function CMIDashboard() {
   });
 
   const handleLogout = async () => {
-    await logout();
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Logout Failed",
+        description: "Failed to logout properly. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleRefreshReports = () => {
