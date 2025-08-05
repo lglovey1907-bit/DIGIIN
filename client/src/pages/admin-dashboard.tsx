@@ -62,7 +62,7 @@ interface Inspection {
 }
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCMI, setSelectedCMI] = useState<string | null>(null);
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
     queryKey: ["/api/admin/pending-users"],
   });
 
-  const { data: assignments = [] } = useQuery<Assignment[]>({
+  const { data: assignments = [], isLoading: assignmentsLoading } = useQuery<Assignment[]>({
     queryKey: ["/api/assignments"],
   });
 
@@ -109,8 +109,8 @@ export default function AdminDashboard() {
     },
   });
 
-  const handleLogout = () => {
-    window.location.href = "/api/logout";
+  const handleLogout = async () => {
+    await logout();
   };
 
   const handleDownloadPDF = async (inspectionId: string) => {
@@ -144,18 +144,18 @@ export default function AdminDashboard() {
     }
   };
 
-  // Calculate statistics
-  const totalAssignments = assignments.length;
-  const completedInspections = inspections.filter(i => i.status === 'completed').length;
-  const pendingAssignments = assignments.filter(a => a.status === 'pending').length;
-  const overdueAssignments = assignments.filter(a => 
+  // Calculate statistics with null safety
+  const totalAssignments = assignments?.length || 0;
+  const completedInspections = inspections?.filter(i => i.status === 'completed').length || 0;
+  const pendingAssignments = assignments?.filter(a => a.status === 'pending').length || 0;
+  const overdueAssignments = assignments?.filter(a => 
     a.status === 'overdue' || (a.status === 'pending' && new Date(a.dueDate) < new Date())
-  ).length;
+  ).length || 0;
 
-  // CMI performance data
-  const cmiPerformance = cmis.map(cmi => {
-    const cmiAssignments = assignments.filter(a => a.cmiId === cmi.id);
-    const cmiInspections = inspections.filter(i => i.userId === cmi.id);
+  // CMI performance data with null safety
+  const cmiPerformance = cmis?.map(cmi => {
+    const cmiAssignments = assignments?.filter(a => a.cmiId === cmi.id) || [];
+    const cmiInspections = inspections?.filter(i => i.userId === cmi.id) || [];
     const completed = cmiInspections.filter(i => i.status === 'completed').length;
     
     return {
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
       pending: cmiAssignments.length - completed,
       completionRate: cmiAssignments.length > 0 ? Math.round((completed / cmiAssignments.length) * 100) : 0,
     };
-  });
+  }) || [];
 
   return (
     <div className="min-h-screen bg-nr-bg">
@@ -275,7 +275,7 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {cmiPerformance.slice(0, 5).map((cmi) => (
+                    {(cmiPerformance || []).slice(0, 5).map((cmi) => (
                       <div key={cmi.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
                           <p className="font-medium text-nr-navy">{cmi.name}</p>
@@ -298,7 +298,7 @@ export default function AdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {inspections.slice(0, 5).map((inspection) => (
+                    {(inspections || []).slice(0, 5).map((inspection) => (
                       <div key={inspection.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div>
                           <p className="font-medium text-nr-navy">{inspection.subject}</p>

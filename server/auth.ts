@@ -74,19 +74,63 @@ export async function setupLocalAuth(app: Express) {
   });
 }
 
-// Authentication middleware
-export const isAuthenticated: RequestHandler = (req, res, next) => {
-  if (req.isAuthenticated()) {
+// Authentication middleware with hybrid support
+export const isAuthenticated = async (req: any, res: any, next: any) => {
+  // First try session-based auth
+  if (req.isAuthenticated() && req.user) {
     return next();
   }
+  
+  // Try token-based auth as fallback
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const decoded = Buffer.from(token, 'base64').toString();
+      const [userId] = decoded.split(':');
+      
+      const { storage } = await import('./storage');
+      const user = await storage.getUser(userId);
+      if (user && user.isApproved) {
+        req.user = user; // Set user for downstream middleware
+        return next();
+      }
+    } catch (error) {
+      console.log('Token decode error:', error);
+    }
+  }
+  
   res.status(401).json({ message: "Unauthorized" });
 };
 
-// Role-based middleware
-export const requireAdmin: RequestHandler = (req: any, res, next) => {
-  if (req.isAuthenticated() && req.user?.role === 'admin') {
+// Role-based middleware with hybrid support
+export const requireAdmin = async (req: any, res: any, next: any) => {
+  // Check if user is already authenticated and is admin
+  if (req.user && req.user.role === 'admin') {
     return next();
   }
+  
+  // If not authenticated yet, try token-based auth
+  if (!req.user) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = Buffer.from(token, 'base64').toString();
+        const [userId] = decoded.split(':');
+        
+        const { storage } = await import('./storage');
+        const user = await storage.getUser(userId);
+        if (user && user.isApproved && user.role === 'admin') {
+          req.user = user;
+          return next();
+        }
+      } catch (error) {
+        console.log('Token decode error:', error);
+      }
+    }
+  }
+  
   res.status(403).json({ message: "Admin access required" });
 };
 
