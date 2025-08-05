@@ -206,14 +206,14 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
         {/* Multiple Companies */}
         <div className="mb-6">
           <div className="mb-4">
-            <h3 className="text-lg font-medium text-nr-navy">Company Inspections</h3>
+            <h3 className="text-lg font-medium text-nr-navy">Observations/Deficiencies</h3>
           </div>
           
           {companies.map((company, companyIndex) => (
             <div key={companyIndex} className="bg-gray-50 rounded-lg p-4 mb-6 relative">
               <div className="flex justify-between items-center mb-4">
                 <h4 className="text-md font-medium text-nr-navy">
-                  Company {companyIndex + 1} - Vendor Information
+                  Unit {companyIndex + 1}
                 </h4>
                 {companies.length > 1 && (
                   <Button
