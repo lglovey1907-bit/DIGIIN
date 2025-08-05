@@ -419,93 +419,76 @@ async function generateImageCellContent(obs: ObservationEntry): Promise<Paragrap
 
   const imageContent: Paragraph[] = [];
 
-  // Process each image file for embedding
+  // Process each image file for embedding - using validated approach from test
   for (const imageFile of obs.imageFiles) {
     try {
-      // Check if file exists and is readable
       if (fs.existsSync(imageFile.filePath)) {
         const stats = fs.statSync(imageFile.filePath);
         
-        // Only process files that aren't empty and aren't too large (max 2MB)
-        // Lower the minimum size check to see what's in our test files
-        if (stats.size > 0 && stats.size < 2 * 1024 * 1024) {
+        if (stats.size > 0) {
           console.log(`Processing image ${imageFile.fileName} (${stats.size} bytes)`);
           
-          // Read the image file
-          const imageBuffer = fs.readFileSync(imageFile.filePath);
-          console.log(`Image buffer for ${imageFile.fileName}: ${imageBuffer.length} bytes`);
-          
-          // Validate that this is actually image data
-          const isValidImage = imageBuffer.length > 20 && (
-            (imageBuffer[0] === 0x89 && imageBuffer[1] === 0x50 && imageBuffer[2] === 0x4E && imageBuffer[3] === 0x47) || // PNG signature
-            (imageBuffer[0] === 0xFF && imageBuffer[1] === 0xD8 && imageBuffer[2] === 0xFF) // JPEG signature
-          );
-          
-          if (!isValidImage) {
-            console.log(`Invalid image data detected for ${imageFile.fileName}, using filename instead`);
-            imageContent.push(new Paragraph({
-              children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 100 }
-            }));
-            continue;
-          }
-          
-          // Determine the correct image type based on file extension
-          const extension = path.extname(imageFile.fileName).toLowerCase();
-          let imageType = "png"; // default
-          
-          if (extension === ".jpg" || extension === ".jpeg") {
-            imageType = "jpg";
-          } else if (extension === ".png") {
-            imageType = "png";
-          } else if (extension === ".gif") {
-            imageType = "gif";
-          }
-          
-          console.log(`Embedding image ${imageFile.fileName} as type ${imageType}`);
-          
           try {
-            // Create the embedded image with conservative sizing
+            // Read the image file
+            const imageBuffer = fs.readFileSync(imageFile.filePath);
+            
+            // Determine image type from extension
+            const extension = path.extname(imageFile.fileName).toLowerCase();
+            let imageType = "png";
+            
+            if (extension === ".jpg" || extension === ".jpeg") {
+              imageType = "jpg";
+            } else if (extension === ".png") {
+              imageType = "png";
+            } else if (extension === ".gif") {
+              imageType = "gif";
+            }
+            
+            // Create the ImageRun with the same approach that works in our test
             const imageRun = new ImageRun({
               data: imageBuffer,
-              type: imageType as any, // Cast to any to handle type compatibility
+              type: imageType as any,
               transformation: {
-                width: 150,  // Slightly larger for better visibility
-                height: 150, // Square format
+                width: 120,
+                height: 120,
               }
             });
             
-            // Add the image in its own paragraph
+            // Add image in paragraph
             imageContent.push(new Paragraph({
               children: [imageRun],
               alignment: AlignmentType.CENTER,
-              spacing: { after: 100, before: 50 }
+              spacing: { after: 50 }
             }));
             
-            console.log(`Successfully embedded image ${imageFile.fileName} in document`);
-          } catch (imageError) {
-            console.error(`Failed to embed image ${imageFile.fileName}:`, imageError);
-            // Fallback to filename if image embedding fails
+            // Add filename below image
             imageContent.push(new Paragraph({
-              children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
+              children: [new TextRun({ 
+                text: imageFile.fileName, 
+                size: 14, 
+                italics: true 
+              })],
               alignment: AlignmentType.CENTER,
               spacing: { after: 100 }
             }));
+            
+            console.log(`Successfully embedded image: ${imageFile.fileName}`);
+            
+          } catch (imageError) {
+            console.error(`Failed to embed image ${imageFile.fileName}:`, imageError);
+            // Fallback to filename reference
+            imageContent.push(new Paragraph({
+              children: [new TextRun({ 
+                text: `📷 ${imageFile.fileName}`, 
+                size: 20,
+                bold: true
+              })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 150 }
+            }));
           }
-          
-          // Add filename below the image
-          imageContent.push(new Paragraph({
-            children: [new TextRun({ text: imageFile.fileName, size: 16, italics: true })],
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 150 }
-          }));
-          
-          console.log(`Successfully processed image ${imageFile.fileName}`);
-          
         } else {
-          // File is empty or too large, show filename only
-          console.log(`File ${imageFile.fileName} is empty or too large (${stats.size} bytes)`);
+          // Empty file fallback
           imageContent.push(new Paragraph({
             children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
             alignment: AlignmentType.CENTER,
@@ -513,8 +496,7 @@ async function generateImageCellContent(obs: ObservationEntry): Promise<Paragrap
           }));
         }
       } else {
-        // File doesn't exist, show filename only
-        console.log(`File ${imageFile.filePath} does not exist`);
+        // File not found fallback
         imageContent.push(new Paragraph({
           children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
           alignment: AlignmentType.CENTER,
@@ -522,8 +504,7 @@ async function generateImageCellContent(obs: ObservationEntry): Promise<Paragrap
         }));
       }
     } catch (error) {
-      console.error(`Error loading image ${imageFile.fileName}:`, error);
-      // Fallback to filename if image can't be loaded
+      console.error(`Error processing image ${imageFile.fileName}:`, error);
       imageContent.push(new Paragraph({
         children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
         alignment: AlignmentType.CENTER,
