@@ -112,13 +112,15 @@ Preferred communication style: Simple, everyday language.
 - **Smart Data Processing**: Converts checkbox responses and technical data into elaborate English descriptions
 - **Company-wise Organization**: Structures observations by company with proper M/s prefixes and unit/platform details
 - **Tabular Format Output**: S.No., Observations, Action Taken By, and Photographs columns with content properly aligned
-- **Enhanced Photo References**: Shows actual uploaded photo file names in the "Images of the Inspection" column instead of generic "As per annexure" text
-- **Multi-File Support**: Handles single or multiple uploaded images with proper file name listing (Photo: filename.jpg for single, multiple files listed separately)
-- **Reliable Document Generation**: Ensures Word documents always generate successfully without corruption
-- **Smart File Detection**: Automatically detects and includes only image files (PNG, JPG, JPEG, GIF, BMP, WebP) in the photo references
+- **Embedded Image Support**: Actual uploaded inspection photos are embedded directly into Word documents instead of text references
+- **Image Validation**: Validates image file integrity with proper PNG/JPEG signature checking before embedding
+- **Multi-File Support**: Handles single or multiple uploaded images with proper embedding and fallback to filenames for invalid files
+- **Reliable Document Generation**: Ensures Word documents always generate successfully without corruption, with graceful fallback for problematic images
+- **Smart File Detection**: Automatically detects and processes only valid image files (PNG, JPG, JPEG, GIF, BMP, WebP) for embedding
 - **Inspector Signature Alignment**: 1st inspector (left), 2nd inspector (center), 3rd inspector (right)
 - **Professional Language**: Transforms technical inspection data into formal Railway correspondence language
 - **Microsoft Office Compatibility**: Native .docx format ensures seamless opening in Microsoft Word, LibreOffice, and Google Docs
+- **Image Processing Debugging**: Comprehensive logging and error handling for image embedding troubleshooting
 
 ## Development Tools
 - **Build System**: Vite for fast development and optimized production builds

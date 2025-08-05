@@ -433,6 +433,23 @@ async function generateImageCellContent(obs: ObservationEntry): Promise<Paragrap
           
           // Read the image file
           const imageBuffer = fs.readFileSync(imageFile.filePath);
+          console.log(`Image buffer for ${imageFile.fileName}: ${imageBuffer.length} bytes`);
+          
+          // Validate that this is actually image data
+          const isValidImage = imageBuffer.length > 20 && (
+            (imageBuffer[0] === 0x89 && imageBuffer[1] === 0x50 && imageBuffer[2] === 0x4E && imageBuffer[3] === 0x47) || // PNG signature
+            (imageBuffer[0] === 0xFF && imageBuffer[1] === 0xD8 && imageBuffer[2] === 0xFF) // JPEG signature
+          );
+          
+          if (!isValidImage) {
+            console.log(`Invalid image data detected for ${imageFile.fileName}, using filename instead`);
+            imageContent.push(new Paragraph({
+              children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 100 }
+            }));
+            continue;
+          }
           
           // Determine the correct image type based on file extension
           const extension = path.extname(imageFile.fileName).toLowerCase();
@@ -448,21 +465,34 @@ async function generateImageCellContent(obs: ObservationEntry): Promise<Paragrap
           
           console.log(`Embedding image ${imageFile.fileName} as type ${imageType}`);
           
-          // Add the embedded image with conservative sizing
-          imageContent.push(new Paragraph({
-            children: [
-              new ImageRun({
-                data: imageBuffer,
-                type: imageType as any, // Cast to any to handle type compatibility
-                transformation: {
-                  width: 100,  // Smaller size to prevent issues
-                  height: 100, // Square format
-                }
-              })
-            ],
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 50 }
-          }));
+          try {
+            // Create the embedded image with conservative sizing
+            const imageRun = new ImageRun({
+              data: imageBuffer,
+              type: imageType as any, // Cast to any to handle type compatibility
+              transformation: {
+                width: 150,  // Slightly larger for better visibility
+                height: 150, // Square format
+              }
+            });
+            
+            // Add the image in its own paragraph
+            imageContent.push(new Paragraph({
+              children: [imageRun],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 100, before: 50 }
+            }));
+            
+            console.log(`Successfully embedded image ${imageFile.fileName} in document`);
+          } catch (imageError) {
+            console.error(`Failed to embed image ${imageFile.fileName}:`, imageError);
+            // Fallback to filename if image embedding fails
+            imageContent.push(new Paragraph({
+              children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 100 }
+            }));
+          }
           
           // Add filename below the image
           imageContent.push(new Paragraph({
