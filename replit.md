@@ -125,14 +125,14 @@ Preferred communication style: Simple, everyday language.
   - UI Integration: Edit and delete buttons appear in both CMI and admin dashboards for draft inspections only
   - Backend API: DELETE /api/inspections/:id route with proper authentication and authorization
   - Database operations: deleteInspection method in storage layer with soft delete protection
-- **Professional Language Enhancement**: Comprehensive language transformation system that converts basic inspection data into sophisticated, commanding Railway inspection terminology
-  - Language Sophistication: Transforms basic phrases to professional equivalents ("working" → "operational and functioning as per specifications", "not working" → "non-functional and necessitating urgent rectification")
-  - Regulatory Emphasis: Incorporates proper railway commercial protocol references and legal precision
-  - Authoritative Tone: Uses commanding language suitable for official Northern Railway documentation
-  - Technical Precision: Employs proper technical terminology (Electronic Point of Sale instead of billing machine)
-  - Enhanced Designations: Full official titles instead of abbreviations (Station Superintendent/DEC vs SS/DEC)
-  - Professional Observation Structure: Structured observations with regulatory compliance references
-  - Enhanced Language Functions: Comprehensive text enhancement system with context-aware professional phrase replacement
+- **Advanced Varied Language System**: Intelligent language transformation system that generates unique, sophisticated Railway inspection terminology for each report while maintaining professional standards
+  - Language Variety: Multiple professional alternatives for each phrase to ensure unique expressions ("working" can become "operational and functioning as per specifications", "functional and performing within established parameters", "active and operating in accordance with requirements", or "serviceable and executing prescribed functions")
+  - Dynamic Expression Generation: Random selection from curated professional variants ensures no two reports use identical language even for similar findings
+  - Regulatory Authority: Incorporates proper railway commercial protocol references with varied authoritative expressions
+  - Technical Precision: Multiple sophisticated alternatives for technical terminology (EPOS system descriptions vary across "infrastructure", "apparatus", "mechanism")
+  - Varied Opening Paragraphs: Four different professional opening statement templates with randomized selection
+  - Enhanced Observation Diversity: Each observation type has 3-4 professional alternatives to prevent repetitive language across multiple users
+  - Context-Aware Enhancement: Sophisticated phrase replacement system that maintains meaning while adding linguistic variety
 - **Microsoft Office Compatibility**: Native .docx format ensures seamless opening in Microsoft Word, LibreOffice, and Google Docs
 - **Image Processing Debugging**: Comprehensive logging and error handling for image embedding troubleshooting
 

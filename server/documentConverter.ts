@@ -53,8 +53,14 @@ export async function convertInspectionToDocument(inspectionData: InspectionData
     // Use inspection subject from form
     const generatedSubject = `Sub: ${inspectionData.subject}`;
 
-    // Generate opening paragraph with enhanced professional language
-    const openingParagraph = `In compliance with the aforementioned directive, the undersigned undertook a comprehensive ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the systematic examination and verification process, the following observations pertaining to Commercial Operations were documented:-`;
+    // Generate varied opening paragraph with professional language
+    const openingVariants = [
+      `In compliance with the aforementioned directive, the undersigned undertook a comprehensive ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the systematic examination and verification process, the following observations pertaining to Commercial Operations were documented:-`,
+      `In pursuance of the above-referenced instruction, the undersigned conducted a thorough ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. Through meticulous assessment and evaluation procedures, the following Commercial Operations observations were recorded:-`,
+      `In adherence to the prescribed directive, the undersigned executed a detailed ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the comprehensive inspection and verification process, the following Commercial Operations findings were established:-`,
+      `In accordance with the referenced mandate, the undersigned performed an extensive ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. Through systematic evaluation and assessment procedures, the following Commercial Operations observations were identified:-`
+    ];
+    const openingParagraph = openingVariants[Math.floor(Math.random() * openingVariants.length)];
 
     // Convert observations to structured format
     const convertedObservations = await convertObservationsToDocument(inspectionData.observations, inspectionData);
@@ -196,47 +202,130 @@ async function convertGeneralObservation(item: any, serialNumber: number, area: 
 function generateDetailedObservation(company: any): string {
   const observations = [];
   
-  // Vendor details with professional railway language
+  // Vendor details with varied professional expressions
   if (company.vendorDetails) {
     const vendorName = company.vendorDetails.vendorName || 'the vendor';
-    const uniformStatus = company.vendorDetails.uniform ? 
-      'was observed to be properly attired in prescribed uniform' : 
-      'was found operating without the mandatory prescribed uniform';
-    const idCardStatus = company.documentation?.idCard ? 
-      'bearing valid identification credentials' : 
-      'failing to display requisite identification credentials';
-    const medicalStatus = company.documentation?.medicalCertificate ? 
-      'with valid medical fitness certificate on record' : 
-      'without producing the mandatory medical fitness certificate';
     
-    observations.push(`During the course of inspection, ${vendorName} ${uniformStatus}, ${idCardStatus} ${medicalStatus}. This aspect requires immediate attention to ensure compliance with railway commercial regulations.`);
+    const uniformVariants = company.vendorDetails.uniform ? [
+      'was observed to be properly attired in prescribed uniform',
+      'was found appropriately dressed in regulation attire',
+      'exhibited compliance with mandatory dress code requirements',
+      'was noted to be wearing the stipulated uniform correctly'
+    ] : [
+      'was found operating without the mandatory prescribed uniform',
+      'was observed functioning in violation of dress code protocols',
+      'exhibited non-compliance with required attire standards',
+      'was detected working without regulation uniform'
+    ];
+    
+    const idCardVariants = company.documentation?.idCard ? [
+      'bearing valid identification credentials',
+      'displaying proper identification documentation',
+      'presenting requisite identity verification',
+      'carrying appropriate identification materials'
+    ] : [
+      'failing to display requisite identification credentials',
+      'lacking proper identification documentation',
+      'without displaying mandatory identity verification',
+      'absent of required identification materials'
+    ];
+    
+    const medicalVariants = company.documentation?.medicalCertificate ? [
+      'with valid medical fitness certificate on record',
+      'possessing current health clearance documentation',
+      'holding appropriate medical certification',
+      'maintaining valid fitness verification records'
+    ] : [
+      'without producing the mandatory medical fitness certificate',
+      'lacking requisite health clearance documentation',
+      'failing to present medical certification',
+      'absent of mandatory fitness verification'
+    ];
+    
+    const openingVariants = [
+      'During the course of inspection,',
+      'Upon systematic examination,',
+      'During comprehensive verification,',
+      'At the time of detailed assessment,'
+    ];
+    
+    const closingVariants = [
+      'This aspect requires immediate attention to ensure compliance with railway commercial regulations.',
+      'This matter demands urgent consideration for adherence to prescribed protocols.',
+      'This element necessitates prompt intervention to maintain regulatory compliance.',
+      'This factor warrants immediate action to uphold commercial standards.'
+    ];
+    
+    const uniformStatus = uniformVariants[Math.floor(Math.random() * uniformVariants.length)];
+    const idCardStatus = idCardVariants[Math.floor(Math.random() * idCardVariants.length)];
+    const medicalStatus = medicalVariants[Math.floor(Math.random() * medicalVariants.length)];
+    const opening = openingVariants[Math.floor(Math.random() * openingVariants.length)];
+    const closing = closingVariants[Math.floor(Math.random() * closingVariants.length)];
+    
+    observations.push(`${opening} ${vendorName} ${uniformStatus}, ${idCardStatus} ${medicalStatus}. ${closing}`);
   }
   
-  // Overcharging with authoritative language
+  // Overcharging with varied authoritative expressions
   if (company.overcharging?.detected === false) {
-    observations.push('Thorough examination of pricing practices revealed no instances of overcharging, with all items being sold at Maximum Retail Price (MRP) as mandated by railway regulations.');
+    const noOverchargingVariants = [
+      'Thorough examination of pricing practices revealed no instances of overcharging, with all items being sold at Maximum Retail Price (MRP) as mandated by railway regulations.',
+      'Comprehensive assessment of pricing compliance confirmed adherence to prescribed MRP standards with no evidence of excessive charging.',
+      'Systematic verification of pricing protocols demonstrated full compliance with MRP regulations without any overcharging violations.',
+      'Detailed scrutiny of pricing practices established complete conformity with mandated retail price structures.'
+    ];
+    observations.push(noOverchargingVariants[Math.floor(Math.random() * noOverchargingVariants.length)]);
   } else if (company.overcharging?.detected === true) {
     const details = company.overcharging.details || 'specific items and excess amounts to be documented';
-    observations.push(`A serious breach of pricing regulations was detected wherein passengers were being charged in excess of MRP. ${details}. This constitutes a flagrant violation of commercial terms and conditions and warrants immediate corrective action.`);
+    const overchargingVariants = [
+      `A serious breach of pricing regulations was detected wherein passengers were being charged in excess of MRP. ${details}. This constitutes a flagrant violation of commercial terms and conditions and warrants immediate corrective action.`,
+      `Critical non-compliance with pricing protocols was identified where customers were subjected to charges exceeding prescribed MRP. ${details}. This represents a grave contravention of licensing conditions requiring urgent remediation.`,
+      `Significant pricing irregularities were discovered involving charges beyond established MRP limits. ${details}. This constitutes a material breach of commercial agreements necessitating immediate intervention.`,
+      `Substantial deviation from pricing regulations was observed with customers being overcharged beyond MRP thresholds. ${details}. This violation of commercial protocols demands swift corrective measures.`
+    ];
+    observations.push(overchargingVariants[Math.floor(Math.random() * overchargingVariants.length)]);
   }
   
-  // Billing machine with technical precision
+  // Billing machine with varied technical expressions
   if (company.billing) {
     if (company.billing.electronicBillMachine === false) {
-      observations.push('The Electronic Point of Sale (EPOS) system was found to be non-operational, thereby compromising the mandatory digital transaction recording mechanism. This deficiency impedes proper revenue accountability and requires urgent rectification.');
+      const nonFunctionalVariants = [
+        'The Electronic Point of Sale (EPOS) system was found to be non-operational, thereby compromising the mandatory digital transaction recording mechanism. This deficiency impedes proper revenue accountability and requires urgent rectification.',
+        'The Electronic Point of Sale infrastructure was discovered to be inoperative, creating significant gaps in digital transaction documentation. This irregularity undermines financial transparency and demands immediate technical intervention.',
+        'The Electronic Point of Sale apparatus was identified as malfunctioning, disrupting essential digital billing protocols. This shortcoming affects revenue tracking integrity and necessitates prompt restoration.',
+        'The Electronic Point of Sale mechanism was observed to be dysfunctional, hampering required electronic transaction processing. This inadequacy compromises audit trail requirements and warrants expeditious repair.'
+      ];
+      observations.push(nonFunctionalVariants[Math.floor(Math.random() * nonFunctionalVariants.length)]);
     } else if (company.billing.electronicBillMachine === true) {
-      observations.push('The Electronic Point of Sale (EPOS) system was verified to be functioning optimally, ensuring compliance with digital billing requirements and facilitating transparent transaction processing.');
+      const functionalVariants = [
+        'The Electronic Point of Sale (EPOS) system was verified to be functioning optimally, ensuring compliance with digital billing requirements and facilitating transparent transaction processing.',
+        'The Electronic Point of Sale infrastructure was confirmed to be operating efficiently, maintaining adherence to electronic billing standards and enabling seamless transaction management.',
+        'The Electronic Point of Sale apparatus was validated as performing satisfactorily, guaranteeing conformity with digital payment protocols and supporting transparent financial operations.',
+        'The Electronic Point of Sale mechanism was assessed to be executing properly, securing compliance with electronic transaction requirements and promoting accountable revenue processing.'
+      ];
+      observations.push(functionalVariants[Math.floor(Math.random() * functionalVariants.length)]);
     }
     
     if (company.billing.manualBill === false) {
-      observations.push('It was observed that manual receipts were not being issued to passengers, which constitutes a serious violation of consumer protection norms and railway commercial guidelines.');
+      const manualBillVariants = [
+        'It was observed that manual receipts were not being issued to passengers, which constitutes a serious violation of consumer protection norms and railway commercial guidelines.',
+        'It was noted that physical receipt generation was absent for customer transactions, representing a significant breach of consumer rights and commercial regulatory standards.',
+        'It was detected that paper-based billing was not being provided to patrons, constituting a major infringement of customer service protocols and commercial compliance requirements.',
+        'It was identified that tangible receipt issuance was being omitted for travellers, indicating a critical violation of consumer documentation rights and commercial operational standards.'
+      ];
+      observations.push(manualBillVariants[Math.floor(Math.random() * manualBillVariants.length)]);
     }
   }
   
-  // Unapproved items with regulatory emphasis
+  // Unapproved items with varied regulatory expressions
   if (company.items?.unapprovedItems && company.items.unapprovedItems.length > 0) {
     const itemsList = company.items.unapprovedItems.join(', ');
-    observations.push(`During stock verification, unauthorized merchandise was found to be retailed from the licensed premises, specifically: ${itemsList}. The sale of non-approved items constitutes a material breach of the licensing agreement and contravenes established commercial protocols.`);
+    const unapprovedVariants = [
+      `During stock verification, unauthorized merchandise was found to be retailed from the licensed premises, specifically: ${itemsList}. The sale of non-approved items constitutes a material breach of the licensing agreement and contravenes established commercial protocols.`,
+      `Upon inventory assessment, non-sanctioned products were discovered being sold from the authorized facility, namely: ${itemsList}. The retail of unapproved merchandise represents a significant violation of licensing terms and conflicts with prescribed commercial standards.`,
+      `Through comprehensive stock examination, unauthorized items were identified being marketed from the licensed establishment, including: ${itemsList}. The distribution of non-approved goods constitutes a serious contravention of agreement conditions and regulatory frameworks.`,
+      `During systematic merchandise review, unlicensed products were detected being offered for sale from the permitted premises, specifically: ${itemsList}. The vending of unauthorized items signifies a critical breach of commercial licensing provisions and operational guidelines.`
+    ];
+    observations.push(unapprovedVariants[Math.floor(Math.random() * unapprovedVariants.length)]);
   }
   
   // Quality and hygiene standards
@@ -261,10 +350,16 @@ function generateDetailedObservation(company: any): string {
     observations.push(enhancedNotes);
   }
   
-  // Default professional observations
+  // Varied professional default observations
   if (observations.length === 0) {
-    observations.push('Comprehensive inspection was conducted in accordance with prescribed commercial inspection protocols.');
-    observations.push('All operational parameters were systematically evaluated against established railway commercial standards and regulatory requirements.');
+    const defaultVariants = [
+      ['Comprehensive inspection was conducted in accordance with prescribed commercial inspection protocols.', 'All operational parameters were systematically evaluated against established railway commercial standards and regulatory requirements.'],
+      ['Thorough examination was undertaken following established commercial inspection procedures and compliance standards.', 'Various operational aspects were assessed against prescribed criteria and determined to meet regulatory requirements.'],
+      ['Systematic assessment was performed in alignment with mandated commercial verification protocols and standards.', 'Multiple operational elements were evaluated against established benchmarks and confirmed to be satisfactory.'],
+      ['Detailed inspection was executed according to prescribed commercial regulatory frameworks and guidelines.', 'All relevant operational factors were scrutinized against standard criteria and found to be compliant.']
+    ];
+    const selectedDefault = defaultVariants[Math.floor(Math.random() * defaultVariants.length)];
+    observations.push(...selectedDefault);
   }
   
   return observations.join('\n\n');
@@ -293,8 +388,14 @@ function generateGeneralObservationText(item: any, area: string): string {
   }
   
   if (observations.length === 0) {
-    observations.push(`Comprehensive inspection of the ${area} facility was conducted in accordance with established railway commercial protocols and regulatory frameworks.`);
-    observations.push('All operational parameters and compliance aspects were systematically evaluated against prescribed benchmarks and found to be within acceptable limits.');
+    const generalDefaultVariants = [
+      [`Comprehensive inspection of the ${area} facility was conducted in accordance with established railway commercial protocols and regulatory frameworks.`, 'All operational parameters and compliance aspects were systematically evaluated against prescribed benchmarks and found to be within acceptable limits.'],
+      [`Thorough examination of the ${area} operations was undertaken following prescribed commercial inspection standards and procedures.`, 'Various compliance elements were assessed against regulatory criteria and determined to meet established requirements.'],
+      [`Systematic assessment of the ${area} facility was performed in alignment with mandated inspection protocols and standards.`, 'Multiple operational aspects were evaluated against prescribed benchmarks and confirmed to be satisfactory.'],
+      [`Detailed inspection of the ${area} area was executed according to established commercial regulatory frameworks and guidelines.`, 'All relevant operational factors were scrutinized against standard criteria and found to be compliant.']
+    ];
+    const selectedVariant = generalDefaultVariants[Math.floor(Math.random() * generalDefaultVariants.length)];
+    observations.push(...selectedVariant);
   }
   
   return observations.join('\n\n');
@@ -313,30 +414,86 @@ function formatFieldName(key: string): string {
 }
 
 function enhanceObservationLanguage(text: string): string {
-  // Enhance basic text to professional railway inspection language
+  // Enhance basic text to professional railway inspection language with variety
   let enhancedText = text;
   
-  // Replace common basic phrases with professional alternatives
-  const replacements = {
-    'ok': 'satisfactory and in compliance',
-    'good': 'exemplary and meeting prescribed standards',
-    'bad': 'substandard and requiring immediate attention',
-    'not working': 'non-functional and necessitating urgent rectification',
-    'working': 'operational and functioning as per specifications',
-    'clean': 'maintained in accordance with hygiene protocols',
-    'dirty': 'exhibiting unsatisfactory sanitary conditions',
-    'found': 'observed during systematic examination',
-    'checked': 'subjected to thorough verification',
-    'seen': 'witnessed during the course of inspection',
-    'problem': 'deficiency requiring corrective measures',
-    'issue': 'concern necessitating administrative intervention',
-    'fine': 'satisfactory and within acceptable parameters'
+  // Multiple professional alternatives for each basic phrase to ensure variety
+  const replacementVariants = {
+    'ok': [
+      'satisfactory and in compliance',
+      'acceptable and conforming to standards',
+      'adequate and meeting requirements',
+      'appropriate and within specifications'
+    ],
+    'good': [
+      'exemplary and meeting prescribed standards',
+      'commendable and exceeding expectations',
+      'superior and adhering to protocols',
+      'excellent and maintaining high standards'
+    ],
+    'bad': [
+      'substandard and requiring immediate attention',
+      'inadequate and necessitating swift intervention',
+      'deficient and demanding urgent remediation',
+      'unsatisfactory and warranting corrective action'
+    ],
+    'not working': [
+      'non-functional and necessitating urgent rectification',
+      'inoperative and requiring immediate technical intervention',
+      'dysfunctional and demanding prompt restoration',
+      'malfunctioning and warranting expeditious repair'
+    ],
+    'working': [
+      'operational and functioning as per specifications',
+      'functional and performing within established parameters',
+      'active and operating in accordance with requirements',
+      'serviceable and executing prescribed functions'
+    ],
+    'clean': [
+      'maintained in accordance with hygiene protocols',
+      'preserved in compliance with sanitary standards',
+      'sustained in adherence to cleanliness norms',
+      'upheld according to prescribed hygiene requirements'
+    ],
+    'dirty': [
+      'exhibiting unsatisfactory sanitary conditions',
+      'displaying compromised hygiene standards',
+      'manifesting inadequate cleanliness protocols',
+      'demonstrating substandard sanitary maintenance'
+    ],
+    'found': [
+      'observed during systematic examination',
+      'detected through comprehensive inspection',
+      'identified during thorough assessment',
+      'discovered upon meticulous verification'
+    ],
+    'checked': [
+      'subjected to thorough verification',
+      'examined through comprehensive assessment',
+      'scrutinized via detailed inspection',
+      'evaluated through systematic review'
+    ],
+    'problem': [
+      'deficiency requiring corrective measures',
+      'irregularity demanding remedial action',
+      'discrepancy necessitating intervention',
+      'shortcoming warranting immediate attention'
+    ],
+    'issue': [
+      'concern necessitating administrative intervention',
+      'matter requiring supervisory attention',
+      'aspect demanding managerial consideration',
+      'element warranting operational review'
+    ]
   };
   
-  // Apply replacements while preserving context
-  for (const [basic, professional] of Object.entries(replacements)) {
+  // Apply random variants to ensure unique expressions
+  for (const [basic, variants] of Object.entries(replacementVariants)) {
     const regex = new RegExp(`\\b${basic}\\b`, 'gi');
-    enhancedText = enhancedText.replace(regex, professional);
+    if (regex.test(enhancedText)) {
+      const randomVariant = variants[Math.floor(Math.random() * variants.length)];
+      enhancedText = enhancedText.replace(regex, randomVariant);
+    }
   }
   
   // Ensure proper capitalization and punctuation
@@ -360,19 +517,65 @@ async function convertNewCateringCompanyObservation(company: any, serialNumber: 
   // Convert new catering structure to English narrative
   const observations = [];
   
-  // Vendor details with enhanced professional language
+  // Vendor details with varied professional expressions
   if (company.vendorName) {
-    const uniformStatus = company.properUniform ? 
-      'was observed to be properly attired in prescribed uniform' : 
-      'was found operating without the mandatory prescribed uniform';
-    const medicalStatus = company.medicalCard ? 
-      'with valid medical fitness certificate on record' : 
-      'without producing the mandatory medical fitness certificate';
-    const policeStatus = company.policeVerification ? 
-      'and bearing requisite police verification clearance' : 
-      'and lacking the required police verification clearance';
+    const uniformVariants = company.properUniform ? [
+      'was observed to be properly attired in prescribed uniform',
+      'was found appropriately dressed in regulation attire',
+      'exhibited compliance with mandatory dress code requirements',
+      'was noted to be wearing the stipulated uniform correctly'
+    ] : [
+      'was found operating without the mandatory prescribed uniform',
+      'was observed functioning in violation of dress code protocols',
+      'exhibited non-compliance with required attire standards',
+      'was detected working without regulation uniform'
+    ];
     
-    observations.push(`During the course of systematic inspection, ${company.vendorName} ${uniformStatus}, ${medicalStatus} ${policeStatus}. This compliance aspect requires strict adherence to prescribed commercial protocols.`);
+    const medicalVariants = company.medicalCard ? [
+      'with valid medical fitness certificate on record',
+      'possessing current health clearance documentation',
+      'holding appropriate medical certification',
+      'maintaining valid fitness verification records'
+    ] : [
+      'without producing the mandatory medical fitness certificate',
+      'lacking requisite health clearance documentation',
+      'failing to present medical certification',
+      'absent of mandatory fitness verification'
+    ];
+    
+    const policeVariants = company.policeVerification ? [
+      'and bearing requisite police verification clearance',
+      'and possessing proper law enforcement background verification',
+      'and maintaining valid police clearance certification',
+      'and holding appropriate security verification documentation'
+    ] : [
+      'and lacking the required police verification clearance',
+      'and absent of mandatory law enforcement background verification',
+      'and without proper police clearance certification',
+      'and missing essential security verification documentation'
+    ];
+    
+    const openingVariants = [
+      'During the course of systematic inspection,',
+      'Upon thorough examination,',
+      'During comprehensive assessment,',
+      'At the time of detailed verification,'
+    ];
+    
+    const closingVariants = [
+      'This compliance aspect requires strict adherence to prescribed commercial protocols.',
+      'This matter demands immediate attention to maintain regulatory standards.',
+      'This element necessitates urgent consideration for protocol compliance.',
+      'This factor warrants prompt action to ensure commercial regulation adherence.'
+    ];
+    
+    const uniformStatus = uniformVariants[Math.floor(Math.random() * uniformVariants.length)];
+    const medicalStatus = medicalVariants[Math.floor(Math.random() * medicalVariants.length)];
+    const policeStatus = policeVariants[Math.floor(Math.random() * policeVariants.length)];
+    const opening = openingVariants[Math.floor(Math.random() * openingVariants.length)];
+    const closing = closingVariants[Math.floor(Math.random() * closingVariants.length)];
+    
+    observations.push(`${opening} ${company.vendorName} ${uniformStatus}, ${medicalStatus} ${policeStatus}. ${closing}`);
   }
   
   // Overcharging examination with regulatory emphasis
