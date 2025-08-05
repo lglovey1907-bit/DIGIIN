@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
@@ -23,7 +24,9 @@ import {
   Upload,
   Plus,
   Trash2,
-  X
+  X,
+  Wifi,
+  WifiOff
 } from "lucide-react";
 import { stations } from "@/data/stations";
 import CateringForm from "@/components/catering-form";
@@ -48,6 +51,7 @@ export default function InspectionForm() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { offlineState, saveInspectionOffline } = useOfflineSync();
   
   const [formData, setFormData] = useState<{
     subject: string;
@@ -163,6 +167,38 @@ export default function InspectionForm() {
       )
     }));
   };
+
+  // Save inspection offline
+  const handleSaveOffline = async () => {
+    if (!formData.subject.trim() || formData.inspectionAreas.length === 0) {
+      toast({
+        title: "Incomplete Form",
+        description: "Please fill in subject and add at least one inspection area.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const offlineInspection = {
+      id: `offline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      data: {
+        subject: formData.subject,
+        stationCode: formData.stationCode,
+        inspectionDate: formData.inspectionDate,
+        referenceNo: formData.referenceNo,
+        inspectionAreas: formData.inspectionAreas,
+        actionTaken: formData.actionTaken,
+        inspectors: formData.inspectors,
+        inspectorId: (user as any)?.id,
+        status: 'draft'
+      },
+      status: 'pending_sync' as const
+    };
+
+    await saveInspectionOffline(offlineInspection);
+  };
+
+  // Removed duplicate handleLogout function
 
   return (
     <div className="min-h-screen bg-nr-bg">
@@ -524,10 +560,22 @@ export default function InspectionForm() {
 
         {/* Form Actions */}
         <div className="flex justify-end space-x-4">
+          {/* Offline Save Button */}
+          {!offlineState.isOnline && (
+            <Button 
+              onClick={handleSaveOffline}
+              variant="outline"
+              className="border-orange-500 text-orange-600 hover:bg-orange-50"
+            >
+              <WifiOff className="mr-2" size={20} />
+              Save Offline
+            </Button>
+          )}
+          
           <Button 
             onClick={() => handleSubmit('draft')}
             variant="outline"
-            disabled={createInspectionMutation.isPending}
+            disabled={!offlineState.isOnline}
           >
             <Save className="mr-2" size={20} />
             Save Draft
@@ -535,7 +583,7 @@ export default function InspectionForm() {
           <Button 
             onClick={() => handleSubmit('submitted')}
             className="bg-nr-success hover:bg-green-700"
-            disabled={createInspectionMutation.isPending}
+            disabled={!offlineState.isOnline}
           >
             <CheckCircle className="mr-2" size={20} />
             Submit Inspection

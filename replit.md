@@ -68,6 +68,16 @@ Preferred communication style: Simple, everyday language.
 - **M/s Prefix**: Company names automatically prefixed with "M/s"
 - **Overcharging Detection**: MRP vs selling price comparison per company
 
+## Offline Mode & Background Sync
+- **Service Worker**: Comprehensive offline functionality with background sync capabilities
+- **Local Storage**: IndexedDB integration for persistent offline data storage
+- **Offline Indicator**: Real-time connection status with pending items counter
+- **Background Sync**: Automatic synchronization when connection is restored
+- **Offline Forms**: Complete inspection forms can be saved locally when offline
+- **Smart Caching**: Critical resources cached for offline availability
+- **Conflict Resolution**: Seamless data merging when back online
+- **Progress Tracking**: Visual feedback for sync status and pending operations
+
 ## PDF Generation & Export
 - **Report Generation**: Server-side PDF creation using PDFKit library for inspection reports
 - **Template System**: Northern Railway branded PDF templates with professional formatting
