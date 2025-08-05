@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Calendar, Download, Clock, CheckCircle, AlertTriangle, Plus, LogOut, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
 import { ReportGenerator } from "@/components/report-generator";
+import AILayoutSuggestions from "@/components/ai-layout-suggestions";
 import { OfflineIndicator } from '@/components/offline-indicator';
 
 interface Assignment {
@@ -407,6 +408,18 @@ export default function CMIDashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* AI Layout Suggestions for Latest Inspection */}
+          {inspections.length > 0 && (
+            <div className="col-span-full">
+              <AILayoutSuggestions 
+                inspectionId={inspections[0].id}
+                onApplySuggestions={(suggestions) => {
+                  console.log('AI suggestions applied:', suggestions);
+                }}
+              />
+            </div>
+          )}
         </div>
       </main>
     </div>

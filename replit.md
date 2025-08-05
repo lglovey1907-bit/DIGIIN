@@ -94,6 +94,16 @@ Preferred communication style: Simple, everyday language.
 - **Download Integration**: PDF download buttons integrated into dashboard inspection listings
 - **Export Route**: `/api/inspections/:id/export-pdf` endpoint for authenticated PDF generation
 
+## AI-Powered Report Layout Suggestions
+- **OpenAI Integration**: GPT-4o powered analysis of inspection data for intelligent layout recommendations
+- **Smart Template Selection**: AI analyzes inspection complexity and suggests optimal report template (Standard/Executive/Detailed)
+- **Visualization Recommendations**: Suggests appropriate charts and graphs based on data patterns and content
+- **Layout Optimization**: AI recommends which sections to prioritize and what visualizations to include
+- **Key Insights Generation**: Automatically identifies and highlights important findings from inspection data
+- **Interactive Suggestions**: Users can apply AI recommendations with one-click integration into report generation
+- **Trend Analysis**: AI analyzes historical inspection data to identify patterns and provide recommendations
+- **Fallback System**: Graceful fallback to rule-based suggestions when AI service is unavailable
+
 ## Development Tools
 - **Build System**: Vite for fast development and optimized production builds
 - **Code Quality**: TypeScript for type safety across frontend and backend

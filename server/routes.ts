@@ -17,6 +17,7 @@ import path from "path";
 import fs from "fs";
 import PDFDocument from "pdfkit";
 import passport from "passport";
+import { generateReportLayoutSuggestions, analyzeInspectionTrends } from "./aiService";
 
 // Extend Express types
 declare global {
@@ -343,6 +344,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating inspection:", error);
       res.status(500).json({ message: "Failed to update inspection" });
+    }
+  });
+
+  // AI-powered layout suggestions routes
+  app.post('/api/inspections/:id/ai-suggestions', isAuthenticated, async (req: any, res) => {
+    try {
+      const inspection = await storage.getInspection(req.params.id);
+      if (!inspection) {
+        return res.status(404).json({ message: "Inspection not found" });
+      }
+      
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Check if user has permission to view this inspection
+      if (user?.role !== 'admin' && inspection.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const suggestions = await generateReportLayoutSuggestions({
+        area: inspection.area,
+        observations: inspection.observations,
+        stationCode: inspection.stationCode,
+        inspectionDate: inspection.inspectionDate.toISOString(),
+        status: inspection.status || 'draft',
+        subject: inspection.subject
+      });
+      
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Error generating AI suggestions:", error);
+      res.status(500).json({ message: "Failed to generate suggestions" });
+    }
+  });
+
+  app.post('/api/inspections/ai-trends', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      let inspections;
+      if (user?.role === 'admin') {
+        inspections = await storage.getAllInspections();
+      } else {
+        inspections = await storage.getUserInspections(userId);
+      }
+      
+      const trends = await analyzeInspectionTrends(inspections);
+      res.json(trends);
+    } catch (error) {
+      console.error("Error analyzing trends:", error);
+      res.status(500).json({ message: "Failed to analyze trends" });
     }
   });
 
