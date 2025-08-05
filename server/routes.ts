@@ -551,6 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         inspectionDate: inspection.inspectionDate ? inspection.inspectionDate.toISOString() : new Date().toISOString(),
         observations: inspection.observations || {},
         referenceNo: inspection.referenceNo || undefined,
+        inspectors: Array.isArray(inspection.inspectors) ? inspection.inspectors : [],
         attachedFiles: attachedFiles.map(file => ({
           id: file.id,
           fileName: file.fileName,
