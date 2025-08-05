@@ -119,8 +119,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Set session userId for compatibility
           (req.session as any).userId = user.id;
           
+          // Generate a simple token for client-side storage
+          const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
+          
           res.json({
             message: "Login successful",
+            token: token, // Send token to client
             user: { 
               id: user.id, 
               email: user.email, 
@@ -144,18 +148,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       // Clear session userId
       (req.session as any).userId = undefined;
+      // Clear session completely
+      req.session.destroy((err) => {
+        if (err) {
+          console.log('Session destroy error:', err);
+        }
+      });
       res.json({ message: "Logout successful" });
     });
   });
 
   // Auth routes (local auth only)
-  app.get('/api/auth/user', (req: any, res) => {
+  app.get('/api/auth/user', async (req: any, res) => {
     console.log('Auth check - Session ID:', req.sessionID);
     console.log('Auth check - Cookies:', req.headers.cookie);
+    console.log('Auth check - Authorization Header:', req.headers.authorization);
     console.log('Auth check - Is Authenticated:', req.isAuthenticated());
     console.log('Auth check - User:', req.user);
     console.log('Auth check - Session:', req.session);
     
+    // First try session-based auth
     if (req.isAuthenticated() && req.user) {
       return res.json({
         id: req.user.id,
@@ -166,6 +178,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stationSection: req.user.stationSection,
       });
     }
+    
+    // Try token-based auth as fallback
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = Buffer.from(token, 'base64').toString();
+        const [userId] = decoded.split(':');
+        
+        const user = await storage.getUser(userId);
+        if (user && user.isApproved) {
+          return res.json({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            designation: user.designation,
+            stationSection: user.stationSection,
+          });
+        }
+      } catch (error) {
+        console.log('Token decode error:', error);
+      }
+    }
+    
     res.status(401).json({ message: "Unauthorized" });
   });
 

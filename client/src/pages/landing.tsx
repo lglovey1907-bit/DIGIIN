@@ -44,6 +44,11 @@ export default function Landing() {
         throw new Error(result.message || "Login failed");
       }
       
+      // Store token if provided
+      if (result.token) {
+        localStorage.setItem('authToken', result.token);
+      }
+      
       toast({
         title: "Login Successful",
         description: `Welcome, ${result.user.name}!`,
