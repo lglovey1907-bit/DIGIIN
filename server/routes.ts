@@ -573,6 +573,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Generate custom report
+  app.post('/api/reports/generate', isAuthenticated, async (req: any, res) => {
+    try {
+      const { 
+        title, 
+        dateRange, 
+        stations, 
+        inspectionTypes, 
+        includeCharts,
+        chartTypes,
+        includeSummary,
+        includePhotos,
+        includeRecommendations,
+        format,
+        template 
+      } = req.body;
+
+      // Get filtered inspections based on criteria
+      let inspections = await storage.getAllInspections();
+      
+      // Filter by date range
+      if (dateRange.start && dateRange.end) {
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
+        inspections = inspections.filter(inspection => {
+          const inspectionDate = new Date(inspection.inspectionDate);
+          return inspectionDate >= startDate && inspectionDate <= endDate;
+        });
+      }
+
+      // Filter by stations
+      if (stations.length > 0) {
+        inspections = inspections.filter(inspection => 
+          stations.includes(inspection.stationCode)
+        );
+      }
+
+      // Filter by inspection types (if applicable)
+      if (inspectionTypes.length > 0) {
+        inspections = inspections.filter(inspection => {
+          if (!inspection.observations) return false;
+          const inspectionAreas = Object.keys(inspection.observations);
+          return inspectionTypes.some((type: string) => inspectionAreas.includes(type));
+        });
+      }
+
+      const reportData = {
+        title,
+        dateRange,
+        inspections,
+        stations,
+        inspectionTypes,
+        options: {
+          includeCharts,
+          chartTypes,
+          includeSummary,
+          includePhotos,
+          includeRecommendations,
+          template
+        }
+      };
+
+      if (format === 'pdf' || format === 'both') {
+        const { ReportGenerator } = await import('./reportGenerator');
+        const reportGenerator = new ReportGenerator();
+        const pdfBuffer = await reportGenerator.generateReport(reportData);
+        
+        if (format === 'pdf') {
+          res.setHeader('Content-Type', 'application/pdf');
+          res.setHeader('Content-Disposition', `attachment; filename="${title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf"`);
+          return res.send(pdfBuffer);
+        }
+      }
+
+      if (format === 'excel' || format === 'both') {
+        // Excel generation would go here
+        // For now, return JSON data
+        res.json({ 
+          message: 'Excel format not yet implemented',
+          data: reportData,
+          recordCount: inspections.length
+        });
+      }
+
+      if (format === 'both') {
+        // Return both formats (implementation needed)
+        res.json({ 
+          message: 'Both formats requested',
+          pdfGenerated: true,
+          excelGenerated: false
+        });
+      }
+
+    } catch (error) {
+      console.error('Report generation error:', error);
+      res.status(500).json({ error: 'Failed to generate report' });
+    }
+  });
+
   // Serve uploaded files
   app.use('/uploads', express.static(uploadDir));
 

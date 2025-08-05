@@ -5,8 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { NorthernRailwayLogo } from "@/components/northern-railway-logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, Download, Clock, CheckCircle, AlertTriangle, Plus, LogOut } from "lucide-react";
+import { Calendar, Download, Clock, CheckCircle, AlertTriangle, Plus, LogOut, BarChart3 } from "lucide-react";
 import { Link } from "wouter";
+import { ReportGenerator } from "@/components/report-generator";
+import { OfflineIndicator } from '@/components/offline-indicator';
 
 interface Assignment {
   id: string;
@@ -81,6 +83,41 @@ export default function CMIDashboard() {
     }
   };
 
+  const handleGenerateReport = async (options: any) => {
+    try {
+      const response = await fetch('/api/reports/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(options),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate report');
+      }
+
+      if (options.format === 'pdf') {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `${options.title.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const data = await response.json();
+        console.log('Report generated:', data);
+      }
+    } catch (error) {
+      console.error('Error generating report:', error);
+      throw error; // Re-throw to be handled by ReportGenerator component
+    }
+  };
+
   // Filter assignments by status
   const upcomingAssignments = assignments.filter(a => a.status === 'pending' && new Date(a.dueDate) > new Date());
   const overdueAssignments = assignments.filter(a => a.status === 'overdue' || (a.status === 'pending' && new Date(a.dueDate) < new Date()));
@@ -106,6 +143,11 @@ export default function CMIDashboard() {
               </div>
             </div>
             <div className="flex items-center space-x-4">
+              <OfflineIndicator />
+              <ReportGenerator 
+                inspections={inspections} 
+                onGenerateReport={handleGenerateReport}
+              />
               <Link href="/inspection">
                 <Button className="bg-nr-blue hover:bg-blue-800">
                   <Plus size={16} className="mr-2" />

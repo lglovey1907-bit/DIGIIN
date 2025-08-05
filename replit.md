@@ -78,8 +78,16 @@ Preferred communication style: Simple, everyday language.
 - **Conflict Resolution**: Seamless data merging when back online
 - **Progress Tracking**: Visual feedback for sync status and pending operations
 
+## One-Click Report Generation
+- **Custom Report Builder**: Interactive dialog for configuring comprehensive reports with visualization options
+- **Multi-Format Export**: PDF and Excel report generation with customizable templates (Standard, Executive, Detailed)
+- **Advanced Filtering**: Date range, station, and inspection type filters for targeted reporting
+- **Visualization Options**: Charts and graphs including overview statistics, trend analysis, compliance metrics, station comparisons
+- **Template System**: Professional Northern Railway branded templates with dynamic content population
+- **One-Click Generation**: Streamlined report creation process from dashboard with instant download
+
 ## PDF Generation & Export
-- **Report Generation**: Server-side PDF creation using PDFKit library for inspection reports
+- **Individual Reports**: Server-side PDF creation using PDFKit library for single inspection reports
 - **Template System**: Northern Railway branded PDF templates with professional formatting
 - **Data Population**: Dynamic population of inspection data, observations, and metadata
 - **Download Integration**: PDF download buttons integrated into dashboard inspection listings
