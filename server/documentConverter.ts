@@ -11,6 +11,8 @@ interface InspectionData {
   inspectionDate: string;
   observations: any;
   letterReference?: string;
+  referenceNo?: string;
+  inspectors?: Array<{name: string; designation: string}>;
 }
 
 interface ConvertedDocument {
@@ -43,20 +45,20 @@ export async function convertInspectionToDocument(inspectionData: InspectionData
       year: 'numeric'
     });
 
-    // Generate subject line (fallback without AI)
-    const generatedSubject = `Sub: Decoy Checks on ${inspectionData.area} facilities at ${inspectionData.stationCode} Railway Station.`;
+    // Use inspection subject from form
+    const generatedSubject = `Sub: ${inspectionData.subject}`;
 
-    // Generate opening paragraph (fallback without AI)
-    const openingParagraph = `As per reference above, undersigned conducted course of decoy checks of ${inspectionData.area} facilities at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the course of decoy checks, the deficiencies observed over Commercial Aspect were as follows:-`;
+    // Generate opening paragraph with dynamic subject content
+    const openingParagraph = `As per reference above, undersigned conducted course of ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the course of checks, the deficiencies observed over Commercial Aspect were as follows:-`;
 
     // Convert observations to structured format
-    const convertedObservations = await convertObservationsToDocument(inspectionData.observations);
+    const convertedObservations = await convertObservationsToDocument(inspectionData.observations, inspectionData);
     console.log("Converted observations:", convertedObservations.length, "entries");
 
     const result = {
       header: "Northern Railway",
       subject: generatedSubject,
-      letterReference: inspectionData.letterReference || generateLetterReference(inspectionData),
+      letterReference: inspectionData.letterReference || inspectionData.referenceNo || "NIL",
       openingParagraph,
       observations: convertedObservations,
       signatures: generateSignatures(inspectionData)
@@ -71,7 +73,7 @@ export async function convertInspectionToDocument(inspectionData: InspectionData
   }
 }
 
-async function convertObservationsToDocument(observations: any): Promise<ObservationEntry[]> {
+async function convertObservationsToDocument(observations: any, inspectionData?: InspectionData): Promise<ObservationEntry[]> {
   console.log("Processing observations:", typeof observations, observations);
   
   if (!observations || typeof observations !== 'object') {
@@ -98,7 +100,7 @@ async function convertObservationsToDocument(observations: any): Promise<Observa
         for (const company of value.companies as any[]) {
           if (company) {
             console.log(`Converting catering company: ${company.companyName || 'Unknown Company'}`);
-            const entry = await convertNewCateringCompanyObservation(company, serialNumber);
+            const entry = await convertNewCateringCompanyObservation(company, serialNumber, (value as any).actionTaken || 'COS Ctg');
             convertedEntries.push(entry);
             serialNumber++;
           }
@@ -259,7 +261,7 @@ function generateGeneralObservationText(item: any, area: string): string {
   return observations.join('\n');
 }
 
-async function convertNewCateringCompanyObservation(company: any, serialNumber: number): Promise<ObservationEntry> {
+async function convertNewCateringCompanyObservation(company: any, serialNumber: number, actionTaken?: string): Promise<ObservationEntry> {
   const companyName = company.companyName?.startsWith('M/s ') ? 
     company.companyName : `M/s ${company.companyName || 'Unknown Company'}`;
   
@@ -335,7 +337,7 @@ async function convertNewCateringCompanyObservation(company: any, serialNumber: 
     serialNumber: serialNumber.toString(),
     companyHeading,
     observations,
-    actionTakenBy: "SS/DEC\nCMI/DEE\nCMI/Ctg\nCOS/Ctg.",
+    actionTakenBy: actionTaken || "COS Ctg",
     photographs: "As per annexure"
   };
 }
@@ -351,6 +353,14 @@ function generateLetterReference(inspectionData: InspectionData): string {
 }
 
 function generateSignatures(inspectionData: InspectionData): string[] {
+  // Use inspector details from form if available
+  if (inspectionData.inspectors && inspectionData.inspectors.length > 0) {
+    return inspectionData.inspectors
+      .filter(inspector => inspector.name && inspector.designation)
+      .map(inspector => `${inspector.name}\n${inspector.designation}`);
+  }
+  
+  // Fallback to default signatures if no inspectors in form
   return [
     "Sanjay Kumar Singh\nCMI/YTSK",
     "Lovey Gandhi\nCMI/G.",
