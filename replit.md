@@ -106,11 +106,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Document Conversion Feature
 - **PDF to DOC Conversion**: Transform PDF inspection reports into formatted English text DOC files with standardized Railway document structure
-- **AI-Powered Content Adaptation**: Uses OpenAI GPT-4o to convert structured data into narrative English text
-- **Official Railway Format**: Maintains proper Northern Railway document format with header, subject line, and letter reference
+- **Reliable Operation**: Works without AI dependency for consistent document generation
+- **Professional Formatting**: Centered Northern Railway header, proper table structure with aligned columns
+- **Conditional Reference Section**: Reference tab only appears if user enters custom reference letter number
 - **Smart Data Processing**: Converts checkbox responses and technical data into elaborate English descriptions
 - **Company-wise Organization**: Structures observations by company with proper M/s prefixes and unit/platform details
-- **Tabular Format Output**: SN, Observations, Action Taken By, and Photographs columns in proper Railway format
+- **Tabular Format Output**: S.No., Observations, Action Taken By, and Photographs columns with content properly aligned
+- **Inspector Signature Alignment**: 1st inspector (right), 2nd inspector (middle), 3rd inspector (left)
 - **Professional Language**: Transforms technical inspection data into formal Railway correspondence language
 
 ## Development Tools

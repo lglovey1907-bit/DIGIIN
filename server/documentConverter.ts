@@ -359,28 +359,95 @@ function generateSignatures(inspectionData: InspectionData): string[] {
 }
 
 export async function generateDocumentText(convertedDoc: ConvertedDocument): Promise<string> {
-  let documentText = `${convertedDoc.header}\n\n`;
+  let documentText = '';
+  
+  // Header - Centered
+  const headerSpaces = ' '.repeat(Math.max(0, (80 - convertedDoc.header.length) / 2));
+  documentText += `${headerSpaces}${convertedDoc.header}\n\n`;
+  
   documentText += `${convertedDoc.subject}\n\n`;
-  documentText += `${convertedDoc.letterReference}\n\n\n\n`;
+  
+  // Letter reference - Only show if user provided custom reference
+  if (convertedDoc.letterReference && 
+      convertedDoc.letterReference.trim() && 
+      !convertedDoc.letterReference.includes('Letter No.23AC/Decoy Checks dated')) {
+    documentText += `${convertedDoc.letterReference}\n\n\n\n`;
+  } else if (convertedDoc.letterReference && convertedDoc.letterReference.trim()) {
+    documentText += `${convertedDoc.letterReference}\n\n\n\n`;
+  }
+  
   documentText += `${convertedDoc.openingParagraph}\n\n\n\n`;
   
-  documentText += `SN\t\tDeficiencies/ Observations\t\tAction Taken By\n\n`;
+  // Table with proper column structure
+  const colWidths = {
+    sn: 6,
+    observations: 70,
+    actionTaken: 25,
+    photographs: 20
+  };
+  
+  // Table header
+  documentText += `${'S.No.'.padEnd(colWidths.sn)}${'Deficiencies/Observations'.padEnd(colWidths.observations)}${'Action Taken By'.padEnd(colWidths.actionTaken)}${'Photographs'}\n`;
+  documentText += `${'-'.repeat(colWidths.sn)}${'-'.repeat(colWidths.observations)}${'-'.repeat(colWidths.actionTaken)}${'-'.repeat(colWidths.photographs)}\n`;
   
   convertedDoc.observations.forEach((obs, index) => {
-    documentText += `${obs.serialNumber}.\n\n`;
-    documentText += `${obs.companyHeading}\n\n`;
+    // Start with SN and company heading
+    documentText += `${obs.serialNumber.padEnd(colWidths.sn)}`;
+    documentText += `${obs.companyHeading.substring(0, colWidths.observations - 2).padEnd(colWidths.observations)}`;
     
-    obs.observations.forEach(observation => {
-      documentText += `${observation}\n\n`;
+    // Action taken by (first line)
+    const actionLines = obs.actionTakenBy.split('\n').filter(line => line.trim());
+    documentText += `${(actionLines[0] || '').padEnd(colWidths.actionTaken)}`;
+    documentText += `${obs.photographs || 'As per annexure'}\n`;
+    
+    // Observations content
+    obs.observations.forEach((observation, obsIndex) => {
+      documentText += `${' '.repeat(colWidths.sn)}`;
+      
+      // Word wrap observations to fit column
+      const wrappedObs = wrapTextToWidth(observation, colWidths.observations - 2);
+      const obsLines = wrappedObs.split('\n');
+      
+      obsLines.forEach((obsLine, lineIndex) => {
+        if (lineIndex > 0) {
+          documentText += `${' '.repeat(colWidths.sn)}`;
+        }
+        documentText += `${obsLine.padEnd(colWidths.observations)}`;
+        
+        // Show remaining action taken lines
+        const actionLineIndex = obsIndex + lineIndex + 1;
+        if (actionLineIndex < actionLines.length) {
+          documentText += `${actionLines[actionLineIndex].padEnd(colWidths.actionTaken)}`;
+        } else {
+          documentText += `${' '.repeat(colWidths.actionTaken)}`;
+        }
+        
+        // Only show photographs on first row
+        if (obsIndex === 0 && lineIndex === 0) {
+          // Already added above
+        } else {
+          documentText += `${' '.repeat(colWidths.photographs)}`;
+        }
+        documentText += `\n`;
+      });
     });
     
-    documentText += `${obs.actionTakenBy}\n\n`;
+    // Add any remaining action taken lines
+    const totalObsLines = obs.observations.reduce((total, obs) => {
+      return total + wrapTextToWidth(obs, colWidths.observations - 2).split('\n').length;
+    }, 0);
     
-    if (obs.photographs) {
-      documentText += `Photographs: ${obs.photographs}\n\n`;
+    for (let i = totalObsLines + 1; i < actionLines.length; i++) {
+      documentText += `${' '.repeat(colWidths.sn)}`;
+      documentText += `${' '.repeat(colWidths.observations)}`;
+      documentText += `${actionLines[i].padEnd(colWidths.actionTaken)}`;
+      documentText += `${' '.repeat(colWidths.photographs)}\n`;
     }
     
-    documentText += `\n\n`;
+    // Separator between entries
+    if (index < convertedDoc.observations.length - 1) {
+      documentText += `${'-'.repeat(colWidths.sn)}${'-'.repeat(colWidths.observations)}${'-'.repeat(colWidths.actionTaken)}${'-'.repeat(colWidths.photographs)}\n`;
+    }
   });
   
   if (convertedDoc.closingNotes) {
@@ -388,11 +455,102 @@ export async function generateDocumentText(convertedDoc: ConvertedDocument): Pro
   }
   
   documentText += `\n\n\n`;
-  convertedDoc.signatures.forEach((signature, index) => {
-    documentText += `${signature}${index < convertedDoc.signatures.length - 1 ? '\t\t\t\t' : ''}`;
-  });
+  
+  // Format signatures with proper alignment
+  documentText += formatInspectorSignatures(convertedDoc.signatures);
   
   documentText += `\n\n\nCopy to:\nSr.DCM/PS: For kind information please.\nDCM/PS: For kind information please.\n\nFor images of the Decoy Check\n\n`;
   
   return documentText;
+}
+
+function wrapTextToWidth(text: string, width: number): string {
+  if (text.length <= width) return text;
+  
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+  
+  for (const word of words) {
+    if ((currentLine + word).length > width) {
+      if (currentLine) {
+        lines.push(currentLine.trim());
+        currentLine = word + ' ';
+      } else {
+        // Single word longer than width, force break
+        lines.push(word.substring(0, width));
+        currentLine = word.substring(width) + ' ';
+      }
+    } else {
+      currentLine += word + ' ';
+    }
+  }
+  
+  if (currentLine.trim()) {
+    lines.push(currentLine.trim());
+  }
+  
+  return lines.join('\n');
+}
+
+function formatInspectorSignatures(signatures: string[]): string {
+  if (!signatures || signatures.length === 0) {
+    return '';
+  }
+  
+  const pageWidth = 120;
+  let result = '';
+  
+  // Parse signatures into name/designation pairs
+  const inspectors = signatures.map(sig => {
+    const lines = sig.split('\n');
+    return {
+      name: lines[0] || '',
+      designation: lines[1] || ''
+    };
+  });
+  
+  if (inspectors.length === 1) {
+    // Single inspector - align right
+    const inspector = inspectors[0];
+    const rightPos = pageWidth - Math.max(inspector.name.length, inspector.designation.length);
+    result += `${' '.repeat(rightPos)}${inspector.name}\n`;
+    result += `${' '.repeat(rightPos)}${inspector.designation}`;
+  } else if (inspectors.length === 2) {
+    // Two inspectors - 1st right, 2nd middle
+    const first = inspectors[0];  // Right
+    const second = inspectors[1]; // Middle
+    
+    const middlePos = Math.floor(pageWidth / 2) - Math.floor(Math.max(second.name.length, second.designation.length) / 2);
+    const rightPos = pageWidth - Math.max(first.name.length, first.designation.length);
+    
+    // Names line
+    result += `${' '.repeat(middlePos)}${second.name}`;
+    result += `${' '.repeat(Math.max(1, rightPos - middlePos - second.name.length))}${first.name}\n`;
+    
+    // Designations line  
+    result += `${' '.repeat(middlePos)}${second.designation}`;
+    result += `${' '.repeat(Math.max(1, rightPos - middlePos - second.designation.length))}${first.designation}`;
+  } else if (inspectors.length >= 3) {
+    // Three or more inspectors - 1st right, 2nd middle, 3rd left
+    const first = inspectors[0];  // Right
+    const second = inspectors[1]; // Middle  
+    const third = inspectors[2];  // Left
+    
+    const leftPos = 0;
+    const middlePos = Math.floor(pageWidth / 2) - Math.floor(Math.max(second.name.length, second.designation.length) / 2);
+    const rightPos = pageWidth - Math.max(first.name.length, first.designation.length);
+    
+    // Names line
+    result += `${third.name}`;
+    result += `${' '.repeat(Math.max(1, middlePos - third.name.length))}${second.name}`;
+    result += `${' '.repeat(Math.max(1, rightPos - middlePos - second.name.length))}${first.name}\n`;
+    
+    // Designations line
+    result += `${third.designation}`;
+    result += `${' '.repeat(Math.max(1, middlePos - third.designation.length))}${second.designation}`;
+    result += `${' '.repeat(Math.max(1, rightPos - middlePos - second.designation.length))}${first.designation}`;
+  }
+  
+  return result;
 }
