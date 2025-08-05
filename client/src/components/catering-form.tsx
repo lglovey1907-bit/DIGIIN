@@ -416,7 +416,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       <EnhancedSmartSearch
                         value=""
                         onChange={(value) => {}}
-                        placeholder="Type 'SN 1' for S.No 1, or search by brand, flavour..."
+                        placeholder="Type 'cans', 'SN 1', brand name, or flavour..."
                         className="w-full"
                       />
                       <p className="text-xs text-green-600">

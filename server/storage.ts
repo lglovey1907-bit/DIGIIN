@@ -24,7 +24,7 @@ import {
   type InsertUserPermission,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, like, or, desc, ilike } from "drizzle-orm";
+import { eq, and, gte, lte, like, or, desc, ilike, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -242,18 +242,41 @@ export class DatabaseStorage implements IStorage {
 
   async searchShortlistedItems(query: string): Promise<ShortlistedItem[]> {
     const searchTerm = `%${query}%`;
+    const lowerQuery = query.toLowerCase().trim();
+    
+    // Build search conditions
+    const conditions = [
+      ilike(shortlistedItems.brand, searchTerm),
+      ilike(shortlistedItems.item, searchTerm),
+      ilike(shortlistedItems.flavour, searchTerm),
+      ilike(shortlistedItems.category, searchTerm),
+      ilike(shortlistedItems.quantity, searchTerm)
+    ];
+    
+    // Add category alias searches for common terms
+    if (lowerQuery.includes('can') || lowerQuery.includes('soft drink') || lowerQuery.includes('cold drink')) {
+      conditions.push(ilike(shortlistedItems.category, '%Aerated Drinks%'));
+    }
+    if (lowerQuery.includes('packet') || lowerQuery.includes('snack')) {
+      conditions.push(ilike(shortlistedItems.category, '%Namkeen%'));
+    }
+    if (lowerQuery.includes('biscuit') || lowerQuery.includes('cookie')) {
+      conditions.push(ilike(shortlistedItems.category, '%Biscuits%'));
+    }
+    if (lowerQuery.includes('chocolate') || lowerQuery.includes('candy')) {
+      conditions.push(ilike(shortlistedItems.category, '%Chocolates%'));
+    }
+    if (lowerQuery.includes('water') || lowerQuery.includes('bottle')) {
+      conditions.push(ilike(shortlistedItems.category, '%Water%'));
+    }
+    if (lowerQuery.includes('juice') || lowerQuery.includes('fruit drink')) {
+      conditions.push(ilike(shortlistedItems.category, '%Juice%'));
+    }
+    
     return await db
       .select()
       .from(shortlistedItems)
-      .where(
-        or(
-          ilike(shortlistedItems.brand, searchTerm),
-          ilike(shortlistedItems.item, searchTerm),
-          ilike(shortlistedItems.flavour, searchTerm),
-          ilike(shortlistedItems.category, searchTerm),
-          ilike(shortlistedItems.quantity, searchTerm)
-        )
-      )
+      .where(or(...conditions))
       .limit(20);
   }
 

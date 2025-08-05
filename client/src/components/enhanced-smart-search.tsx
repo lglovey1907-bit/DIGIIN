@@ -187,7 +187,8 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
             <div className="font-medium mb-1">Search Tips:</div>
             <div>• Type "SN 1" or just "1" for serial number</div>
             <div>• Type brand name like "Coca Cola" or "Neni Memi"</div>
-            <div>• Type flavour like "Aloo Bhujia" or category like "Namkeen"</div>
+            <div>• Type "cans" for soft drinks, "snacks" for namkeen</div>
+            <div>• Type flavour like "Aloo Bhujia" or category like "Biscuits"</div>
           </div>
         </div>
       )}
