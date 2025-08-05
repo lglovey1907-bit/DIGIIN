@@ -20,13 +20,13 @@ export function getSession() {
     secret: process.env.SESSION_SECRET || 'railway-inspection-secret',
     store: sessionStore,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true, // Allow session creation for anonymous users
     name: 'sessionId',
     cookie: {
-      httpOnly: true,
+      httpOnly: false, // Allow client-side access for debugging
       secure: false, // false for development
       maxAge: sessionTtl,
-      sameSite: 'lax',
+      sameSite: 'none', // Allow cross-origin cookies
       path: '/',
       domain: undefined // Let browser handle domain automatically
     },

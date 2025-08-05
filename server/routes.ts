@@ -150,6 +150,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes (local auth only)
   app.get('/api/auth/user', (req: any, res) => {
+    console.log('Auth check - Session ID:', req.sessionID);
+    console.log('Auth check - Cookies:', req.headers.cookie);
+    console.log('Auth check - Is Authenticated:', req.isAuthenticated());
+    console.log('Auth check - User:', req.user);
+    console.log('Auth check - Session:', req.session);
+    
     if (req.isAuthenticated() && req.user) {
       return res.json({
         id: req.user.id,
