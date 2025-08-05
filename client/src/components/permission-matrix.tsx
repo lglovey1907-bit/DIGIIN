@@ -111,10 +111,35 @@ export default function PermissionMatrix() {
   const queryClient = useQueryClient();
 
   // Fetch permission matrix data
-  const { data: matrixData, isLoading } = useQuery<PermissionMatrixData>({
+  const { data: matrixData, isLoading, error } = useQuery<PermissionMatrixData>({
     queryKey: ['/api/admin/permission-matrix'],
     enabled: true
   });
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Permission Matrix Error
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center py-8">
+          <div className="text-red-600 mb-4">
+            <Shield className="h-12 w-12 mx-auto mb-2" />
+            <p>Failed to load permission matrix data.</p>
+          </div>
+          <Button 
+            onClick={() => window.location.reload()}
+            variant="outline"
+          >
+            Reload Page
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Update permission mutation
   const updatePermissionMutation = useMutation({
@@ -152,6 +177,14 @@ export default function PermissionMatrix() {
       toast({
         title: "Permissions Initialized",
         description: "Default permissions have been created successfully.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error initializing permissions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to initialize permissions. Please try again.",
+        variant: "destructive",
       });
     }
   });
