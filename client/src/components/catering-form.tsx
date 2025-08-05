@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { SmartSearch } from "./smart-search";
+import { EnhancedSmartSearch } from "./enhanced-smart-search";
 import { Upload, Plus, Trash2, Utensils } from "lucide-react";
 
 interface CateringFormProps {
@@ -412,13 +413,16 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       Shortlisted Items (Approved)
                     </h6>
                     <div className="space-y-2">
-                      <SmartSearch
+                      <EnhancedSmartSearch
                         value=""
                         onChange={(value) => {}}
-                        placeholder="Search approved shortlisted items..."
+                        placeholder="Type 'SN 1' for S.No 1, or search by brand, flavour..."
                         className="w-full"
                       />
-                      <p className="text-xs text-green-600">Search and verify items from the approved shortlisted catalog (Reference tool - not included in report)</p>
+                      <p className="text-xs text-green-600">
+                        <strong>Smart Search Features:</strong> Search by S.No (e.g., "SN 1"), brand name, flavour, category, or quantity. 
+                        This is a reference tool - not included in report.
+                      </p>
                     </div>
                   </div>
 
