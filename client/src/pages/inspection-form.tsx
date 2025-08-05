@@ -20,7 +20,10 @@ import {
   LogOut,
   Save,
   CheckCircle,
-  Upload
+  Upload,
+  Plus,
+  Trash2,
+  X
 } from "lucide-react";
 import { stations } from "@/data/stations";
 import CateringForm from "@/components/catering-form";
@@ -33,21 +36,37 @@ const inspectionAreas = [
   { value: "parking", label: "Parking", icon: "🅿️" },
 ];
 
+interface InspectionArea {
+  type: string;
+  label: string;
+  observations: any;
+  id: string;
+}
+
 export default function InspectionForm() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    subject: string;
+    stationCode: string;
+    inspectionDate: string;
+    referenceNo: string;
+    inspectionAreas: InspectionArea[];
+    actionTaken: string;
+    inspectors: { name: string; designation: string; }[];
+  }>({
     subject: "",
     stationCode: "",
     inspectionDate: "",
     referenceNo: "",
-    area: "",
-    observations: {},
+    inspectionAreas: [], // Track selected areas with observations
     actionTaken: "",
     inspectors: [{ name: "", designation: "" }],
   });
+
+  const [selectedArea, setSelectedArea] = useState("");
 
   const createInspectionMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -94,6 +113,41 @@ export default function InspectionForm() {
       ...prev,
       inspectors: prev.inspectors.map((inspector, i) => 
         i === index ? { ...inspector, [field]: value } : inspector
+      )
+    }));
+  };
+
+  // Add area to inspection
+  const addArea = () => {
+    if (selectedArea && !formData.inspectionAreas.find(area => area.type === selectedArea)) {
+      const newArea = {
+        type: selectedArea,
+        label: inspectionAreas.find(area => area.value === selectedArea)?.label || selectedArea,
+        observations: {},
+        id: Date.now().toString()
+      };
+      setFormData(prev => ({
+        ...prev,
+        inspectionAreas: [...prev.inspectionAreas, newArea]
+      }));
+      setSelectedArea("");
+    }
+  };
+
+  // Remove area from inspection
+  const removeArea = (areaId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      inspectionAreas: prev.inspectionAreas.filter(area => area.id !== areaId)
+    }));
+  };
+
+  // Update area observations
+  const updateAreaObservations = (areaId: string, observations: any) => {
+    setFormData(prev => ({
+      ...prev,
+      inspectionAreas: prev.inspectionAreas.map(area => 
+        area.id === areaId ? { ...area, observations } : area
       )
     }));
   };
@@ -196,48 +250,169 @@ export default function InspectionForm() {
           </CardContent>
         </Card>
 
-        {/* Area of Inspection Selection */}
+        {/* Multi-Area Inspection Selection */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center">
               <MapPin className="mr-3 text-nr-blue" size={24} />
-              Area of Inspection
+              Areas of Inspection
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {inspectionAreas.map((area) => (
-                <Label key={area.value} className="cursor-pointer">
-                  <input
-                    type="radio"
-                    name="inspectionArea"
-                    value={area.value}
-                    checked={formData.area === area.value}
-                    onChange={(e) => setFormData(prev => ({ ...prev, area: e.target.value }))}
-                    className="peer hidden"
-                  />
-                  <div className="p-4 border-2 border-gray-200 rounded-lg text-center hover:border-nr-blue peer-checked:border-nr-blue peer-checked:bg-blue-50 transition-colors">
-                    <div className="text-2xl mb-2">{area.icon}</div>
-                    <p className="font-medium text-gray-700">{area.label}</p>
-                  </div>
-                </Label>
-              ))}
+            {/* Add New Area */}
+            <div className="mb-6">
+              <div className="flex gap-4 items-end">
+                <div className="flex-1">
+                  <Label htmlFor="newArea">Add Inspection Area</Label>
+                  <Select 
+                    value={selectedArea} 
+                    onValueChange={setSelectedArea}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select area to inspect" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {inspectionAreas
+                        .filter(area => !formData.inspectionAreas.find(inspArea => inspArea.type === area.value))
+                        .map((area) => (
+                          <SelectItem key={area.value} value={area.value}>
+                            {area.icon} {area.label}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={addArea}
+                  disabled={!selectedArea}
+                  className="bg-nr-blue hover:bg-blue-800"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Area
+                </Button>
+              </div>
             </div>
+
+            {/* Selected Areas List */}
+            {formData.inspectionAreas.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="font-medium text-nr-navy">Selected Areas:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {formData.inspectionAreas.map((area) => (
+                    <div key={area.id} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">
+                          {inspectionAreas.find(a => a.value === area.type)?.icon}
+                        </span>
+                        <span className="font-medium text-nr-navy">{area.label}</span>
+                      </div>
+                      <Button
+                        onClick={() => removeArea(area.id)}
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {formData.inspectionAreas.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <MapPin className="mx-auto mb-4 text-gray-400" size={48} />
+                <p>No areas selected for inspection yet.</p>
+                <p className="text-sm">Select areas above to begin your multi-area inspection.</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Area-specific forms */}
-        {formData.area === 'catering' && (
-          <CateringForm 
-            observations={formData.observations}
-            onObservationsChange={(observations) => 
-              setFormData(prev => ({ ...prev, observations }))
-            }
-          />
-        )}
+        {/* Multi-Area Forms */}
+        {formData.inspectionAreas.map((area) => (
+          <div key={area.id} className="relative">
+            {/* Area Header */}
+            <div className="mb-4 p-4 bg-gradient-to-r from-nr-blue to-blue-600 text-white rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">
+                    {inspectionAreas.find(a => a.value === area.type)?.icon}
+                  </span>
+                  <h3 className="text-xl font-semibold">{area.label} Inspection</h3>
+                </div>
+                <Button
+                  onClick={() => removeArea(area.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Area-specific forms */}
+            {area.type === 'catering' && (
+              <div className="border border-gray-200 rounded-b-lg">
+                <CateringForm 
+                  observations={area.observations}
+                  onObservationsChange={(observations) => 
+                    updateAreaObservations(area.id, observations)
+                  }
+                />
+              </div>
+            )}
+            
+            {area.type === 'sanitation' && (
+              <Card className="rounded-t-none border-t-0">
+                <CardContent className="p-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <p className="text-lg font-medium mb-2">Sanitation Inspection Form</p>
+                    <p>Form template will be available soon</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {area.type === 'parking' && (
+              <Card className="rounded-t-none border-t-0">
+                <CardContent className="p-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <p className="text-lg font-medium mb-2">Parking Inspection Form</p>
+                    <p>Form template will be available soon</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {area.type === 'publicity' && (
+              <Card className="rounded-t-none border-t-0">
+                <CardContent className="p-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <p className="text-lg font-medium mb-2">Publicity Inspection Form</p>
+                    <p>Form template will be available soon</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {area.type === 'uts_prs' && (
+              <Card className="rounded-t-none border-t-0">
+                <CardContent className="p-6">
+                  <div className="text-center py-12 text-gray-500">
+                    <p className="text-lg font-medium mb-2">UTS/PRS Inspection Form</p>
+                    <p>Form template will be available soon</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        ))}
 
         {/* Action Taken */}
-        {formData.area && (
+        {formData.inspectionAreas.length > 0 && (
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Action Taken</CardTitle>
