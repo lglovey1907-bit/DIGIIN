@@ -20,7 +20,10 @@ import {
   Eye,
   TrendingUp,
   Edit,
-  Trash2
+  Trash2,
+  FileClock,
+  FileCheck,
+  FileX
 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -64,6 +67,19 @@ interface Inspection {
   inspectionDate: string;
 }
 
+interface ActionRequest {
+  id: string;
+  inspectionId: string;
+  requestedBy: string;
+  actionType: 'edit' | 'delete';
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewComments?: string;
+  createdAt: string;
+}
+
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
@@ -84,6 +100,10 @@ export default function AdminDashboard() {
 
   const { data: inspections = [] } = useQuery<Inspection[]>({
     queryKey: ["/api/inspections"],
+  });
+
+  const { data: actionRequests = [] } = useQuery<ActionRequest[]>({
+    queryKey: ["/api/inspection-action-requests"],
   });
 
   const approveUserMutation = useMutation({
@@ -145,6 +165,60 @@ export default function AdminDashboard() {
     },
   });
 
+  const approveActionRequestMutation = useMutation({
+    mutationFn: async ({ requestId, comments }: { requestId: string; comments?: string }) => {
+      const response = await fetch(`/api/inspection-action-requests/${requestId}/approve`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comments }),
+      });
+      if (!response.ok) throw new Error('Failed to approve action request');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inspection-action-requests"] });
+      toast({
+        title: "Request Approved",
+        description: "Action request has been approved successfully.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Approval Failed",
+        description: error.message || "Failed to approve action request",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectActionRequestMutation = useMutation({
+    mutationFn: async ({ requestId, comments }: { requestId: string; comments?: string }) => {
+      const response = await fetch(`/api/inspection-action-requests/${requestId}/reject`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comments }),
+      });
+      if (!response.ok) throw new Error('Failed to reject action request');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inspection-action-requests"] });
+      toast({
+        title: "Request Rejected",
+        description: "Action request has been rejected.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Rejection Failed",
+        description: error.message || "Failed to reject action request",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogout = async () => {
     await logout();
   };
@@ -157,6 +231,18 @@ export default function AdminDashboard() {
 
   const handleEditInspection = (inspectionId: string) => {
     window.location.href = `/inspection?edit=${inspectionId}`;
+  };
+
+  const handleApproveRequest = (requestId: string) => {
+    const comments = prompt('Optional: Add comments for this approval:');
+    approveActionRequestMutation.mutate({ requestId, comments: comments || undefined });
+  };
+
+  const handleRejectRequest = (requestId: string) => {
+    const comments = prompt('Please provide a reason for rejecting this request:');
+    if (comments && comments.trim()) {
+      rejectActionRequestMutation.mutate({ requestId, comments });
+    }
   };
 
   const handleDownloadPDF = async (inspectionId: string) => {
@@ -253,7 +339,7 @@ export default function AdminDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
@@ -309,6 +395,20 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center mr-4">
+                  <FileClock className="text-white" size={24} />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-nr-navy">Pending Actions</h3>
+                  <p className="text-2xl font-bold text-orange-600">{actionRequests.filter(r => r.status === 'pending').length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Dashboard Tabs */}
@@ -318,7 +418,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="cmis">CMI Management</TabsTrigger>
             <TabsTrigger value="approvals">User Approvals</TabsTrigger>
             <TabsTrigger value="permissions">Permissions</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="actions">Action Requests</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -579,61 +679,110 @@ export default function AdminDashboard() {
             <PermissionMatrix />
           </TabsContent>
 
-          {/* Reports Tab */}
-          <TabsContent value="reports" className="space-y-6">
+          {/* Action Requests Tab */}
+          <TabsContent value="actions" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <BarChart3 className="mr-2 text-nr-blue" size={20} />
-                  System Reports & Analytics
+                  <FileClock className="mr-2 text-orange-600" size={20} />
+                  Inspection Action Requests
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {actionRequests.length > 0 ? (
                   <div className="space-y-4">
-                    <h3 className="font-semibold text-nr-navy">Performance Summary</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Total CMIs:</span>
-                        <span className="font-medium">{cmis.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Total Inspections:</span>
-                        <span className="font-medium">{inspections.length}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Completion Rate:</span>
-                        <span className="font-medium text-green-600">
-                          {totalAssignments > 0 ? Math.round((completedInspections / totalAssignments) * 100) : 0}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Pending Approvals:</span>
-                        <span className="font-medium text-yellow-600">{pendingUsers.length}</span>
-                      </div>
-                    </div>
+                    {actionRequests.map((request) => {
+                      const inspection = inspections.find(i => i.id === request.inspectionId);
+                      const requestUser = [...cmis, ...(user as any)?.name ? [user] : []].find(u => u.id === request.requestedBy);
+                      
+                      return (
+                        <div 
+                          key={request.id} 
+                          className={`p-4 border rounded-lg ${
+                            request.status === 'pending' ? 'border-orange-200 bg-orange-50' :
+                            request.status === 'approved' ? 'border-green-200 bg-green-50' :
+                            'border-red-200 bg-red-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Badge 
+                                  variant={
+                                    request.actionType === 'edit' ? 'default' : 'destructive'
+                                  }
+                                >
+                                  {request.actionType.toUpperCase()}
+                                </Badge>
+                                <Badge 
+                                  variant={
+                                    request.status === 'pending' ? 'secondary' :
+                                    request.status === 'approved' ? 'outline' : 'destructive'
+                                  }
+                                >
+                                  {request.status.toUpperCase()}
+                                </Badge>
+                              </div>
+                              
+                              <h3 className="font-semibold text-nr-navy mb-1">
+                                Request by: {requestUser?.name || 'Unknown User'}
+                              </h3>
+                              
+                              <p className="text-sm text-gray-600 mb-2">
+                                <strong>Inspection:</strong> {inspection?.subject || 'Inspection not found'}
+                              </p>
+                              
+                              <p className="text-sm text-gray-600 mb-2">
+                                <strong>Reason:</strong> {request.reason}
+                              </p>
+                              
+                              {request.reviewComments && (
+                                <p className="text-sm text-gray-600 mb-2">
+                                  <strong>Admin Comments:</strong> {request.reviewComments}
+                                </p>
+                              )}
+                              
+                              <p className="text-xs text-gray-500">
+                                Requested: {new Date(request.createdAt).toLocaleString()}
+                                {request.reviewedAt && (
+                                  <> • Reviewed: {new Date(request.reviewedAt).toLocaleString()}</>
+                                )}
+                              </p>
+                            </div>
+                            
+                            {request.status === 'pending' && (
+                              <div className="flex items-center space-x-2">
+                                <Button
+                                  onClick={() => handleApproveRequest(request.id)}
+                                  disabled={approveActionRequestMutation.isPending}
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                >
+                                  <FileCheck size={14} className="mr-1" />
+                                  Approve
+                                </Button>
+                                <Button
+                                  onClick={() => handleRejectRequest(request.id)}
+                                  disabled={rejectActionRequestMutation.isPending}
+                                  size="sm"
+                                  variant="destructive"
+                                >
+                                  <FileX size={14} className="mr-1" />
+                                  Reject
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-nr-navy">Quick Actions</h3>
-                    <div className="space-y-2">
-                      <Button className="w-full justify-start" variant="outline">
-                        <Download size={16} className="mr-2" />
-                        Export All Reports
-                      </Button>
-                      <Button className="w-full justify-start" variant="outline">
-                        <BarChart3 size={16} className="mr-2" />
-                        Generate Analytics
-                      </Button>
-                      <Link href="/register">
-                        <Button className="w-full justify-start bg-nr-blue hover:bg-blue-800">
-                          <Plus size={16} className="mr-2" />
-                          Add New Commercial Inspector
-                        </Button>
-                      </Link>
-                    </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <FileClock className="mx-auto text-gray-400 mb-4" size={48} />
+                    <p className="text-gray-500">No action requests</p>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

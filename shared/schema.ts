@@ -157,12 +157,33 @@ export const userPermissions = pgTable("user_permissions", {
   pk: primaryKey({ columns: [table.userId, table.permissionId] })
 }));
 
+// Inspection Action Requests table (for edit/delete approval workflow)
+export const inspectionActionRequests = pgTable("inspection_action_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  inspectionId: varchar("inspection_id").notNull(),
+  requestedBy: varchar("requested_by").notNull(), // User who requested the action
+  actionType: varchar("action_type").notNull(), // 'edit' or 'delete'
+  reason: text("reason").notNull(), // Justification for the action
+  status: varchar("status").default("pending"), // 'pending', 'approved', 'rejected'
+  reviewedBy: varchar("reviewed_by"), // Admin who reviewed the request
+  reviewedAt: timestamp("reviewed_at"),
+  reviewComments: text("review_comments"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Permission schemas
 export const insertPermissionSchema = createInsertSchema(permissions).omit({
   id: true,
   createdAt: true,
 });
 export const insertUserPermissionSchema = createInsertSchema(userPermissions);
+
+export const insertInspectionActionRequestSchema = createInsertSchema(inspectionActionRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 
 // Authentication schemas
 export const registerUserSchema = z.object({
@@ -196,3 +217,5 @@ export type InsertPermission = z.infer<typeof insertPermissionSchema>;
 export type Permission = typeof permissions.$inferSelect;
 export type InsertUserPermission = z.infer<typeof insertUserPermissionSchema>;
 export type UserPermission = typeof userPermissions.$inferSelect;
+export type InsertInspectionActionRequest = z.infer<typeof insertInspectionActionRequestSchema>;
+export type InspectionActionRequest = typeof inspectionActionRequests.$inferSelect;

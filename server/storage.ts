@@ -6,6 +6,7 @@ import {
   fileUploads,
   permissions,
   userPermissions,
+  inspectionActionRequests,
   type User,
   type UpsertUser,
   type RegisterUser,
@@ -22,6 +23,8 @@ import {
   type InsertPermission,
   type UserPermission,
   type InsertUserPermission,
+  type InspectionActionRequest,
+  type InsertInspectionActionRequest,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, like, or, desc, ilike, sql } from "drizzle-orm";
@@ -74,6 +77,14 @@ export interface IStorage {
     permissions: Permission[];
     userPermissions: UserPermission[];
   }>;
+
+  // Inspection Action Request operations
+  createInspectionActionRequest(request: InsertInspectionActionRequest): Promise<InspectionActionRequest>;
+  getInspectionActionRequests(status?: string): Promise<InspectionActionRequest[]>;
+  getUserActionRequests(userId: string): Promise<InspectionActionRequest[]>;
+  approveActionRequest(requestId: string, reviewedBy: string, comments?: string): Promise<InspectionActionRequest>;
+  rejectActionRequest(requestId: string, reviewedBy: string, comments?: string): Promise<InspectionActionRequest>;
+  getActionRequest(requestId: string): Promise<InspectionActionRequest | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -354,6 +365,75 @@ export class DatabaseStorage implements IStorage {
       permissions: allPermissions,
       userPermissions: allUserPermissions
     };
+  }
+
+  // Inspection Action Request operations
+  async createInspectionActionRequest(request: InsertInspectionActionRequest): Promise<InspectionActionRequest> {
+    const [actionRequest] = await db
+      .insert(inspectionActionRequests)
+      .values(request)
+      .returning();
+    return actionRequest;
+  }
+
+  async getInspectionActionRequests(status?: string): Promise<InspectionActionRequest[]> {
+    if (status) {
+      return await db
+        .select()
+        .from(inspectionActionRequests)
+        .where(eq(inspectionActionRequests.status, status))
+        .orderBy(desc(inspectionActionRequests.createdAt));
+    }
+    return await db
+      .select()
+      .from(inspectionActionRequests)
+      .orderBy(desc(inspectionActionRequests.createdAt));
+  }
+
+  async getUserActionRequests(userId: string): Promise<InspectionActionRequest[]> {
+    return await db
+      .select()
+      .from(inspectionActionRequests)
+      .where(eq(inspectionActionRequests.requestedBy, userId))
+      .orderBy(desc(inspectionActionRequests.createdAt));
+  }
+
+  async approveActionRequest(requestId: string, reviewedBy: string, comments?: string): Promise<InspectionActionRequest> {
+    const [actionRequest] = await db
+      .update(inspectionActionRequests)
+      .set({
+        status: 'approved',
+        reviewedBy,
+        reviewedAt: new Date(),
+        reviewComments: comments,
+        updatedAt: new Date(),
+      })
+      .where(eq(inspectionActionRequests.id, requestId))
+      .returning();
+    return actionRequest;
+  }
+
+  async rejectActionRequest(requestId: string, reviewedBy: string, comments?: string): Promise<InspectionActionRequest> {
+    const [actionRequest] = await db
+      .update(inspectionActionRequests)
+      .set({
+        status: 'rejected',
+        reviewedBy,
+        reviewedAt: new Date(),
+        reviewComments: comments,
+        updatedAt: new Date(),
+      })
+      .where(eq(inspectionActionRequests.id, requestId))
+      .returning();
+    return actionRequest;
+  }
+
+  async getActionRequest(requestId: string): Promise<InspectionActionRequest | undefined> {
+    const [actionRequest] = await db
+      .select()
+      .from(inspectionActionRequests)
+      .where(eq(inspectionActionRequests.id, requestId));
+    return actionRequest;
   }
 }
 

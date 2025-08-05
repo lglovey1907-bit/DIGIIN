@@ -131,15 +131,71 @@ export default function CMIDashboard() {
     refreshMutation.mutate();
   };
 
-  const handleDeleteInspection = (inspectionId: string) => {
-    if (window.confirm('Are you sure you want to delete this inspection? This action cannot be undone.')) {
-      deleteMutation.mutate(inspectionId);
+  const handleDeleteInspection = (inspection: Inspection) => {
+    if (inspection.status === 'draft') {
+      // Direct deletion for draft inspections
+      if (window.confirm('Are you sure you want to delete this draft inspection? This action cannot be undone.')) {
+        deleteMutation.mutate(inspection.id);
+      }
+    } else {
+      // For submitted inspections, create a deletion request
+      const reason = prompt('Please provide a reason for requesting to delete this submitted inspection:');
+      if (reason && reason.trim()) {
+        createActionRequestMutation.mutate({
+          inspectionId: inspection.id,
+          actionType: 'delete',
+          reason: reason.trim()
+        });
+      }
     }
   };
 
-  const handleEditInspection = (inspectionId: string) => {
-    // Navigate to inspection form with the inspection ID for editing
-    window.location.href = `/inspection?edit=${inspectionId}`;
+  const createActionRequestMutation = useMutation({
+    mutationFn: async ({ inspectionId, actionType, reason }: { inspectionId: string; actionType: 'edit' | 'delete'; reason: string }) => {
+      const response = await fetch('/api/inspection-action-requests', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inspectionId, actionType, reason }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to create action request: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/inspection-action-requests'] });
+      toast({
+        title: "Success",
+        description: "Action request submitted successfully. Waiting for administrator approval.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create action request",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditInspection = (inspection: Inspection) => {
+    if (inspection.status === 'draft') {
+      // Navigate to inspection form with the inspection ID for editing
+      window.location.href = `/inspection?edit=${inspection.id}`;
+    } else {
+      // For submitted inspections, create an edit request
+      const reason = prompt('Please provide a reason for requesting to edit this submitted inspection:');
+      if (reason && reason.trim()) {
+        createActionRequestMutation.mutate({
+          inspectionId: inspection.id,
+          actionType: 'edit',
+          reason: reason.trim()
+        });
+      }
+    }
   };
 
   const handleDownloadPDF = async (inspectionId: string) => {
@@ -451,31 +507,27 @@ export default function CMIDashboard() {
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        {/* Edit button - only show for draft inspections */}
-                        {inspection.status === 'draft' && (
-                          <Button
-                            onClick={() => handleEditInspection(inspection.id)}
-                            size="sm"
-                            variant="outline"
-                            className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
-                          >
-                            <Edit size={14} />
-                            <span>Edit</span>
-                          </Button>
-                        )}
+                        {/* Edit button - show for all inspections, but behavior differs */}
+                        <Button
+                          onClick={() => handleEditInspection(inspection)}
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+                        >
+                          <Edit size={14} />
+                          <span>{inspection.status === 'draft' ? 'Edit' : 'Request Edit'}</span>
+                        </Button>
                         
-                        {/* Delete button - only show for draft inspections */}
-                        {inspection.status === 'draft' && (
-                          <Button
-                            onClick={() => handleDeleteInspection(inspection.id)}
-                            size="sm"
-                            variant="outline"
-                            className="flex items-center space-x-1 text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 size={14} />
-                            <span>Delete</span>
-                          </Button>
-                        )}
+                        {/* Delete button - show for all inspections, but behavior differs */}
+                        <Button
+                          onClick={() => handleDeleteInspection(inspection)}
+                          size="sm"
+                          variant="outline"
+                          className="flex items-center space-x-1 text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 size={14} />
+                          <span>{inspection.status === 'draft' ? 'Delete' : 'Request Delete'}</span>
+                        </Button>
                         
                         <Button
                           onClick={() => handleDownloadPDF(inspection.id)}

@@ -417,9 +417,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
       
-      const updates = insertInspectionSchema.partial().parse(req.body);
-      const updated = await storage.updateInspection(req.params.id, updates);
-      res.json(updated);
+      // Allow direct editing of draft inspections
+      if (inspection.status === 'draft') {
+        const updates = insertInspectionSchema.partial().parse(req.body);
+        const updated = await storage.updateInspection(req.params.id, updates);
+        return res.json(updated);
+      }
+      
+      // For submitted/completed inspections, check if there's an approved edit request
+      if (inspection.status !== 'draft') {
+        const actionRequests = await storage.getInspectionActionRequests('approved');
+        const approvedRequest = actionRequests.find(request => 
+          request.inspectionId === req.params.id && 
+          request.actionType === 'edit' && 
+          request.requestedBy === userId
+        );
+        
+        if (!approvedRequest) {
+          return res.status(400).json({ 
+            message: "Submitted inspections require administrator approval for editing. Please create an edit request." 
+          });
+        }
+        
+        // Allow the edit
+        const updates = insertInspectionSchema.partial().parse(req.body);
+        const updated = await storage.updateInspection(req.params.id, updates);
+        return res.json(updated);
+      }
+      
     } catch (error) {
       console.error("Error updating inspection:", error);
       res.status(500).json({ message: "Failed to update inspection" });
@@ -441,11 +466,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
       
-      await storage.deleteInspection(req.params.id);
-      res.json({ message: "Inspection deleted successfully" });
+      // Allow direct deletion of draft inspections
+      if (inspection.status === 'draft') {
+        await storage.deleteInspection(req.params.id);
+        return res.json({ message: "Inspection deleted successfully" });
+      }
+      
+      // For submitted/completed inspections, check if there's an approved deletion request
+      if (inspection.status !== 'draft') {
+        const actionRequests = await storage.getInspectionActionRequests('approved');
+        const approvedRequest = actionRequests.find(request => 
+          request.inspectionId === req.params.id && 
+          request.actionType === 'delete' && 
+          request.requestedBy === userId
+        );
+        
+        if (!approvedRequest) {
+          return res.status(400).json({ 
+            message: "Submitted inspections require administrator approval for deletion. Please create a deletion request." 
+          });
+        }
+        
+        // Delete the inspection
+        await storage.deleteInspection(req.params.id);
+        return res.json({ message: "Inspection deleted successfully with administrator approval" });
+      }
+      
     } catch (error) {
       console.error("Error deleting inspection:", error);
       res.status(500).json({ message: "Failed to delete inspection" });
+    }
+  });
+
+  // Inspection Action Request routes
+  app.post('/api/inspection-action-requests', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { inspectionId, actionType, reason } = req.body;
+      
+      // Validate required fields
+      if (!inspectionId || !actionType || !reason) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+      
+      // Validate action type
+      if (!['edit', 'delete'].includes(actionType)) {
+        return res.status(400).json({ message: "Invalid action type" });
+      }
+      
+      // Check if inspection exists and user has permission
+      const inspection = await storage.getInspection(inspectionId);
+      if (!inspection) {
+        return res.status(404).json({ message: "Inspection not found" });
+      }
+      
+      if (inspection.userId !== userId) {
+        return res.status(403).json({ message: "You can only request actions on your own inspections" });
+      }
+      
+      // Check if inspection is submitted (can't request actions on drafts)
+      if (inspection.status === 'draft') {
+        return res.status(400).json({ message: "Draft inspections can be directly edited or deleted" });
+      }
+      
+      // Check if there's already a pending request for this inspection and action
+      const existingRequests = await storage.getUserActionRequests(userId);
+      const pendingRequest = existingRequests.find(request => 
+        request.inspectionId === inspectionId && 
+        request.actionType === actionType && 
+        request.status === 'pending'
+      );
+      
+      if (pendingRequest) {
+        return res.status(400).json({ message: `A ${actionType} request for this inspection is already pending` });
+      }
+      
+      const actionRequest = await storage.createInspectionActionRequest({
+        inspectionId,
+        requestedBy: userId,
+        actionType,
+        reason
+      });
+      
+      res.json(actionRequest);
+    } catch (error) {
+      console.error("Error creating action request:", error);
+      res.status(500).json({ message: "Failed to create action request" });
+    }
+  });
+
+  app.get('/api/inspection-action-requests', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      const { status } = req.query;
+      
+      let requests;
+      if (user?.role === 'admin') {
+        // Admins can see all requests
+        requests = await storage.getInspectionActionRequests(status as string);
+      } else {
+        // Users can only see their own requests
+        requests = await storage.getUserActionRequests(userId);
+        if (status) {
+          requests = requests.filter(request => request.status === status);
+        }
+      }
+      
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching action requests:", error);
+      res.status(500).json({ message: "Failed to fetch action requests" });
+    }
+  });
+
+  app.put('/api/inspection-action-requests/:id/approve', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Only admins can approve requests
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Only administrators can approve requests" });
+      }
+      
+      const requestId = req.params.id;
+      const { comments } = req.body;
+      
+      const actionRequest = await storage.getActionRequest(requestId);
+      if (!actionRequest) {
+        return res.status(404).json({ message: "Action request not found" });
+      }
+      
+      if (actionRequest.status !== 'pending') {
+        return res.status(400).json({ message: "Only pending requests can be approved" });
+      }
+      
+      const updatedRequest = await storage.approveActionRequest(requestId, userId, comments);
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Error approving action request:", error);
+      res.status(500).json({ message: "Failed to approve action request" });
+    }
+  });
+
+  app.put('/api/inspection-action-requests/:id/reject', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Only admins can reject requests
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Only administrators can reject requests" });
+      }
+      
+      const requestId = req.params.id;
+      const { comments } = req.body;
+      
+      const actionRequest = await storage.getActionRequest(requestId);
+      if (!actionRequest) {
+        return res.status(404).json({ message: "Action request not found" });
+      }
+      
+      if (actionRequest.status !== 'pending') {
+        return res.status(400).json({ message: "Only pending requests can be rejected" });
+      }
+      
+      const updatedRequest = await storage.rejectActionRequest(requestId, userId, comments);
+      res.json(updatedRequest);
+    } catch (error) {
+      console.error("Error rejecting action request:", error);
+      res.status(500).json({ message: "Failed to reject action request" });
     }
   });
 
