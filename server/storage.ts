@@ -24,7 +24,7 @@ import {
   type InsertUserPermission,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, like, or, desc } from "drizzle-orm";
+import { eq, and, gte, lte, like, or, desc, ilike } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface IStorage {
@@ -247,10 +247,11 @@ export class DatabaseStorage implements IStorage {
       .from(shortlistedItems)
       .where(
         or(
-          like(shortlistedItems.brand, searchTerm),
-          like(shortlistedItems.item, searchTerm),
-          like(shortlistedItems.flavour, searchTerm),
-          like(shortlistedItems.category, searchTerm)
+          ilike(shortlistedItems.brand, searchTerm),
+          ilike(shortlistedItems.item, searchTerm),
+          ilike(shortlistedItems.flavour, searchTerm),
+          ilike(shortlistedItems.category, searchTerm),
+          ilike(shortlistedItems.quantity, searchTerm)
         )
       )
       .limit(20);
