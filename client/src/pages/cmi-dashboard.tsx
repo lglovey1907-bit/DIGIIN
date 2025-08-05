@@ -6,7 +6,7 @@ import { NorthernRailwayLogo } from "@/components/northern-railway-logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { Calendar, Download, Clock, CheckCircle, AlertTriangle, Plus, LogOut, BarChart3, FileText, RefreshCw } from "lucide-react";
+import { Calendar, Download, Clock, CheckCircle, AlertTriangle, Plus, LogOut, BarChart3, FileText, RefreshCw, Edit, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { ReportGenerator } from "@/components/report-generator";
 import AILayoutSuggestions from "@/components/ai-layout-suggestions";
@@ -81,6 +81,39 @@ export default function CMIDashboard() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (inspectionId: string) => {
+      const response = await fetch(`/api/inspections/${inspectionId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Delete failed: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Inspection Deleted",
+        description: "Inspection has been successfully deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete inspection",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -96,6 +129,17 @@ export default function CMIDashboard() {
 
   const handleRefreshReports = () => {
     refreshMutation.mutate();
+  };
+
+  const handleDeleteInspection = (inspectionId: string) => {
+    if (window.confirm('Are you sure you want to delete this inspection? This action cannot be undone.')) {
+      deleteMutation.mutate(inspectionId);
+    }
+  };
+
+  const handleEditInspection = (inspectionId: string) => {
+    // Navigate to inspection form with the inspection ID for editing
+    window.location.href = `/inspection?edit=${inspectionId}`;
   };
 
   const handleDownloadPDF = async (inspectionId: string) => {
@@ -407,6 +451,32 @@ export default function CMIDashboard() {
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
+                        {/* Edit button - only show for draft inspections */}
+                        {inspection.status === 'draft' && (
+                          <Button
+                            onClick={() => handleEditInspection(inspection.id)}
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+                          >
+                            <Edit size={14} />
+                            <span>Edit</span>
+                          </Button>
+                        )}
+                        
+                        {/* Delete button - only show for draft inspections */}
+                        {inspection.status === 'draft' && (
+                          <Button
+                            onClick={() => handleDeleteInspection(inspection.id)}
+                            size="sm"
+                            variant="outline"
+                            className="flex items-center space-x-1 text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 size={14} />
+                            <span>Delete</span>
+                          </Button>
+                        )}
+                        
                         <Button
                           onClick={() => handleDownloadPDF(inspection.id)}
                           size="sm"

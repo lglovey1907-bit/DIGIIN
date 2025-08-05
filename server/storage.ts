@@ -44,6 +44,7 @@ export interface IStorage {
   createInspection(inspection: InsertInspection): Promise<Inspection>;
   getInspection(id: string): Promise<Inspection | undefined>;
   updateInspection(id: string, updates: Partial<InsertInspection>): Promise<Inspection>;
+  deleteInspection(id: string): Promise<void>;
   getUserInspections(userId: string): Promise<Inspection[]>;
   getAllInspections(): Promise<Inspection[]>;
   
@@ -182,6 +183,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(inspections.id, id))
       .returning();
     return updated;
+  }
+
+  async deleteInspection(id: string): Promise<void> {
+    await db
+      .delete(inspections)
+      .where(eq(inspections.id, id));
   }
 
   async getUserInspections(userId: string): Promise<Inspection[]> {

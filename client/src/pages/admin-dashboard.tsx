@@ -18,7 +18,9 @@ import {
   LogOut,
   Plus,
   Eye,
-  TrendingUp
+  TrendingUp,
+  Edit,
+  Trash2
 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -110,8 +112,51 @@ export default function AdminDashboard() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (inspectionId: string) => {
+      const response = await fetch(`/api/inspections/${inspectionId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Delete failed: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Inspection Deleted",
+        description: "Inspection has been successfully deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete inspection",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleDeleteInspection = (inspectionId: string) => {
+    if (window.confirm('Are you sure you want to delete this inspection? This action cannot be undone.')) {
+      deleteMutation.mutate(inspectionId);
+    }
+  };
+
+  const handleEditInspection = (inspectionId: string) => {
+    window.location.href = `/inspection?edit=${inspectionId}`;
   };
 
   const handleDownloadPDF = async (inspectionId: string) => {
@@ -321,6 +366,30 @@ export default function AdminDashboard() {
                           </p>
                         </div>
                         <div className="flex items-center space-x-2">
+                          {/* Edit button - only show for draft inspections */}
+                          {inspection.status === 'draft' && (
+                            <Button
+                              onClick={() => handleEditInspection(inspection.id)}
+                              size="sm"
+                              variant="outline"
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              <Edit size={14} />
+                            </Button>
+                          )}
+                          
+                          {/* Delete button - only show for draft inspections */}
+                          {inspection.status === 'draft' && (
+                            <Button
+                              onClick={() => handleDeleteInspection(inspection.id)}
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          )}
+                          
                           <Button
                             onClick={() => handleDownloadPDF(inspection.id)}
                             size="sm"
@@ -412,13 +481,35 @@ export default function AdminDashboard() {
                                       {inspection.stationCode} • {new Date(inspection.inspectionDate).toLocaleDateString()}
                                     </p>
                                   </div>
-                                  <Button
-                                    onClick={() => handleDownloadPDF(inspection.id)}
-                                    size="sm"
-                                    variant="ghost"
-                                  >
-                                    <Download size={14} />
-                                  </Button>
+                                  <div className="flex items-center space-x-1">
+                                    {inspection.status === 'draft' && (
+                                      <>
+                                        <Button
+                                          onClick={() => handleEditInspection(inspection.id)}
+                                          size="sm"
+                                          variant="ghost"
+                                          className="text-blue-600 hover:text-blue-800"
+                                        >
+                                          <Edit size={14} />
+                                        </Button>
+                                        <Button
+                                          onClick={() => handleDeleteInspection(inspection.id)}
+                                          size="sm"
+                                          variant="ghost"
+                                          className="text-red-600 hover:text-red-800"
+                                        >
+                                          <Trash2 size={14} />
+                                        </Button>
+                                      </>
+                                    )}
+                                    <Button
+                                      onClick={() => handleDownloadPDF(inspection.id)}
+                                      size="sm"
+                                      variant="ghost"
+                                    >
+                                      <Download size={14} />
+                                    </Button>
+                                  </div>
                                 </div>
                               ))}
                           </div>

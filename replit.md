@@ -117,7 +117,14 @@ Preferred communication style: Simple, everyday language.
 - **Multi-File Support**: Handles single or multiple uploaded images with clear, underlined filename references
 - **Reliable Document Generation**: Ensures Word documents always generate successfully without corruption across all Microsoft Office versions
 - **Consistent Formatting**: Professional photo reference format that works reliably in Word, LibreOffice, and Google Docs
-- **Inspector Signature Table**: Dynamic formatting at document end - single inspector displays name and designation as stacked paragraphs (right-aligned), two or more inspectors use multi-column borderless table with each column containing stacked name/designation (all center-aligned), column widths automatically calculated based on number of inspectors, no heading, fixed to properly pass inspector data from database to document converter
+- **Inspector Signature Table**: Dynamic formatting at document end - single inspector displays name and designation as stacked paragraphs (right-aligned), two or more inspectors use multi-column borderless table with each column containing stacked name/designation (all center-aligned), column widths automatically calculated based on number of inspectors, no heading, comprehensive border removal (table-level and inside borders set to NONE), fixed to properly pass inspector data from database to document converter
+- **Inspection Management**: Full CRUD operations for inspections with delete and edit functionality
+  - Delete functionality: Available for draft inspections with confirmation dialog and proper authorization checks
+  - Edit functionality: Available for draft inspections, redirects to inspection form with edit mode
+  - Role-based access: Both CMI and admin users can delete/edit their own inspections or admin can manage all
+  - UI Integration: Edit and delete buttons appear in both CMI and admin dashboards for draft inspections only
+  - Backend API: DELETE /api/inspections/:id route with proper authentication and authorization
+  - Database operations: deleteInspection method in storage layer with soft delete protection
 - **Professional Language**: Transforms technical inspection data into formal Railway correspondence language
 - **Microsoft Office Compatibility**: Native .docx format ensures seamless opening in Microsoft Word, LibreOffice, and Google Docs
 - **Image Processing Debugging**: Comprehensive logging and error handling for image embedding troubleshooting

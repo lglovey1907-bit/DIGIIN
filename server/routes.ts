@@ -421,6 +421,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/inspections/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const inspection = await storage.getInspection(req.params.id);
+      if (!inspection) {
+        return res.status(404).json({ message: "Inspection not found" });
+      }
+      
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Check if user has permission to delete this inspection
+      if (user?.role !== 'admin' && inspection.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      await storage.deleteInspection(req.params.id);
+      res.json({ message: "Inspection deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting inspection:", error);
+      res.status(500).json({ message: "Failed to delete inspection" });
+    }
+  });
+
   // AI-powered layout suggestions routes
   app.post('/api/inspections/:id/ai-suggestions', isAuthenticated, async (req: any, res) => {
     try {
