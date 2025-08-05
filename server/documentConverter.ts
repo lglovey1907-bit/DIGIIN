@@ -1105,60 +1105,66 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
           spacing: { after: 300 }
         }),
 
-        // Create inspector signature table - 2 rows format with names then designations
+        // Create inspector signature table - rows = number of inspectors, 2 columns (Name, Designation)
         new Table({
-          rows: [
-            // First row - Names
-            new TableRow({
-              children: convertedDoc.signatures.map((signature, index) => {
-                const lines = signature.split('\n');
-                const name = lines[0] || '';
-                
-                return new TableCell({
+          rows: convertedDoc.signatures.map((signature, index) => {
+            const lines = signature.split('\n');
+            const name = lines[0] || '';
+            const designation = lines[1] || '';
+            
+            // Determine alignment based on inspector order
+            let alignment = AlignmentType.CENTER;
+            if (convertedDoc.signatures.length === 1) {
+              alignment = AlignmentType.RIGHT;
+            } else if (convertedDoc.signatures.length === 2) {
+              alignment = index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER;
+            } else if (convertedDoc.signatures.length >= 3) {
+              if (index === 0) alignment = AlignmentType.RIGHT;
+              else if (index === 1) alignment = AlignmentType.CENTER;
+              else alignment = AlignmentType.LEFT;
+            }
+            
+            return new TableRow({
+              children: [
+                // Name column
+                new TableCell({
                   children: [
                     new Paragraph({
-                      children: [new TextRun({ text: name, size: 22 })],
-                      alignment: AlignmentType.CENTER,
-                      spacing: { after: 100 }
+                      children: [new TextRun({ text: name, bold: true, size: 22 })],
+                      alignment: alignment,
+                      spacing: { after: 50 }
                     })
                   ],
-                  width: { size: Math.floor(100 / convertedDoc.signatures.length), type: WidthType.PERCENTAGE },
-                  margins: { top: 200, bottom: 100, left: 100, right: 100 },
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                  margins: { top: 100, bottom: 50, left: 100, right: 100 },
                   borders: {
                     top: { style: BorderStyle.NONE },
                     bottom: { style: BorderStyle.NONE },
                     left: { style: BorderStyle.NONE },
                     right: { style: BorderStyle.NONE }
                   }
-                });
-              })
-            }),
-            // Second row - Designations
-            new TableRow({
-              children: convertedDoc.signatures.map((signature, index) => {
-                const lines = signature.split('\n');
-                const designation = lines[1] || '';
-                
-                return new TableCell({
+                }),
+                // Designation column
+                new TableCell({
                   children: [
                     new Paragraph({
                       children: [new TextRun({ text: designation, size: 20 })],
-                      alignment: AlignmentType.CENTER,
-                      spacing: { after: 100 }
+                      alignment: alignment,
+                      spacing: { after: 50 }
                     })
                   ],
-                  width: { size: Math.floor(100 / convertedDoc.signatures.length), type: WidthType.PERCENTAGE },
-                  margins: { top: 0, bottom: 200, left: 100, right: 100 },
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                  margins: { top: 50, bottom: 100, left: 100, right: 100 },
                   borders: {
                     top: { style: BorderStyle.NONE },
                     bottom: { style: BorderStyle.NONE },
                     left: { style: BorderStyle.NONE },
                     right: { style: BorderStyle.NONE }
                   }
-                });
-              })
-            })
-          ],
+                })
+              ]
+            });
+          }),
           width: { size: 100, type: WidthType.PERCENTAGE }
         }),
 
