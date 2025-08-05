@@ -1117,8 +1117,8 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
               alignment: AlignmentType.RIGHT,
               spacing: { after: 200 }
             })
-          ] : convertedDoc.signatures.length === 2 ? [
-            // Two inspectors: 2-column table, each column contains name and designation of one inspector
+          ] : [
+            // Two or more inspectors: multi-column table, each column contains name and designation of one inspector
             new Table({
               rows: [
                 new TableRow({
@@ -1127,23 +1127,23 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
                     const name = lines[0] || '';
                     const designation = lines[1] || '';
                     
-                    // First inspector: right-aligned, Second inspector: center-aligned
-                    const alignment = index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER;
+                    // Calculate column width based on number of inspectors
+                    const columnWidth = Math.floor(100 / convertedDoc.signatures.length);
                     
                     return new TableCell({
                       children: [
                         new Paragraph({
                           children: [new TextRun({ text: name, bold: true, size: 22 })],
-                          alignment: alignment,
+                          alignment: AlignmentType.CENTER,
                           spacing: { after: 50 }
                         }),
                         new Paragraph({
                           children: [new TextRun({ text: designation, size: 20 })],
-                          alignment: alignment,
+                          alignment: AlignmentType.CENTER,
                           spacing: { after: 50 }
                         })
                       ],
-                      width: { size: 50, type: WidthType.PERCENTAGE },
+                      width: { size: columnWidth, type: WidthType.PERCENTAGE },
                       margins: { top: 100, bottom: 100, left: 100, right: 100 },
                       borders: {
                         top: { style: BorderStyle.NONE },
@@ -1155,63 +1155,6 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
                   })
                 })
               ],
-              width: { size: 100, type: WidthType.PERCENTAGE }
-            })
-          ] : [
-            // Three or more inspectors: table format with 2 columns (Name, Designation)
-            new Table({
-              rows: convertedDoc.signatures.map((signature, index) => {
-                const lines = signature.split('\n');
-                const name = lines[0] || '';
-                const designation = lines[1] || '';
-                
-                // Determine alignment based on inspector order: 1st=right, 2nd=center, 3rd+=left
-                const alignment = 
-                  index === 0 ? AlignmentType.RIGHT :
-                  index === 1 ? AlignmentType.CENTER :
-                  AlignmentType.LEFT;
-                
-                return new TableRow({
-                  children: [
-                    // Name column
-                    new TableCell({
-                      children: [
-                        new Paragraph({
-                          children: [new TextRun({ text: name, bold: true, size: 22 })],
-                          alignment: alignment,
-                          spacing: { after: 50 }
-                        })
-                      ],
-                      width: { size: 50, type: WidthType.PERCENTAGE },
-                      margins: { top: 100, bottom: 50, left: 100, right: 100 },
-                      borders: {
-                        top: { style: BorderStyle.NONE },
-                        bottom: { style: BorderStyle.NONE },
-                        left: { style: BorderStyle.NONE },
-                        right: { style: BorderStyle.NONE }
-                      }
-                    }),
-                    // Designation column
-                    new TableCell({
-                      children: [
-                        new Paragraph({
-                          children: [new TextRun({ text: designation, size: 20 })],
-                          alignment: alignment,
-                          spacing: { after: 50 }
-                        })
-                      ],
-                      width: { size: 50, type: WidthType.PERCENTAGE },
-                      margins: { top: 50, bottom: 100, left: 100, right: 100 },
-                      borders: {
-                        top: { style: BorderStyle.NONE },
-                        bottom: { style: BorderStyle.NONE },
-                        left: { style: BorderStyle.NONE },
-                        right: { style: BorderStyle.NONE }
-                      }
-                    })
-                  ]
-                });
-              }),
               width: { size: 100, type: WidthType.PERCENTAGE }
             })
           ])
