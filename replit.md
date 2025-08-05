@@ -27,7 +27,7 @@ Preferred communication style: Simple, everyday language.
 - **Provider**: Replit's OpenID Connect (OIDC) authentication
 - **Strategy**: Passport.js with OpenID Client strategy
 - **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple
-- **Role-based Access**: Admin and CMI (Chief Metropolitan Inspector) roles
+- **Role-based Access**: Admin and CMI (Commercial Inspector) roles
 
 ## Database Design
 - **Database**: PostgreSQL with Drizzle ORM

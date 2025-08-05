@@ -107,7 +107,7 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>Designation</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Chief Metropolitan Inspector" {...field} />
+                        <Input placeholder="e.g., Commercial Inspector" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -169,7 +169,7 @@ export default function Register() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="cmi">CMI (Chief Metropolitan Inspector)</SelectItem>
+                          <SelectItem value="cmi">CMI (Commercial Inspector)</SelectItem>
                           <SelectItem value="admin">Administrator</SelectItem>
                         </SelectContent>
                       </Select>

@@ -333,12 +333,12 @@ export default function AdminDashboard() {
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center">
                     <Users className="mr-2 text-nr-blue" size={20} />
-                    CMI Management
+                    Commercial Inspector Management
                   </span>
                   <Link href="/register">
                     <Button className="bg-nr-blue hover:bg-blue-800">
                       <Plus size={16} className="mr-2" />
-                      Add CMI
+                      Add Commercial Inspector
                     </Button>
                   </Link>
                 </CardTitle>
@@ -518,7 +518,7 @@ export default function AdminDashboard() {
                       <Link href="/register">
                         <Button className="w-full justify-start bg-nr-blue hover:bg-blue-800">
                           <Plus size={16} className="mr-2" />
-                          Add New CMI
+                          Add New Commercial Inspector
                         </Button>
                       </Link>
                     </div>

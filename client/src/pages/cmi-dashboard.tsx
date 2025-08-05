@@ -89,8 +89,8 @@ export default function CMIDashboard() {
             <div className="flex items-center space-x-4">
               <NorthernRailwayLogo size={48} />
               <div>
-                <h1 className="text-xl font-bold text-nr-navy">CMI Dashboard</h1>
-                <p className="text-sm text-gray-600">Welcome, {user?.name || 'CMI User'}</p>
+                <h1 className="text-xl font-bold text-nr-navy">Commercial Inspector Dashboard</h1>
+                <p className="text-sm text-gray-600">Welcome, {(user as any)?.name || 'CMI User'}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
