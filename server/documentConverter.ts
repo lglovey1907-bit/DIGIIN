@@ -410,9 +410,6 @@ function getImageFiles(attachedFiles?: Array<{id: string; fileName: string; file
 }
 
 async function generateImageCellContent(obs: ObservationEntry): Promise<Paragraph[]> {
-  // For now, revert to showing filenames to prevent document corruption
-  // This ensures reliable document generation while we work on image embedding
-  
   if (!obs.imageFiles || obs.imageFiles.length === 0) {
     return [new Paragraph({
       children: [new TextRun({ text: "As per annexure", size: 22 })],
@@ -422,13 +419,87 @@ async function generateImageCellContent(obs: ObservationEntry): Promise<Paragrap
 
   const imageContent: Paragraph[] = [];
 
-  // Show file names for each image with better formatting
+  // Process each image file for embedding
   for (const imageFile of obs.imageFiles) {
-    imageContent.push(new Paragraph({
-      children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 100 }
-    }));
+    try {
+      // Check if file exists and is readable
+      if (fs.existsSync(imageFile.filePath)) {
+        const stats = fs.statSync(imageFile.filePath);
+        
+        // Only process files that aren't empty and aren't too large (max 2MB)
+        // Lower the minimum size check to see what's in our test files
+        if (stats.size > 0 && stats.size < 2 * 1024 * 1024) {
+          console.log(`Processing image ${imageFile.fileName} (${stats.size} bytes)`);
+          
+          // Read the image file
+          const imageBuffer = fs.readFileSync(imageFile.filePath);
+          
+          // Determine the correct image type based on file extension
+          const extension = path.extname(imageFile.fileName).toLowerCase();
+          let imageType = "png"; // default
+          
+          if (extension === ".jpg" || extension === ".jpeg") {
+            imageType = "jpg";
+          } else if (extension === ".png") {
+            imageType = "png";
+          } else if (extension === ".gif") {
+            imageType = "gif";
+          }
+          
+          console.log(`Embedding image ${imageFile.fileName} as type ${imageType}`);
+          
+          // Add the embedded image with conservative sizing
+          imageContent.push(new Paragraph({
+            children: [
+              new ImageRun({
+                data: imageBuffer,
+                type: imageType as any, // Cast to any to handle type compatibility
+                transformation: {
+                  width: 100,  // Smaller size to prevent issues
+                  height: 100, // Square format
+                }
+              })
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 50 }
+          }));
+          
+          // Add filename below the image
+          imageContent.push(new Paragraph({
+            children: [new TextRun({ text: imageFile.fileName, size: 16, italics: true })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 150 }
+          }));
+          
+          console.log(`Successfully processed image ${imageFile.fileName}`);
+          
+        } else {
+          // File is empty or too large, show filename only
+          console.log(`File ${imageFile.fileName} is empty or too large (${stats.size} bytes)`);
+          imageContent.push(new Paragraph({
+            children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 100 }
+          }));
+        }
+      } else {
+        // File doesn't exist, show filename only
+        console.log(`File ${imageFile.filePath} does not exist`);
+        imageContent.push(new Paragraph({
+          children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 100 }
+        }));
+      }
+    } catch (error) {
+      console.error(`Error loading image ${imageFile.fileName}:`, error);
+      // Fallback to filename if image can't be loaded
+      imageContent.push(new Paragraph({
+        children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 100 }
+      }));
+    }
   }
 
   return imageContent;
