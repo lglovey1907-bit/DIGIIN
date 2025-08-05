@@ -104,8 +104,13 @@ export const insertInspectionSchema = createInsertSchema(inspections).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  inspectionDate: true, // Remove the original to override
 }).extend({
-  inspectionDate: z.string().transform((str) => new Date(str)),
+  inspectionDate: z.union([z.string(), z.date(), z.null()]).transform((val) => {
+    if (val === null || val === undefined) return new Date();
+    if (val instanceof Date) return val;
+    return new Date(val);
+  }),
   observations: z.record(z.any()).optional().default({}),
   inspectors: z.array(z.object({
     name: z.string(),

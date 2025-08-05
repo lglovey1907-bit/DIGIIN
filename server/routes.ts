@@ -257,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.id;
       
       // Transform multi-area data to the database format
-      const inspectionData = {
+      const rawData = {
         ...req.body,
         userId,
         // Convert inspectionAreas to observations and primary area
@@ -272,8 +272,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Remove the inspectionAreas field as it's transformed
         inspectionAreas: undefined
       };
+
+      // Handle null inspectionDate before validation
+      if (rawData.inspectionDate === null || rawData.inspectionDate === undefined) {
+        rawData.inspectionDate = new Date().toISOString();
+      }
       
-      const validatedData = insertInspectionSchema.parse(inspectionData);
+      const validatedData = insertInspectionSchema.parse(rawData);
       
       const inspection = await storage.createInspection(validatedData);
       res.json(inspection);
