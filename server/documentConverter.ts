@@ -1116,16 +1116,14 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
               const designation = lines[1] || '';
               
               // Determine alignment based on inspector order
-              let alignment = AlignmentType.CENTER;
-              if (convertedDoc.signatures.length === 1) {
-                alignment = AlignmentType.RIGHT;
-              } else if (convertedDoc.signatures.length === 2) {
-                alignment = index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER;
-              } else if (convertedDoc.signatures.length >= 3) {
-                if (index === 0) alignment = AlignmentType.RIGHT;
-                else if (index === 1) alignment = AlignmentType.CENTER;
-                else alignment = AlignmentType.LEFT;
-              }
+              const alignment = 
+                convertedDoc.signatures.length === 1 
+                  ? AlignmentType.RIGHT
+                  : convertedDoc.signatures.length === 2
+                  ? (index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER)
+                  : convertedDoc.signatures.length >= 3
+                  ? (index === 0 ? AlignmentType.RIGHT : index === 1 ? AlignmentType.CENTER : AlignmentType.LEFT)
+                  : AlignmentType.CENTER;
               
               return new TableRow({
                 children: [
@@ -1192,16 +1190,14 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
               const designation = lines[1] || '';
               
               // Determine alignment based on inspector order
-              let alignment = AlignmentType.CENTER;
-              if (convertedDoc.signatures.length === 1) {
-                alignment = AlignmentType.RIGHT;
-              } else if (convertedDoc.signatures.length === 2) {
-                alignment = index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER;
-              } else if (convertedDoc.signatures.length >= 3) {
-                if (index === 0) alignment = AlignmentType.RIGHT;
-                else if (index === 1) alignment = AlignmentType.CENTER;
-                else alignment = AlignmentType.LEFT;
-              }
+              const alignment = 
+                convertedDoc.signatures.length === 1 
+                  ? AlignmentType.RIGHT
+                  : convertedDoc.signatures.length === 2
+                  ? (index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER)
+                  : convertedDoc.signatures.length >= 3
+                  ? (index === 0 ? AlignmentType.RIGHT : index === 1 ? AlignmentType.CENTER : AlignmentType.LEFT)
+                  : AlignmentType.CENTER;
               
               return new TableRow({
                 children: [
