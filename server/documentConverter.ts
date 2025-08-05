@@ -1,5 +1,7 @@
 import OpenAI from "openai";
-import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType, HeadingLevel } from "docx";
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, BorderStyle, AlignmentType, HeadingLevel, ImageRun } from "docx";
+import fs from "fs";
+import path from "path";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -14,7 +16,7 @@ interface InspectionData {
   letterReference?: string;
   referenceNo?: string;
   inspectors?: Array<{name: string; designation: string}>;
-  attachedFiles?: Array<{id: string; fileName: string; fileType: string}>;
+  attachedFiles?: Array<{id: string; fileName: string; fileType: string; filePath: string}>;
 }
 
 interface ConvertedDocument {
@@ -33,6 +35,7 @@ interface ObservationEntry {
   observations: string[];
   actionTakenBy: string;
   photographs?: string;
+  imageFiles?: Array<{id: string; fileName: string; filePath: string; fileType: string}>;
 }
 
 export async function convertInspectionToDocument(inspectionData: InspectionData): Promise<ConvertedDocument> {
@@ -181,7 +184,8 @@ async function convertGeneralObservation(item: any, serialNumber: number, area: 
     companyHeading: `${area.charAt(0).toUpperCase() + area.slice(1)} Inspection - Unit ${serialNumber}`,
     observations: convertedText.split('\n').filter(line => line.trim()),
     actionTakenBy: "SS/DEC\nCMI/DEE\nCMI/Ctg\nCOS/Ctg.",
-    photographs: generatePhotographsText(inspectionData.attachedFiles)
+    photographs: generatePhotographsText(inspectionData.attachedFiles),
+    imageFiles: getImageFiles(inspectionData.attachedFiles)
   };
 }
 
@@ -340,7 +344,8 @@ async function convertNewCateringCompanyObservation(company: any, serialNumber: 
     companyHeading,
     observations,
     actionTakenBy: actionTaken || "COS Ctg",
-    photographs: generatePhotographsText(inspectionData.attachedFiles)
+    photographs: generatePhotographsText(inspectionData.attachedFiles),
+    imageFiles: getImageFiles(inspectionData.attachedFiles)
   };
 }
 
@@ -370,7 +375,7 @@ function generateSignatures(inspectionData: InspectionData): string[] {
   ];
 }
 
-function generatePhotographsText(attachedFiles?: Array<{id: string; fileName: string; fileType: string}>): string {
+function generatePhotographsText(attachedFiles?: Array<{id: string; fileName: string; fileType: string; filePath: string}>): string {
   if (!attachedFiles || attachedFiles.length === 0) {
     return "As per annexure";
   }
@@ -390,6 +395,80 @@ function generatePhotographsText(attachedFiles?: Array<{id: string; fileName: st
   }
   
   return `Photos: ${imageFiles.map(f => f.fileName).join(', ')}`;
+}
+
+function getImageFiles(attachedFiles?: Array<{id: string; fileName: string; fileType: string; filePath: string}>): Array<{id: string; fileName: string; filePath: string; fileType: string}> {
+  if (!attachedFiles || attachedFiles.length === 0) {
+    return [];
+  }
+  
+  // Filter for image files only
+  return attachedFiles.filter(file => 
+    file.fileType.startsWith('image/') || 
+    file.fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)
+  );
+}
+
+async function generateImageCellContent(obs: ObservationEntry): Promise<Paragraph[]> {
+  // If no image files, show fallback text
+  if (!obs.imageFiles || obs.imageFiles.length === 0) {
+    return [new Paragraph({
+      children: [new TextRun({ text: "As per annexure", size: 22 })],
+      alignment: AlignmentType.CENTER
+    })];
+  }
+
+  const imageContent: Paragraph[] = [];
+
+  // Try to embed each image, fallback to filename if image can't be loaded
+  for (const imageFile of obs.imageFiles) {
+    try {
+      // Check if file exists
+      if (fs.existsSync(imageFile.filePath)) {
+        // Read the image file
+        const imageBuffer = fs.readFileSync(imageFile.filePath);
+        
+        // Add the embedded image
+        imageContent.push(new Paragraph({
+          children: [
+            new ImageRun({
+              data: imageBuffer,
+              transformation: {
+                width: 150,  // Max width 150 pixels
+                height: 150, // Max height 150 pixels
+              }
+            })
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 100 }
+        }));
+        
+        // Add filename below the image
+        imageContent.push(new Paragraph({
+          children: [new TextRun({ text: imageFile.fileName, size: 18 })],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 }
+        }));
+      } else {
+        // File doesn't exist, show filename only
+        imageContent.push(new Paragraph({
+          children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 100 }
+        }));
+      }
+    } catch (error) {
+      console.error(`Error loading image ${imageFile.fileName}:`, error);
+      // Fallback to filename if image can't be loaded
+      imageContent.push(new Paragraph({
+        children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 100 }
+      }));
+    }
+  }
+
+  return imageContent;
 }
 
 export async function generateDocumentText(convertedDoc: ConvertedDocument): Promise<string> {
@@ -957,8 +1036,8 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
                 })
               ]
             }),
-            // Data rows
-            ...convertedDoc.observations.map(obs => 
+            // Data rows - generate async and await all
+            ...(await Promise.all(convertedDoc.observations.map(async obs => 
               new TableRow({
                 children: [
                   new TableCell({
@@ -994,15 +1073,12 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
                     width: { size: 15, type: WidthType.PERCENTAGE }
                   }),
                   new TableCell({
-                    children: [new Paragraph({
-                      children: [new TextRun({ text: obs.photographs || "As per annexure", size: 22 })],
-                      alignment: AlignmentType.CENTER
-                    })],
+                    children: await generateImageCellContent(obs),
                     width: { size: 15, type: WidthType.PERCENTAGE }
                   })
                 ]
               })
-            )
+            )))
           ]
         }),
 

@@ -554,7 +554,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         attachedFiles: attachedFiles.map(file => ({
           id: file.id,
           fileName: file.fileName,
-          fileType: file.fileType
+          fileType: file.fileType,
+          filePath: file.filePath
         }))
       });
       
