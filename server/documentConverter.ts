@@ -1115,19 +1115,15 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
               const name = lines[0] || '';
               const designation = lines[1] || '';
               
-              // Determine alignment based on inspector order
+              // Determine alignment based on inspector order: 1st=right, 2nd=center, 3rd+=left
               const alignment = 
-                convertedDoc.signatures.length === 1 
-                  ? AlignmentType.RIGHT
-                  : convertedDoc.signatures.length === 2
-                  ? (index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER)
-                  : convertedDoc.signatures.length >= 3
-                  ? (index === 0 ? AlignmentType.RIGHT : index === 1 ? AlignmentType.CENTER : AlignmentType.LEFT)
-                  : AlignmentType.CENTER;
+                index === 0 ? AlignmentType.RIGHT :
+                index === 1 ? AlignmentType.CENTER :
+                AlignmentType.LEFT;
               
               return new TableRow({
                 children: [
-                  // Name column
+                  // Name column (First column)
                   new TableCell({
                     children: [
                       new Paragraph({
@@ -1145,7 +1141,7 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
                       right: { style: BorderStyle.NONE }
                     }
                   }),
-                  // Designation column
+                  // Designation column (Second column)
                   new TableCell({
                     children: [
                       new Paragraph({
@@ -1189,15 +1185,11 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
               const name = lines[0] || '';
               const designation = lines[1] || '';
               
-              // Determine alignment based on inspector order
+              // Determine alignment based on inspector order: 1st=right, 2nd=center, 3rd+=left
               const alignment = 
-                convertedDoc.signatures.length === 1 
-                  ? AlignmentType.RIGHT
-                  : convertedDoc.signatures.length === 2
-                  ? (index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER)
-                  : convertedDoc.signatures.length >= 3
-                  ? (index === 0 ? AlignmentType.RIGHT : index === 1 ? AlignmentType.CENTER : AlignmentType.LEFT)
-                  : AlignmentType.CENTER;
+                index === 0 ? AlignmentType.RIGHT :
+                index === 1 ? AlignmentType.CENTER :
+                AlignmentType.LEFT;
               
               return new TableRow({
                 children: [
