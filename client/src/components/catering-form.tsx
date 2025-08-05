@@ -234,7 +234,14 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   <Input
                     placeholder="M/s Company Name"
                     value={company.companyName || ""}
-                    onChange={(e) => updateCompany(companyIndex, 'companyName', e.target.value)}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      // Automatically add M/s prefix if not present
+                      if (value && !value.startsWith('M/s ')) {
+                        value = 'M/s ' + value;
+                      }
+                      updateCompany(companyIndex, 'companyName', value);
+                    }}
                   />
                 </div>
                 <div>
