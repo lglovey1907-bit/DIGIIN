@@ -18,7 +18,7 @@ import fs from "fs";
 import PDFDocument from "pdfkit";
 import passport from "passport";
 import { generateReportLayoutSuggestions, analyzeInspectionTrends } from "./aiService";
-import { convertInspectionToDocument, generateDocumentText } from "./documentConverter";
+import { convertInspectionToDocument, generateDocumentText, generateRTFDocument } from "./documentConverter";
 
 // Extend Express types
 declare global {
@@ -524,12 +524,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const documentText = await generateDocumentText(convertedDocument);
       console.log("Document text generated, length:", documentText.length);
       
-      // Set headers for DOC file download
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      // Enhanced Microsoft Office compatibility headers for latest Word versions
+      res.setHeader('Content-Type', 'application/msword');
       res.setHeader('Content-Disposition', `attachment; filename="Inspection_Report_${inspection.stationCode}_${new Date(inspection.inspectionDate).toISOString().split('T')[0]}.doc"`);
+      res.setHeader('Content-Transfer-Encoding', 'binary');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       
-      // Send as plain text that can be opened in Word
-      res.send(documentText);
+      // Generate RTF format for better Microsoft Office compatibility
+      const rtfDocument = generateRTFDocument(documentText);
+      res.send(rtfDocument);
     } catch (error) {
       console.error("Error converting inspection to DOC:", error);
       res.status(500).json({ message: "Failed to convert inspection to DOC format" });

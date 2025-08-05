@@ -359,10 +359,14 @@ function generateSignatures(inspectionData: InspectionData): string[] {
 }
 
 export async function generateDocumentText(convertedDoc: ConvertedDocument): Promise<string> {
+  // Use portrait format optimized for A4 paper (210mm width)
+  // Standard A4 portrait: ~70-75 characters per line for optimal readability
+  const portraitWidth = 75;
+  
   let documentText = '';
   
-  // Header - Centered
-  const headerSpaces = ' '.repeat(Math.max(0, (80 - convertedDoc.header.length) / 2));
+  // Header - Centered for portrait format
+  const headerSpaces = ' '.repeat(Math.max(0, (portraitWidth - convertedDoc.header.length) / 2));
   documentText += `${headerSpaces}${convertedDoc.header}\n\n`;
   
   documentText += `${convertedDoc.subject}\n\n`;
@@ -378,75 +382,67 @@ export async function generateDocumentText(convertedDoc: ConvertedDocument): Pro
   
   documentText += `${convertedDoc.openingParagraph}\n\n\n\n`;
   
-  // Table with proper column structure
-  const colWidths = {
-    sn: 6,
-    observations: 70,
-    actionTaken: 25,
-    photographs: 20
+  // Portrait format table structure optimized for A4
+  const portraitColWidths = {
+    sn: 5,
+    observations: 45,
+    actionTaken: 15,
+    photographs: 10
   };
   
-  // Table header
-  documentText += `${'S.No.'.padEnd(colWidths.sn)}${'Deficiencies/Observations'.padEnd(colWidths.observations)}${'Action Taken By'.padEnd(colWidths.actionTaken)}${'Photographs'}\n`;
-  documentText += `${'-'.repeat(colWidths.sn)}${'-'.repeat(colWidths.observations)}${'-'.repeat(colWidths.actionTaken)}${'-'.repeat(colWidths.photographs)}\n`;
+  // Table header with portrait formatting
+  documentText += `${'S.No.'.padEnd(portraitColWidths.sn)}${'Deficiencies/Observations'.padEnd(portraitColWidths.observations)}${'Action Taken By'.padEnd(portraitColWidths.actionTaken)}${'Photos'}\n`;
+  documentText += `${'-'.repeat(portraitColWidths.sn)}${'-'.repeat(portraitColWidths.observations)}${'-'.repeat(portraitColWidths.actionTaken)}${'-'.repeat(portraitColWidths.photographs)}\n`;
   
   convertedDoc.observations.forEach((obs, index) => {
     // Start with SN and company heading
-    documentText += `${obs.serialNumber.padEnd(colWidths.sn)}`;
-    documentText += `${obs.companyHeading.substring(0, colWidths.observations - 2).padEnd(colWidths.observations)}`;
+    documentText += `${obs.serialNumber.padEnd(portraitColWidths.sn)}`;
+    
+    // Company heading with portrait wrapping
+    const wrappedCompany = wrapPortraitText(obs.companyHeading, portraitColWidths.observations - 2);
+    const companyLines = wrappedCompany.split('\n');
+    documentText += `${companyLines[0].padEnd(portraitColWidths.observations)}`;
     
     // Action taken by (first line)
     const actionLines = obs.actionTakenBy.split('\n').filter(line => line.trim());
-    documentText += `${(actionLines[0] || '').padEnd(colWidths.actionTaken)}`;
-    documentText += `${obs.photographs || 'As per annexure'}\n`;
+    documentText += `${(actionLines[0] || '').substring(0, portraitColWidths.actionTaken).padEnd(portraitColWidths.actionTaken)}`;
+    documentText += `${(obs.photographs || 'Annexure').substring(0, portraitColWidths.photographs)}\n`;
     
-    // Observations content
+    // Additional company heading lines
+    for (let i = 1; i < companyLines.length; i++) {
+      documentText += `${' '.repeat(portraitColWidths.sn)}`;
+      documentText += `${companyLines[i].padEnd(portraitColWidths.observations)}`;
+      if (i < actionLines.length) {
+        documentText += `${actionLines[i].substring(0, portraitColWidths.actionTaken).padEnd(portraitColWidths.actionTaken)}`;
+      } else {
+        documentText += `${' '.repeat(portraitColWidths.actionTaken)}`;
+      }
+      documentText += `${' '.repeat(portraitColWidths.photographs)}\n`;
+    }
+    
+    // Observations content with portrait formatting
     obs.observations.forEach((observation, obsIndex) => {
-      documentText += `${' '.repeat(colWidths.sn)}`;
-      
-      // Word wrap observations to fit column
-      const wrappedObs = wrapTextToWidth(observation, colWidths.observations - 2);
+      const wrappedObs = wrapPortraitText(observation, portraitColWidths.observations - 2);
       const obsLines = wrappedObs.split('\n');
       
       obsLines.forEach((obsLine, lineIndex) => {
-        if (lineIndex > 0) {
-          documentText += `${' '.repeat(colWidths.sn)}`;
-        }
-        documentText += `${obsLine.padEnd(colWidths.observations)}`;
+        documentText += `${' '.repeat(portraitColWidths.sn)}`;
+        documentText += `${obsLine.padEnd(portraitColWidths.observations)}`;
         
         // Show remaining action taken lines
-        const actionLineIndex = obsIndex + lineIndex + 1;
+        const actionLineIndex = companyLines.length + obsIndex + lineIndex;
         if (actionLineIndex < actionLines.length) {
-          documentText += `${actionLines[actionLineIndex].padEnd(colWidths.actionTaken)}`;
+          documentText += `${actionLines[actionLineIndex].substring(0, portraitColWidths.actionTaken).padEnd(portraitColWidths.actionTaken)}`;
         } else {
-          documentText += `${' '.repeat(colWidths.actionTaken)}`;
+          documentText += `${' '.repeat(portraitColWidths.actionTaken)}`;
         }
-        
-        // Only show photographs on first row
-        if (obsIndex === 0 && lineIndex === 0) {
-          // Already added above
-        } else {
-          documentText += `${' '.repeat(colWidths.photographs)}`;
-        }
-        documentText += `\n`;
+        documentText += `${' '.repeat(portraitColWidths.photographs)}\n`;
       });
     });
     
-    // Add any remaining action taken lines
-    const totalObsLines = obs.observations.reduce((total, obs) => {
-      return total + wrapTextToWidth(obs, colWidths.observations - 2).split('\n').length;
-    }, 0);
-    
-    for (let i = totalObsLines + 1; i < actionLines.length; i++) {
-      documentText += `${' '.repeat(colWidths.sn)}`;
-      documentText += `${' '.repeat(colWidths.observations)}`;
-      documentText += `${actionLines[i].padEnd(colWidths.actionTaken)}`;
-      documentText += `${' '.repeat(colWidths.photographs)}\n`;
-    }
-    
-    // Separator between entries
+    // Separator between entries for better readability in portrait
     if (index < convertedDoc.observations.length - 1) {
-      documentText += `${'-'.repeat(colWidths.sn)}${'-'.repeat(colWidths.observations)}${'-'.repeat(colWidths.actionTaken)}${'-'.repeat(colWidths.photographs)}\n`;
+      documentText += `${'-'.repeat(portraitColWidths.sn)}${'-'.repeat(portraitColWidths.observations)}${'-'.repeat(portraitColWidths.actionTaken)}${'-'.repeat(portraitColWidths.photographs)}\n`;
     }
   });
   
@@ -456,8 +452,8 @@ export async function generateDocumentText(convertedDoc: ConvertedDocument): Pro
   
   documentText += `\n\n\n`;
   
-  // Format signatures with proper alignment
-  documentText += formatInspectorSignatures(convertedDoc.signatures);
+  // Format signatures with portrait alignment
+  documentText += formatPortraitInspectorSignatures(convertedDoc.signatures, portraitWidth);
   
   documentText += `\n\n\nCopy to:\nSr.DCM/PS: For kind information please.\nDCM/PS: For kind information please.\n\nFor images of the Decoy Check\n\n`;
   
@@ -491,6 +487,189 @@ function wrapTextToWidth(text: string, width: number): string {
   }
   
   return lines.join('\n');
+}
+
+// Portrait format text wrapping optimized for A4 paper
+function wrapPortraitText(text: string, width: number): string {
+  if (text.length <= width) return text;
+  
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+  
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (testLine.length <= width) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        // Word too long, break it at width boundary
+        let remainingWord = word;
+        while (remainingWord.length > width) {
+          lines.push(remainingWord.substring(0, width));
+          remainingWord = remainingWord.substring(width);
+        }
+        currentLine = remainingWord;
+      }
+    }
+  }
+  
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  
+  return lines.join('\n');
+}
+
+// Portrait format inspector signature alignment
+function formatPortraitInspectorSignatures(signatures: string[], portraitWidth: number): string {
+  if (!signatures || signatures.length === 0) {
+    return '';
+  }
+  
+  // For portrait format, use 3-column layout with proper spacing
+  const colWidth = Math.floor(portraitWidth / 3);
+  let signatureText = '';
+  
+  // Parse signatures into name/designation pairs
+  const inspectors = signatures.map(sig => {
+    const lines = sig.split('\n');
+    return {
+      name: lines[0] || '',
+      designation: lines[1] || ''
+    };
+  });
+  
+  if (inspectors.length === 1) {
+    // Single inspector - align right in portrait
+    const inspector = inspectors[0];
+    const rightPos = portraitWidth - Math.max(inspector.name.length, inspector.designation.length);
+    signatureText += `${' '.repeat(Math.max(0, rightPos))}${inspector.name}\n`;
+    signatureText += `${' '.repeat(Math.max(0, rightPos))}${inspector.designation}`;
+  } else if (inspectors.length === 2) {
+    // Two inspectors - 1st right, 2nd middle in portrait
+    const first = inspectors[0];  // Right
+    const second = inspectors[1]; // Middle
+    
+    const middlePos = Math.floor(portraitWidth / 2) - Math.floor(Math.max(second.name.length, second.designation.length) / 2);
+    const rightPos = portraitWidth - Math.max(first.name.length, first.designation.length);
+    
+    // Names line
+    signatureText += `${' '.repeat(Math.max(0, middlePos))}${second.name}`;
+    signatureText += `${' '.repeat(Math.max(1, rightPos - middlePos - second.name.length))}${first.name}\n`;
+    
+    // Designations line  
+    signatureText += `${' '.repeat(Math.max(0, middlePos))}${second.designation}`;
+    signatureText += `${' '.repeat(Math.max(1, rightPos - middlePos - second.designation.length))}${first.designation}`;
+  } else if (inspectors.length >= 3) {
+    // Three or more inspectors - 1st right, 2nd middle, 3rd left in portrait
+    const first = inspectors[0];  // Right
+    const second = inspectors[1]; // Middle  
+    const third = inspectors[2];  // Left
+    
+    const middlePos = Math.floor(portraitWidth / 2) - Math.floor(Math.max(second.name.length, second.designation.length) / 2);
+    const rightPos = portraitWidth - Math.max(first.name.length, first.designation.length);
+    
+    // Names line
+    signatureText += `${third.name}`;
+    signatureText += `${' '.repeat(Math.max(1, middlePos - third.name.length))}${second.name}`;
+    signatureText += `${' '.repeat(Math.max(1, rightPos - middlePos - second.name.length))}${first.name}\n`;
+    
+    // Designations line
+    signatureText += `${third.designation}`;
+    signatureText += `${' '.repeat(Math.max(1, middlePos - third.designation.length))}${second.designation}`;
+    signatureText += `${' '.repeat(Math.max(1, rightPos - middlePos - second.designation.length))}${first.designation}`;
+  }
+  
+  return signatureText;
+}
+
+// Generate RTF document for Microsoft Office compatibility
+export function generateRTFDocument(plainText: string): string {
+  // RTF header for latest Microsoft Word compatibility
+  let rtfContent = '{\\rtf1\\ansi\\deff0';
+  
+  // Font table with common Windows fonts
+  rtfContent += '{\\fonttbl{\\f0\\froman\\fcharset0 Times New Roman;}{\\f1\\fswiss\\fcharset0 Arial;}}';
+  
+  // Color table
+  rtfContent += '{\\colortbl;\\red0\\green0\\blue0;}';
+  
+  // Document formatting for portrait A4
+  rtfContent += '\\paperw11906\\paperh16838'; // A4 size in twips
+  rtfContent += '\\margl1134\\margr1134\\margt850\\margb850'; // 1 inch margins
+  rtfContent += '\\sectd\\pgwsxn11906\\pghsxn16838'; // Page dimensions
+  rtfContent += '\\cols1\\colsx708'; // Single column
+  
+  // Default paragraph formatting
+  rtfContent += '\\pard\\plain\\f0\\fs24'; // Times New Roman, 12pt
+  
+  // Convert plain text to RTF format
+  const lines = plainText.split('\n');
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Header formatting (centered)
+    if (line.trim() === 'Northern Railway') {
+      rtfContent += '\\qc\\b\\fs28 ' + escapeRTF(line) + '\\b0\\fs24\\par\\par';
+      continue;
+    }
+    
+    // Subject line formatting
+    if (line.startsWith('Sub:')) {
+      rtfContent += '\\ql\\b ' + escapeRTF(line) + '\\b0\\par\\par';
+      continue;
+    }
+    
+    // Reference line formatting
+    if (line.startsWith('Ref:')) {
+      rtfContent += '\\ql ' + escapeRTF(line) + '\\par\\par';
+      continue;
+    }
+    
+    // Table header formatting
+    if (line.includes('S.No.') && line.includes('Deficiencies/Observations')) {
+      rtfContent += '\\ql\\b ' + escapeRTF(line) + '\\b0\\par';
+      continue;
+    }
+    
+    // Table separator lines
+    if (line.match(/^-+$/)) {
+      rtfContent += '\\ql ' + escapeRTF(line) + '\\par';
+      continue;
+    }
+    
+    // Inspector signatures (detect by pattern)
+    if (line.includes('CMI/') || line.includes('COS/') || line.includes('SS/')) {
+      rtfContent += '\\ql\\b ' + escapeRTF(line) + '\\b0\\par';
+      continue;
+    }
+    
+    // Regular content
+    if (line.trim()) {
+      rtfContent += '\\ql ' + escapeRTF(line) + '\\par';
+    } else {
+      rtfContent += '\\par'; // Empty line
+    }
+  }
+  
+  rtfContent += '}';
+  return rtfContent;
+}
+
+// Escape special RTF characters
+function escapeRTF(text: string): string {
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/\{/g, '\\{')
+    .replace(/\}/g, '\\}')
+    .replace(/[\u0080-\uffff]/g, (match) => {
+      return '\\u' + match.charCodeAt(0) + '?';
+    });
 }
 
 function formatInspectorSignatures(signatures: string[]): string {
