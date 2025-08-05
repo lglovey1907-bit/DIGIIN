@@ -203,16 +203,8 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
       <CardContent>
         {/* Multiple Companies */}
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="mb-4">
             <h3 className="text-lg font-medium text-nr-navy">Company Inspections</h3>
-            <Button
-              type="button"
-              onClick={addCompany}
-              className="bg-nr-blue hover:bg-nr-navy"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Another Company
-            </Button>
           </div>
           
           {companies.map((company, companyIndex) => (
@@ -493,6 +485,20 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
                 </div>
               </div>
+              
+              {/* Add Another Company Button - only show on the last company */}
+              {companyIndex === companies.length - 1 && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <Button
+                    type="button"
+                    onClick={addCompany}
+                    className="bg-nr-blue hover:bg-nr-navy w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Another Company
+                  </Button>
+                </div>
+              )}
             </div>
           ))}
         </div>
