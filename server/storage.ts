@@ -4,6 +4,8 @@ import {
   inspectionAssignments,
   shortlistedItems,
   fileUploads,
+  permissions,
+  userPermissions,
   type User,
   type UpsertUser,
   type RegisterUser,
@@ -16,6 +18,10 @@ import {
   type InsertShortlistedItem,
   type FileUpload,
   type InsertFileUpload,
+  type Permission,
+  type InsertPermission,
+  type UserPermission,
+  type InsertUserPermission,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, like, or, desc } from "drizzle-orm";
@@ -54,6 +60,19 @@ export interface IStorage {
   // File upload operations
   createFileUpload(file: InsertFileUpload): Promise<FileUpload>;
   getInspectionFiles(inspectionId: string): Promise<FileUpload[]>;
+  
+  // Permission operations
+  createPermission(permission: InsertPermission): Promise<Permission>;
+  getAllPermissions(): Promise<Permission[]>;
+  createUserPermission(userPermission: InsertUserPermission): Promise<UserPermission>;
+  removeUserPermission(userId: string, permissionId: string): Promise<void>;
+  getUserPermissions(userId: string): Promise<UserPermission[]>;
+  getAllUserPermissions(): Promise<UserPermission[]>;
+  getPermissionMatrix(): Promise<{
+    users: User[];
+    permissions: Permission[];
+    userPermissions: UserPermission[];
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -255,6 +274,55 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(fileUploads)
       .where(eq(fileUploads.inspectionId, inspectionId));
+  }
+
+  // Permission operations
+  async createPermission(permission: InsertPermission): Promise<Permission> {
+    const [created] = await db.insert(permissions).values(permission).returning();
+    return created;
+  }
+
+  async getAllPermissions(): Promise<Permission[]> {
+    return await db.select().from(permissions).orderBy(permissions.category, permissions.resource, permissions.action);
+  }
+
+  async createUserPermission(userPermission: InsertUserPermission): Promise<UserPermission> {
+    const [created] = await db.insert(userPermissions).values(userPermission).returning();
+    return created;
+  }
+
+  async removeUserPermission(userId: string, permissionId: string): Promise<void> {
+    await db.delete(userPermissions)
+      .where(and(
+        eq(userPermissions.userId, userId),
+        eq(userPermissions.permissionId, permissionId)
+      ));
+  }
+
+  async getUserPermissions(userId: string): Promise<UserPermission[]> {
+    return await db.select().from(userPermissions).where(eq(userPermissions.userId, userId));
+  }
+
+  async getAllUserPermissions(): Promise<UserPermission[]> {
+    return await db.select().from(userPermissions);
+  }
+
+  async getPermissionMatrix(): Promise<{
+    users: User[];
+    permissions: Permission[];
+    userPermissions: UserPermission[];
+  }> {
+    const [allUsers, allPermissions, allUserPermissions] = await Promise.all([
+      db.select().from(users).where(eq(users.isApproved, true)).orderBy(users.name),
+      this.getAllPermissions(),
+      this.getAllUserPermissions()
+    ]);
+
+    return {
+      users: allUsers,
+      permissions: allPermissions,
+      userPermissions: allUserPermissions
+    };
   }
 }
 

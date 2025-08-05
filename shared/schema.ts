@@ -9,6 +9,7 @@ import {
   integer,
   boolean,
   decimal,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -124,6 +125,35 @@ export const insertFileUploadSchema = createInsertSchema(fileUploads).omit({
   createdAt: true,
 });
 
+// Permissions table
+export const permissions = pgTable("permissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  resource: varchar("resource").notNull(), // e.g., 'inspections', 'users', 'reports'
+  action: varchar("action").notNull(), // e.g., 'create', 'view', 'edit', 'delete'
+  description: text("description").notNull(),
+  category: varchar("category").notNull(), // e.g., 'Inspection Management', 'User Management'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User Permissions junction table
+export const userPermissions = pgTable("user_permissions", {
+  userId: varchar("user_id").notNull(),
+  permissionId: varchar("permission_id").notNull(),
+  granted: boolean("granted").default(true),
+  grantedBy: varchar("granted_by").notNull(),
+  grantedAt: timestamp("granted_at").defaultNow(),
+  revokedAt: timestamp("revoked_at"),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.permissionId] })
+}));
+
+// Permission schemas
+export const insertPermissionSchema = createInsertSchema(permissions).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertUserPermissionSchema = createInsertSchema(userPermissions);
+
 // Authentication schemas
 export const registerUserSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -152,3 +182,7 @@ export type InsertShortlistedItem = z.infer<typeof insertShortlistedItemSchema>;
 export type ShortlistedItem = typeof shortlistedItems.$inferSelect;
 export type InsertFileUpload = z.infer<typeof insertFileUploadSchema>;
 export type FileUpload = typeof fileUploads.$inferSelect;
+export type InsertPermission = z.infer<typeof insertPermissionSchema>;
+export type Permission = typeof permissions.$inferSelect;
+export type InsertUserPermission = z.infer<typeof insertUserPermissionSchema>;
+export type UserPermission = typeof userPermissions.$inferSelect;

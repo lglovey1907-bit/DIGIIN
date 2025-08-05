@@ -573,6 +573,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(assignments);
   });
 
+  // Permission management routes
+  app.get('/api/admin/permission-matrix', isAuthenticated, requireAdmin, async (req: any, res) => {
+    try {
+      const matrixData = await storage.getPermissionMatrix();
+      res.json(matrixData);
+    } catch (error) {
+      console.error("Error fetching permission matrix:", error);
+      res.status(500).json({ message: "Failed to fetch permission matrix" });
+    }
+  });
+
+  app.post('/api/admin/initialize-permissions', isAuthenticated, requireAdmin, async (req: any, res) => {
+    try {
+      const { permissions: permissionData } = req.body;
+      const createdPermissions = [];
+      
+      for (const permissionInfo of permissionData) {
+        const created = await storage.createPermission(permissionInfo);
+        createdPermissions.push(created);
+      }
+      
+      res.json({ 
+        message: "Permissions initialized successfully", 
+        permissions: createdPermissions 
+      });
+    } catch (error) {
+      console.error("Error initializing permissions:", error);
+      res.status(500).json({ message: "Failed to initialize permissions" });
+    }
+  });
+
+  app.post('/api/admin/permissions/:userId/:permissionId', isAuthenticated, requireAdmin, async (req: any, res) => {
+    try {
+      const { userId, permissionId } = req.params;
+      const grantedBy = req.user.id;
+      
+      const userPermission = await storage.createUserPermission({
+        userId,
+        permissionId,
+        granted: true,
+        grantedBy
+      });
+      
+      res.json({ message: "Permission granted successfully", userPermission });
+    } catch (error) {
+      console.error("Error granting permission:", error);
+      res.status(500).json({ message: "Failed to grant permission" });
+    }
+  });
+
+  app.delete('/api/admin/permissions/:userId/:permissionId', isAuthenticated, requireAdmin, async (req: any, res) => {
+    try {
+      const { userId, permissionId } = req.params;
+      
+      await storage.removeUserPermission(userId, permissionId);
+      
+      res.json({ message: "Permission revoked successfully" });
+    } catch (error) {
+      console.error("Error revoking permission:", error);
+      res.status(500).json({ message: "Failed to revoke permission" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

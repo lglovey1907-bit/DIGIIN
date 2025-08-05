@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import PermissionMatrix from "@/components/permission-matrix";
 
 interface CMI {
   id: string;
@@ -255,10 +256,11 @@ export default function AdminDashboard() {
 
         {/* Main Dashboard Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="cmis">CMI Management</TabsTrigger>
             <TabsTrigger value="approvals">User Approvals</TabsTrigger>
+            <TabsTrigger value="permissions">Permissions</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
 
@@ -467,6 +469,11 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Permissions Tab */}
+          <TabsContent value="permissions" className="space-y-6">
+            <PermissionMatrix />
           </TabsContent>
 
           {/* Reports Tab */}
