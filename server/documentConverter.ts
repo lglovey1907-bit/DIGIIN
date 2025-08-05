@@ -14,6 +14,7 @@ interface InspectionData {
   letterReference?: string;
   referenceNo?: string;
   inspectors?: Array<{name: string; designation: string}>;
+  attachedFiles?: Array<{id: string; fileName: string; fileType: string}>;
 }
 
 interface ConvertedDocument {
@@ -74,7 +75,7 @@ export async function convertInspectionToDocument(inspectionData: InspectionData
   }
 }
 
-async function convertObservationsToDocument(observations: any, inspectionData?: InspectionData): Promise<ObservationEntry[]> {
+async function convertObservationsToDocument(observations: any, inspectionData: InspectionData): Promise<ObservationEntry[]> {
   console.log("Processing observations:", typeof observations, observations);
   
   if (!observations || typeof observations !== 'object') {
@@ -101,7 +102,7 @@ async function convertObservationsToDocument(observations: any, inspectionData?:
         for (const company of value.companies as any[]) {
           if (company) {
             console.log(`Converting catering company: ${company.companyName || 'Unknown Company'}`);
-            const entry = await convertNewCateringCompanyObservation(company, serialNumber, (value as any).actionTaken || 'COS Ctg');
+            const entry = await convertNewCateringCompanyObservation(company, serialNumber, inspectionData, (value as any).actionTaken || 'COS Ctg');
             convertedEntries.push(entry);
             serialNumber++;
           }
@@ -121,14 +122,14 @@ async function convertObservationsToDocument(observations: any, inspectionData?:
       // Process other area observations
       for (const item of value as any[]) {
         console.log(`Converting general observation for area: ${key}`);
-        const entry = await convertGeneralObservation(item, serialNumber, key);
+        const entry = await convertGeneralObservation(item, serialNumber, key, inspectionData!);
         convertedEntries.push(entry);
         serialNumber++;
       }
     } else if (typeof value === 'object' && value !== null) {
       // Handle single object observations
       console.log(`Converting single object observation for area: ${key}`);
-      const entry = await convertGeneralObservation(value, serialNumber, key);
+      const entry = await convertGeneralObservation(value, serialNumber, key, inspectionData!);
       convertedEntries.push(entry);
       serialNumber++;
     }
@@ -171,7 +172,7 @@ async function convertCompanyObservation(company: any, serialNumber: number): Pr
   };
 }
 
-async function convertGeneralObservation(item: any, serialNumber: number, area: string): Promise<ObservationEntry> {
+async function convertGeneralObservation(item: any, serialNumber: number, area: string, inspectionData: InspectionData): Promise<ObservationEntry> {
   // Convert general observations without AI
   const convertedText = generateGeneralObservationText(item, area);
 
@@ -180,7 +181,7 @@ async function convertGeneralObservation(item: any, serialNumber: number, area: 
     companyHeading: `${area.charAt(0).toUpperCase() + area.slice(1)} Inspection - Unit ${serialNumber}`,
     observations: convertedText.split('\n').filter(line => line.trim()),
     actionTakenBy: "SS/DEC\nCMI/DEE\nCMI/Ctg\nCOS/Ctg.",
-    photographs: "As per annexure"
+    photographs: generatePhotographsText(inspectionData.attachedFiles)
   };
 }
 
@@ -262,7 +263,7 @@ function generateGeneralObservationText(item: any, area: string): string {
   return observations.join('\n');
 }
 
-async function convertNewCateringCompanyObservation(company: any, serialNumber: number, actionTaken?: string): Promise<ObservationEntry> {
+async function convertNewCateringCompanyObservation(company: any, serialNumber: number, inspectionData: InspectionData, actionTaken?: string): Promise<ObservationEntry> {
   const companyName = company.companyName?.startsWith('M/s ') ? 
     company.companyName : `M/s ${company.companyName || 'Unknown Company'}`;
   
@@ -339,7 +340,7 @@ async function convertNewCateringCompanyObservation(company: any, serialNumber: 
     companyHeading,
     observations,
     actionTakenBy: actionTaken || "COS Ctg",
-    photographs: "As per annexure"
+    photographs: generatePhotographsText(inspectionData.attachedFiles)
   };
 }
 
@@ -367,6 +368,28 @@ function generateSignatures(inspectionData: InspectionData): string[] {
     "Lovey Gandhi\nCMI/G.",
     "Vivek Kumar\nCMI/Ctg/VIP"
   ];
+}
+
+function generatePhotographsText(attachedFiles?: Array<{id: string; fileName: string; fileType: string}>): string {
+  if (!attachedFiles || attachedFiles.length === 0) {
+    return "As per annexure";
+  }
+  
+  // Filter for image files only
+  const imageFiles = attachedFiles.filter(file => 
+    file.fileType.startsWith('image/') || 
+    file.fileName.toLowerCase().match(/\.(jpg|jpeg|png|gif|bmp|webp)$/i)
+  );
+  
+  if (imageFiles.length === 0) {
+    return "As per annexure";
+  }
+  
+  if (imageFiles.length === 1) {
+    return `Photo: ${imageFiles[0].fileName}`;
+  }
+  
+  return `Photos: ${imageFiles.map(f => f.fileName).join(', ')}`;
 }
 
 export async function generateDocumentText(convertedDoc: ConvertedDocument): Promise<string> {

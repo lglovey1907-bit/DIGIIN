@@ -539,6 +539,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("Starting document conversion for inspection:", inspection.id);
       
+      // Fetch attached files for this inspection
+      const attachedFiles = await storage.getInspectionFiles(inspection.id);
+      console.log("Found attached files:", attachedFiles.length);
+      
       const convertedDocument = await convertInspectionToDocument({
         id: inspection.id,
         subject: inspection.subject || 'Railway Inspection',
@@ -546,7 +550,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         area: inspection.area || 'General',
         inspectionDate: inspection.inspectionDate ? inspection.inspectionDate.toISOString() : new Date().toISOString(),
         observations: inspection.observations || {},
-        referenceNo: inspection.referenceNo || undefined
+        referenceNo: inspection.referenceNo || undefined,
+        attachedFiles: attachedFiles.map(file => ({
+          id: file.id,
+          fileName: file.fileName,
+          fileType: file.fileType
+        }))
       });
       
       console.log("Document conversion completed, generating Word document...");

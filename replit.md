@@ -112,6 +112,8 @@ Preferred communication style: Simple, everyday language.
 - **Smart Data Processing**: Converts checkbox responses and technical data into elaborate English descriptions
 - **Company-wise Organization**: Structures observations by company with proper M/s prefixes and unit/platform details
 - **Tabular Format Output**: S.No., Observations, Action Taken By, and Photographs columns with content properly aligned
+- **Dynamic Photo Integration**: Shows actual uploaded file names instead of generic "As per annexure" text when inspection photos are attached
+- **Multi-File Support**: Handles single or multiple uploaded images with proper comma-separated file name listing
 - **Inspector Signature Alignment**: 1st inspector (left), 2nd inspector (center), 3rd inspector (right)
 - **Professional Language**: Transforms technical inspection data into formal Railway correspondence language
 - **Microsoft Office Compatibility**: Native .docx format ensures seamless opening in Microsoft Word, LibreOffice, and Google Docs
