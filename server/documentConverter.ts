@@ -1099,27 +1099,40 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
           spacing: { after: 600 }
         }),
 
-        // Inspector signatures
-        ...convertedDoc.signatures.map((signature, index) => {
-          const alignment = index === 0 ? AlignmentType.LEFT : 
-                           index === 1 ? AlignmentType.CENTER : 
-                           AlignmentType.RIGHT;
-          
-          return new Paragraph({
-            children: [
-              new TextRun({
-                text: signature.split('\n')[0], // Name
-                bold: true,
-                size: 22
-              }),
-              new TextRun({
-                text: `\n${signature.split('\n')[1] || ''}`, // Designation
-                size: 22
+        // Inspector signatures with proper alignment
+        new Paragraph({
+          children: [new TextRun({ text: "", size: 22 })],
+          spacing: { after: 300 }
+        }),
+
+        // Create signature table for proper alignment
+        new Table({
+          rows: [
+            new TableRow({
+              children: convertedDoc.signatures.map((signature, index) => {
+                const lines = signature.split('\n');
+                const name = lines[0] || '';
+                const designation = lines[1] || '';
+                
+                return new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [new TextRun({ text: name, bold: true, size: 22 })],
+                      alignment: AlignmentType.CENTER,
+                      spacing: { after: 0 }
+                    }),
+                    new Paragraph({
+                      children: [new TextRun({ text: designation, size: 20 })],
+                      alignment: AlignmentType.CENTER
+                    })
+                  ],
+                  width: { size: Math.floor(100 / convertedDoc.signatures.length), type: WidthType.PERCENTAGE },
+                  margins: { top: 100, bottom: 100, left: 100, right: 100 }
+                });
               })
-            ],
-            alignment: alignment,
-            spacing: { after: 200 }
-          });
+            })
+          ],
+          width: { size: 100, type: WidthType.PERCENTAGE }
         }),
 
         // Copy to section
