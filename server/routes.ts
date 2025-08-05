@@ -252,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Inspection routes
   app.post('/api/inspections', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const validatedData = insertInspectionSchema.parse({
         ...req.body,
         userId,
@@ -268,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/inspections', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       let inspections;
@@ -292,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Inspection not found" });
       }
       
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       // Check if user has permission to view this inspection
@@ -314,7 +314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Inspection not found" });
       }
       
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       // Check if user has permission to update this inspection
@@ -334,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Assignment routes (admin only)
   app.post('/api/assignments', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (user?.role !== 'admin') {
@@ -356,7 +356,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/assignments', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       let assignments;
@@ -401,7 +401,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/shortlisted-items', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await storage.getUser(userId);
       
       if (user?.role !== 'admin') {
@@ -424,7 +424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No file uploaded" });
       }
       
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const fileUpload = await storage.createFileUpload({
         inspectionId: req.body.inspectionId || null,
         fileName: req.file.originalname,
