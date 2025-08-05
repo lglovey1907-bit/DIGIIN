@@ -104,6 +104,15 @@ Preferred communication style: Simple, everyday language.
 - **Trend Analysis**: AI analyzes historical inspection data to identify patterns and provide recommendations
 - **Fallback System**: Graceful fallback to rule-based suggestions when AI service is unavailable
 
+## Document Conversion Feature
+- **PDF to DOC Conversion**: Transform PDF inspection reports into formatted English text DOC files with standardized Railway document structure
+- **AI-Powered Content Adaptation**: Uses OpenAI GPT-4o to convert structured data into narrative English text
+- **Official Railway Format**: Maintains proper Northern Railway document format with header, subject line, and letter reference
+- **Smart Data Processing**: Converts checkbox responses and technical data into elaborate English descriptions
+- **Company-wise Organization**: Structures observations by company with proper M/s prefixes and unit/platform details
+- **Tabular Format Output**: SN, Observations, Action Taken By, and Photographs columns in proper Railway format
+- **Professional Language**: Transforms technical inspection data into formal Railway correspondence language
+
 ## Development Tools
 - **Build System**: Vite for fast development and optimized production builds
 - **Code Quality**: TypeScript for type safety across frontend and backend

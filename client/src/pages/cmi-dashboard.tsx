@@ -5,10 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { NorthernRailwayLogo } from "@/components/northern-railway-logo";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, Download, Clock, CheckCircle, AlertTriangle, Plus, LogOut, BarChart3 } from "lucide-react";
+import { Calendar, Download, Clock, CheckCircle, AlertTriangle, Plus, LogOut, BarChart3, FileText } from "lucide-react";
 import { Link } from "wouter";
 import { ReportGenerator } from "@/components/report-generator";
 import AILayoutSuggestions from "@/components/ai-layout-suggestions";
+import DocumentConverter from "@/components/document-converter";
 import { OfflineIndicator } from '@/components/offline-indicator';
 
 interface Assignment {
@@ -81,6 +82,48 @@ export default function CMIDashboard() {
     } catch (error) {
       console.error('Error downloading PDF:', error);
       alert('Failed to download PDF. Please try again.');
+    }
+  };
+
+  const handleConvertToDoc = async (inspectionId: string) => {
+    try {
+      const response = await fetch(`/api/inspections/${inspectionId}/convert-to-doc`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          letterReference: `Ref: (i) Letter No.23AC/Decoy Checks dated ${new Date().toLocaleDateString('en-GB')}.
+          (ii) Control Message No.1006/CC/DLI/2025 dated ${new Date().toLocaleDateString('en-GB')}.`
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to convert to DOC');
+      }
+
+      // Get the filename from response headers or create one
+      const contentDisposition = response.headers.get('content-disposition');
+      let filename = 'Inspection_Report.doc';
+      if (contentDisposition && contentDisposition.includes('filename=')) {
+        filename = contentDisposition.split('filename=')[1].replace(/"/g, '');
+      }
+
+      // Download the file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error converting to DOC:', error);
+      alert('Failed to convert inspection to DOC format');
     }
   };
 
@@ -312,6 +355,14 @@ export default function CMIDashboard() {
                           <Download size={14} />
                           <span>PDF</span>
                         </Button>
+                        <DocumentConverter 
+                          inspectionId={inspection.id}
+                          inspectionData={{
+                            stationCode: inspection.stationCode,
+                            inspectionDate: inspection.inspectionDate,
+                            subject: inspection.subject
+                          }}
+                        />
                         <Badge
                           variant={
                             inspection.status === 'completed' ? 'default' :

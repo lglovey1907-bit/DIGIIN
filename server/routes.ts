@@ -18,6 +18,7 @@ import fs from "fs";
 import PDFDocument from "pdfkit";
 import passport from "passport";
 import { generateReportLayoutSuggestions, analyzeInspectionTrends } from "./aiService";
+import { convertInspectionToDocument, generateDocumentText } from "./documentConverter";
 
 // Extend Express types
 declare global {
@@ -396,6 +397,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error analyzing trends:", error);
       res.status(500).json({ message: "Failed to analyze trends" });
+    }
+  });
+
+  // PDF to DOC conversion route
+  app.post('/api/inspections/:id/convert-to-doc', isAuthenticated, async (req: any, res) => {
+    try {
+      const inspection = await storage.getInspection(req.params.id);
+      if (!inspection) {
+        return res.status(404).json({ message: "Inspection not found" });
+      }
+      
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Check if user has permission to view this inspection
+      if (user?.role !== 'admin' && inspection.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const convertedDocument = await convertInspectionToDocument({
+        id: inspection.id,
+        subject: inspection.subject,
+        stationCode: inspection.stationCode,
+        area: inspection.area,
+        inspectionDate: inspection.inspectionDate.toISOString(),
+        observations: inspection.observations,
+        letterReference: req.body.letterReference
+      });
+      
+      const documentText = await generateDocumentText(convertedDocument);
+      
+      // Set headers for DOC file download
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', `attachment; filename="Inspection_Report_${inspection.stationCode}_${new Date(inspection.inspectionDate).toISOString().split('T')[0]}.doc"`);
+      
+      // Send as plain text that can be opened in Word
+      res.send(documentText);
+    } catch (error) {
+      console.error("Error converting inspection to DOC:", error);
+      res.status(500).json({ message: "Failed to convert inspection to DOC format" });
     }
   });
 
