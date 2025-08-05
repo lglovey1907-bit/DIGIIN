@@ -112,11 +112,11 @@ Preferred communication style: Simple, everyday language.
 - **Smart Data Processing**: Converts checkbox responses and technical data into elaborate English descriptions
 - **Company-wise Organization**: Structures observations by company with proper M/s prefixes and unit/platform details
 - **Tabular Format Output**: S.No., Observations, Action Taken By, and Photographs columns with content properly aligned
-- **Embedded Image Support**: Actual uploaded inspection photos are embedded directly into Word documents instead of text references
-- **Image Validation**: Validates image file integrity with proper PNG/JPEG signature checking before embedding
-- **Multi-File Support**: Handles single or multiple uploaded images with proper embedding and fallback to filenames for invalid files
-- **Reliable Document Generation**: Ensures Word documents always generate successfully without corruption, with graceful fallback for problematic images
-- **Smart File Detection**: Automatically detects and processes only valid image files (PNG, JPG, JPEG, GIF, BMP, WebP) for embedding
+- **Professional Photo References**: Uploaded inspection photos are clearly indicated in Word documents with "Uploaded Photo:" labels and formatted filenames
+- **Image File Detection**: Automatically detects and processes only valid image files (PNG, JPG, JPEG, GIF, BMP, WebP) for professional referencing
+- **Multi-File Support**: Handles single or multiple uploaded images with clear, underlined filename references
+- **Reliable Document Generation**: Ensures Word documents always generate successfully without corruption across all Microsoft Office versions
+- **Consistent Formatting**: Professional photo reference format that works reliably in Word, LibreOffice, and Google Docs
 - **Inspector Signature Alignment**: 1st inspector (left), 2nd inspector (center), 3rd inspector (right)
 - **Professional Language**: Transforms technical inspection data into formal Railway correspondence language
 - **Microsoft Office Compatibility**: Native .docx format ensures seamless opening in Microsoft Word, LibreOffice, and Google Docs

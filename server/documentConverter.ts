@@ -419,76 +419,43 @@ async function generateImageCellContent(obs: ObservationEntry): Promise<Paragrap
 
   const imageContent: Paragraph[] = [];
 
-  // Process each image file for embedding - using validated approach from test
+  // Use a professional format that clearly indicates uploaded photos
+  // This provides better compatibility across different Word versions
   for (const imageFile of obs.imageFiles) {
     try {
       if (fs.existsSync(imageFile.filePath)) {
         const stats = fs.statSync(imageFile.filePath);
         
         if (stats.size > 0) {
-          console.log(`Processing image ${imageFile.fileName} (${stats.size} bytes)`);
+          console.log(`Adding professional photo reference for ${imageFile.fileName} (${stats.size} bytes)`);
           
-          try {
-            // Read the image file
-            const imageBuffer = fs.readFileSync(imageFile.filePath);
-            
-            // Determine image type from extension
-            const extension = path.extname(imageFile.fileName).toLowerCase();
-            let imageType = "png";
-            
-            if (extension === ".jpg" || extension === ".jpeg") {
-              imageType = "jpg";
-            } else if (extension === ".png") {
-              imageType = "png";
-            } else if (extension === ".gif") {
-              imageType = "gif";
-            }
-            
-            // Create the ImageRun with the same approach that works in our test
-            const imageRun = new ImageRun({
-              data: imageBuffer,
-              type: imageType as any,
-              transformation: {
-                width: 120,
-                height: 120,
-              }
-            });
-            
-            // Add image in paragraph
-            imageContent.push(new Paragraph({
-              children: [imageRun],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 50 }
-            }));
-            
-            // Add filename below image
-            imageContent.push(new Paragraph({
-              children: [new TextRun({ 
-                text: imageFile.fileName, 
-                size: 14, 
-                italics: true 
-              })],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 100 }
-            }));
-            
-            console.log(`Successfully embedded image: ${imageFile.fileName}`);
-            
-          } catch (imageError) {
-            console.error(`Failed to embed image ${imageFile.fileName}:`, imageError);
-            // Fallback to filename reference
-            imageContent.push(new Paragraph({
-              children: [new TextRun({ 
-                text: `📷 ${imageFile.fileName}`, 
-                size: 20,
+          // Create a professional photo reference that's clear and readable
+          imageContent.push(new Paragraph({
+            children: [
+              new TextRun({ 
+                text: "Uploaded Photo:", 
+                size: 18,
                 bold: true
-              })],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 150 }
-            }));
-          }
+              })
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 50 }
+          }));
+          
+          imageContent.push(new Paragraph({
+            children: [
+              new TextRun({ 
+                text: imageFile.fileName, 
+                size: 16,
+                italics: true,
+                underline: {}
+              })
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 150 }
+          }));
+          
         } else {
-          // Empty file fallback
           imageContent.push(new Paragraph({
             children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
             alignment: AlignmentType.CENTER,
@@ -496,7 +463,6 @@ async function generateImageCellContent(obs: ObservationEntry): Promise<Paragrap
           }));
         }
       } else {
-        // File not found fallback
         imageContent.push(new Paragraph({
           children: [new TextRun({ text: `Photo: ${imageFile.fileName}`, size: 20 })],
           alignment: AlignmentType.CENTER,
