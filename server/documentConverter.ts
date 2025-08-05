@@ -359,103 +359,55 @@ function generateSignatures(inspectionData: InspectionData): string[] {
 }
 
 export async function generateDocumentText(convertedDoc: ConvertedDocument): Promise<string> {
-  // Use portrait format optimized for A4 paper (210mm width)
-  // Standard A4 portrait: ~70-75 characters per line for optimal readability
-  const portraitWidth = 75;
-  
+  // Create structured document for RTF table conversion
   let documentText = '';
   
-  // Header - Centered for portrait format
-  const headerSpaces = ' '.repeat(Math.max(0, (portraitWidth - convertedDoc.header.length) / 2));
-  documentText += `${headerSpaces}${convertedDoc.header}\n\n`;
+  // Header - will be centered in RTF
+  documentText += `${convertedDoc.header}\n\n`;
   
   documentText += `${convertedDoc.subject}\n\n`;
   
-  // Letter reference - Only show if user provided custom reference
-  if (convertedDoc.letterReference && 
-      convertedDoc.letterReference.trim() && 
-      !convertedDoc.letterReference.includes('Letter No.23AC/Decoy Checks dated')) {
-    documentText += `${convertedDoc.letterReference}\n\n\n\n`;
-  } else if (convertedDoc.letterReference && convertedDoc.letterReference.trim()) {
+  // Letter reference
+  if (convertedDoc.letterReference && convertedDoc.letterReference.trim()) {
     documentText += `${convertedDoc.letterReference}\n\n\n\n`;
   }
   
   documentText += `${convertedDoc.openingParagraph}\n\n\n\n`;
   
-  // Portrait format table structure optimized for A4
-  const portraitColWidths = {
-    sn: 5,
-    observations: 45,
-    actionTaken: 15,
-    photographs: 10
-  };
-  
-  // Table header with portrait formatting
-  documentText += `${'S.No.'.padEnd(portraitColWidths.sn)}${'Deficiencies/Observations'.padEnd(portraitColWidths.observations)}${'Action Taken By'.padEnd(portraitColWidths.actionTaken)}${'Photos'}\n`;
-  documentText += `${'-'.repeat(portraitColWidths.sn)}${'-'.repeat(portraitColWidths.observations)}${'-'.repeat(portraitColWidths.actionTaken)}${'-'.repeat(portraitColWidths.photographs)}\n`;
+  // TABLE STRUCTURE MARKER - RTF will parse this specially
+  documentText += `TABLE_START\n`;
+  documentText += `S.No.|Observations|Action Taken By|Images of the Inspection\n`;
   
   convertedDoc.observations.forEach((obs, index) => {
-    // Start with SN and company heading
-    documentText += `${obs.serialNumber.padEnd(portraitColWidths.sn)}`;
+    // Company heading row
+    documentText += `${obs.serialNumber}|${obs.companyHeading}|${obs.actionTakenBy.split('\n')[0] || ''}|${obs.photographs || 'As per annexure'}\n`;
     
-    // Company heading with portrait wrapping
-    const wrappedCompany = wrapPortraitText(obs.companyHeading, portraitColWidths.observations - 2);
-    const companyLines = wrappedCompany.split('\n');
-    documentText += `${companyLines[0].padEnd(portraitColWidths.observations)}`;
-    
-    // Action taken by (first line)
-    const actionLines = obs.actionTakenBy.split('\n').filter(line => line.trim());
-    documentText += `${(actionLines[0] || '').substring(0, portraitColWidths.actionTaken).padEnd(portraitColWidths.actionTaken)}`;
-    documentText += `${(obs.photographs || 'Annexure').substring(0, portraitColWidths.photographs)}\n`;
-    
-    // Additional company heading lines
-    for (let i = 1; i < companyLines.length; i++) {
-      documentText += `${' '.repeat(portraitColWidths.sn)}`;
-      documentText += `${companyLines[i].padEnd(portraitColWidths.observations)}`;
-      if (i < actionLines.length) {
-        documentText += `${actionLines[i].substring(0, portraitColWidths.actionTaken).padEnd(portraitColWidths.actionTaken)}`;
-      } else {
-        documentText += `${' '.repeat(portraitColWidths.actionTaken)}`;
-      }
-      documentText += `${' '.repeat(portraitColWidths.photographs)}\n`;
-    }
-    
-    // Observations content with portrait formatting
-    obs.observations.forEach((observation, obsIndex) => {
-      const wrappedObs = wrapPortraitText(observation, portraitColWidths.observations - 2);
-      const obsLines = wrappedObs.split('\n');
-      
-      obsLines.forEach((obsLine, lineIndex) => {
-        documentText += `${' '.repeat(portraitColWidths.sn)}`;
-        documentText += `${obsLine.padEnd(portraitColWidths.observations)}`;
-        
-        // Show remaining action taken lines
-        const actionLineIndex = companyLines.length + obsIndex + lineIndex;
-        if (actionLineIndex < actionLines.length) {
-          documentText += `${actionLines[actionLineIndex].substring(0, portraitColWidths.actionTaken).padEnd(portraitColWidths.actionTaken)}`;
-        } else {
-          documentText += `${' '.repeat(portraitColWidths.actionTaken)}`;
-        }
-        documentText += `${' '.repeat(portraitColWidths.photographs)}\n`;
-      });
+    // Observation content rows
+    obs.observations.forEach((observation) => {
+      documentText += `|${observation}|||\n`;
     });
     
-    // Separator between entries for better readability in portrait
-    if (index < convertedDoc.observations.length - 1) {
-      documentText += `${'-'.repeat(portraitColWidths.sn)}${'-'.repeat(portraitColWidths.observations)}${'-'.repeat(portraitColWidths.actionTaken)}${'-'.repeat(portraitColWidths.photographs)}\n`;
+    // Action taken lines (remaining)
+    const actionLines = obs.actionTakenBy.split('\n').filter(line => line.trim());
+    for (let i = 1; i < actionLines.length; i++) {
+      documentText += `||${actionLines[i]}||\n`;
     }
   });
   
+  documentText += `TABLE_END\n\n\n`;
+  
   if (convertedDoc.closingNotes) {
-    documentText += `\n\nNote: ${convertedDoc.closingNotes}\n\n`;
+    documentText += `Note: ${convertedDoc.closingNotes}\n\n`;
   }
   
   documentText += `\n\n\n`;
   
-  // Format signatures with portrait alignment
-  documentText += formatPortraitInspectorSignatures(convertedDoc.signatures, portraitWidth);
+  // Inspector signatures
+  convertedDoc.signatures.forEach((signature, index) => {
+    documentText += `SIGNATURE_${index + 1}|${signature}\n`;
+  });
   
-  documentText += `\n\n\nCopy to:\nSr.DCM/PS: For kind information please.\nDCM/PS: For kind information please.\n\nFor images of the Decoy Check\n\n`;
+  documentText += `\n\nCopy to:\nSr.DCM/PS: For kind information please.\nDCM/PS: For kind information please.\n\nFor images of the Decoy Check\n\n`;
   
   return documentText;
 }
@@ -587,7 +539,7 @@ function formatPortraitInspectorSignatures(signatures: string[], portraitWidth: 
   return signatureText;
 }
 
-// Generate RTF document for Microsoft Office compatibility
+// Generate RTF document for Microsoft Office compatibility with proper table structure
 export function generateRTFDocument(plainText: string): string {
   // RTF header for latest Microsoft Word compatibility
   let rtfContent = '{\\rtf1\\ansi\\deff0';
@@ -596,7 +548,7 @@ export function generateRTFDocument(plainText: string): string {
   rtfContent += '{\\fonttbl{\\f0\\froman\\fcharset0 Times New Roman;}{\\f1\\fswiss\\fcharset0 Arial;}}';
   
   // Color table
-  rtfContent += '{\\colortbl;\\red0\\green0\\blue0;}';
+  rtfContent += '{\\colortbl;\\red0\\green0\\blue0;\\red128\\green128\\blue128;}';
   
   // Document formatting for portrait A4
   rtfContent += '\\paperw11906\\paperh16838'; // A4 size in twips
@@ -607,52 +559,146 @@ export function generateRTFDocument(plainText: string): string {
   // Default paragraph formatting
   rtfContent += '\\pard\\plain\\f0\\fs24'; // Times New Roman, 12pt
   
-  // Convert plain text to RTF format
   const lines = plainText.split('\n');
+  let inTable = false;
+  let tableHeaderDone = false;
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     
-    // Header formatting (centered)
+    // Northern Railway header - CENTERED AT TOP OF PAGE
     if (line.trim() === 'Northern Railway') {
-      rtfContent += '\\qc\\b\\fs28 ' + escapeRTF(line) + '\\b0\\fs24\\par\\par';
+      rtfContent += '\\qc\\b\\fs32\\ul ' + escapeRTF(line) + '\\ulnone\\b0\\fs24\\par\\par\\par';
       continue;
     }
     
     // Subject line formatting
     if (line.startsWith('Sub:')) {
-      rtfContent += '\\ql\\b ' + escapeRTF(line) + '\\b0\\par\\par';
+      rtfContent += '\\ql\\b\\fs26 ' + escapeRTF(line) + '\\b0\\fs24\\par\\par';
       continue;
     }
     
     // Reference line formatting
     if (line.startsWith('Ref:')) {
-      rtfContent += '\\ql ' + escapeRTF(line) + '\\par\\par';
+      rtfContent += '\\ql\\fs22 ' + escapeRTF(line) + '\\fs24\\par';
       continue;
     }
     
-    // Table header formatting
-    if (line.includes('S.No.') && line.includes('Deficiencies/Observations')) {
-      rtfContent += '\\ql\\b ' + escapeRTF(line) + '\\b0\\par';
+    // Opening paragraph with justify
+    if (line.includes('As per reference above')) {
+      rtfContent += '\\par\\qj\\fs22 ' + escapeRTF(line) + '\\fs24\\par\\par';
       continue;
     }
     
-    // Table separator lines
-    if (line.match(/^-+$/)) {
-      rtfContent += '\\ql ' + escapeRTF(line) + '\\par';
+    // TABLE START MARKER
+    if (line === 'TABLE_START') {
+      inTable = true;
+      tableHeaderDone = false;
       continue;
     }
     
-    // Inspector signatures (detect by pattern)
-    if (line.includes('CMI/') || line.includes('COS/') || line.includes('SS/')) {
-      rtfContent += '\\ql\\b ' + escapeRTF(line) + '\\b0\\par';
+    // TABLE END MARKER
+    if (line === 'TABLE_END') {
+      inTable = false;
+      rtfContent += '\\pard\\par\\par';
+      continue;
+    }
+    
+    // Process table content
+    if (inTable) {
+      const parts = line.split('|');
+      
+      if (parts.length >= 4) {
+        // Start table row
+        rtfContent += '\\trowd\\trgaph108\\trleft-108';
+        
+        // Define column widths (in twips: 1 inch = 1440 twips, total ~10000)
+        rtfContent += '\\cellx1000';      // S.No. - 1000 twips
+        rtfContent += '\\cellx6500';      // Observations - 5500 twips wide  
+        rtfContent += '\\cellx8500';      // Action Taken By - 2000 twips
+        rtfContent += '\\cellx10000';     // Images - 1500 twips
+        
+        // Table header row
+        if (!tableHeaderDone && parts[0] === 'S.No.') {
+          rtfContent += '\\pard\\intbl\\qc\\b\\fs22 ' + escapeRTF(parts[0]) + '\\cell';
+          rtfContent += '\\pard\\intbl\\qc\\b\\fs22 ' + escapeRTF(parts[1]) + '\\cell';
+          rtfContent += '\\pard\\intbl\\qc\\b\\fs22 ' + escapeRTF(parts[2]) + '\\cell';
+          rtfContent += '\\pard\\intbl\\qc\\b\\fs22 ' + escapeRTF(parts[3]) + '\\cell';
+          rtfContent += '\\row';
+          tableHeaderDone = true;
+          continue;
+        }
+        
+        // Data rows
+        if (tableHeaderDone) {
+          // Serial number cell (bold if not empty)
+          if (parts[0].trim()) {
+            rtfContent += '\\pard\\intbl\\qc\\b\\fs22 ' + escapeRTF(parts[0]) + '\\b0\\cell';
+          } else {
+            rtfContent += '\\pard\\intbl\\cell';
+          }
+          
+          // Observations cell with justify formatting (Ctrl+J equivalent)
+          if (parts[1].trim()) {
+            rtfContent += '\\pard\\intbl\\qj\\fs22 ' + escapeRTF(parts[1]) + '\\cell';
+          } else {
+            rtfContent += '\\pard\\intbl\\cell';
+          }
+          
+          // Action taken cell
+          if (parts[2].trim()) {
+            rtfContent += '\\pard\\intbl\\qc\\fs22 ' + escapeRTF(parts[2]) + '\\cell';
+          } else {
+            rtfContent += '\\pard\\intbl\\cell';
+          }
+          
+          // Images cell
+          if (parts[3].trim()) {
+            rtfContent += '\\pard\\intbl\\qc\\fs22 ' + escapeRTF(parts[3]) + '\\cell';
+          } else {
+            rtfContent += '\\pard\\intbl\\cell';
+          }
+          
+          rtfContent += '\\row';
+        }
+      }
+      continue;
+    }
+    
+    // Inspector signatures with special formatting
+    if (line.startsWith('SIGNATURE_')) {
+      const parts = line.split('|');
+      if (parts.length >= 2) {
+        const signature = parts[1];
+        const sigLines = signature.split('\\n');
+        
+        // Position signatures: 1st right, 2nd middle, 3rd left
+        if (line.startsWith('SIGNATURE_1')) {
+          rtfContent += '\\ql\\b\\fs22 ' + escapeRTF(sigLines[0]) + '\\b0\\tab\\tab\\tab';
+        } else if (line.startsWith('SIGNATURE_2')) {
+          rtfContent += '\\tab\\tab ' + escapeRTF(sigLines[0]) + '\\tab\\tab';
+        } else if (line.startsWith('SIGNATURE_3')) {
+          rtfContent += escapeRTF(sigLines[0]) + '\\par';
+          
+          // Designations line
+          rtfContent += '\\ql\\b\\fs22 ';
+          if (parts[1].includes('CMI/YTSK')) rtfContent += escapeRTF('CMI/YTSK');
+          rtfContent += '\\tab\\tab CMI/G.\\tab\\tab CMI/Ctg/VIP\\b0\\fs24\\par\\par';
+        }
+        continue;
+      }
+    }
+    
+    // Copy to section
+    if (line.startsWith('Copy to:')) {
+      rtfContent += '\\ql\\b\\fs22 ' + escapeRTF(line) + '\\b0\\par';
       continue;
     }
     
     // Regular content
-    if (line.trim()) {
-      rtfContent += '\\ql ' + escapeRTF(line) + '\\par';
-    } else {
+    if (line.trim() && !line.startsWith('SIGNATURE_')) {
+      rtfContent += '\\ql\\fs22 ' + escapeRTF(line) + '\\par';
+    } else if (!line.trim()) {
       rtfContent += '\\par'; // Empty line
     }
   }

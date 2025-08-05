@@ -473,6 +473,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Debug endpoint to see plain text before RTF conversion
+  app.post('/api/inspections/:id/debug-text', async (req: any, res) => {
+    try {
+      const inspection = await storage.getInspection(req.params.id);
+      if (!inspection) {
+        return res.status(404).json({ message: "Inspection not found" });
+      }
+
+      const { letterReference } = req.body;
+      const convertedDoc = await convertInspectionToDocument({
+        id: inspection.id,
+        subject: inspection.subject || 'Railway Inspection',
+        stationCode: inspection.stationCode,
+        area: inspection.area,
+        inspectionDate: inspection.inspectionDate,
+        observations: inspection.observations,
+        letterReference
+      }, letterReference);
+      
+      const plainText = await generateDocumentText(convertedDoc);
+      
+      res.setHeader('Content-Type', 'text/plain');
+      res.send(plainText);
+    } catch (error) {
+      console.error('Error generating debug text:', error);
+      res.status(500).json({ error: 'Failed to generate debug text' });
+    }
+  });
+
   // PDF to DOC conversion route
   app.post('/api/inspections/:id/convert-to-doc', async (req: any, res) => {
     try {
