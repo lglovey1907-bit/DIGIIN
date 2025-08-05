@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { NorthernRailwayLogo } from "@/components/northern-railway-logo";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
-import { Calendar, Download, Clock, CheckCircle, AlertTriangle, Plus, LogOut, BarChart3, FileText } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { Calendar, Download, Clock, CheckCircle, AlertTriangle, Plus, LogOut, BarChart3, FileText, RefreshCw } from "lucide-react";
 import { Link } from "wouter";
 import { ReportGenerator } from "@/components/report-generator";
 import AILayoutSuggestions from "@/components/ai-layout-suggestions";
 import DocumentConverter from "@/components/document-converter";
 import { OfflineIndicator } from '@/components/offline-indicator';
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Assignment {
   id: string;
@@ -33,6 +36,7 @@ interface Inspection {
 export default function CMIDashboard() {
   const { user, logout } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const { toast } = useToast();
   
   const { data: assignments = [] } = useQuery<Assignment[]>({
     queryKey: ["/api/assignments"],
@@ -42,8 +46,33 @@ export default function CMIDashboard() {
     queryKey: ["/api/inspections"],
   });
 
+  const refreshMutation = useMutation({
+    mutationFn: () => apiRequest("/api/inspections/refresh", {
+      method: "POST",
+    }),
+    onSuccess: (data) => {
+      toast({
+        title: "Reports Refreshed",
+        description: `Successfully refreshed ${data.refreshedCount} inspection reports with updated formatting.`,
+      });
+      // Refresh the inspections list
+      queryClient.invalidateQueries({ queryKey: ["/api/inspections"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Refresh Failed", 
+        description: error.message || "Failed to refresh reports",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleRefreshReports = () => {
+    refreshMutation.mutate();
   };
 
   const handleDownloadPDF = async (inspectionId: string) => {
@@ -188,6 +217,15 @@ export default function CMIDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <OfflineIndicator />
+              <Button 
+                onClick={handleRefreshReports}
+                disabled={refreshMutation.isPending}
+                variant="outline"
+                className="text-nr-blue border-nr-blue hover:bg-nr-blue hover:text-white"
+              >
+                <RefreshCw size={16} className={`mr-2 ${refreshMutation.isPending ? 'animate-spin' : ''}`} />
+                {refreshMutation.isPending ? 'Refreshing...' : 'Refresh Reports'}
+              </Button>
               <ReportGenerator 
                 inspections={inspections} 
                 onGenerateReport={handleGenerateReport}

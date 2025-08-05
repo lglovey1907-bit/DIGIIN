@@ -302,6 +302,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Refresh old reports endpoint
+  app.post("/api/inspections/refresh", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      let allInspections;
+      if (user?.role === 'admin') {
+        allInspections = await storage.getAllInspections();
+      } else {
+        allInspections = await storage.getUserInspections(userId);
+      }
+      
+      let refreshedCount = 0;
+
+      for (const inspection of allInspections) {
+        // Check if inspection has old format observations (not nested under area)
+        const obs = inspection.observations as any;
+        if (obs && !obs.catering && !obs.sanitation && !obs.parking && !obs.publicity && !obs.uts_prs) {
+          console.log(`Refreshing inspection ${inspection.id} with old format`);
+          
+          // Convert old format to new format
+          const newObservations: any = {};
+          
+          if (inspection.area === 'catering') {
+            // Convert old catering format to new format
+            if (obs.companyName || obs.vendorName || typeof obs === 'object') {
+              newObservations.catering = {
+                companies: [{
+                  companyName: obs.companyName || 'M/s Company',
+                  unitType: obs.unitType || 'SMU',
+                  platformNo: obs.platformNo || '1',
+                  vendorName: obs.vendorName || 'Vendor Name',
+                  properUniform: obs.properUniform !== false,
+                  medicalCard: obs.medicalCard !== false,
+                  policeVerification: obs.policeVerification !== false,
+                  foodLicense: obs.foodLicense || 'available',
+                  rateListDisplay: obs.rateListDisplay || 'properly_displayed',
+                  billMachine: obs.billMachine || 'available_working',
+                  digitalPayment: obs.digitalPayment || 'not_accepting',
+                  overchargingItems: obs.overchargingItems || [],
+                  unapprovedItems: obs.unapprovedItems || []
+                }],
+                actionTaken: inspection.actionTaken || obs.actionTaken || 'COS Ctg'
+              };
+            }
+          } else {
+            // For other areas, wrap in area-specific structure
+            newObservations[inspection.area] = {
+              ...obs,
+              actionTaken: inspection.actionTaken || obs.actionTaken || 'Action taken'
+            };
+          }
+
+          // Update the inspection with new format
+          await storage.updateInspection(inspection.id, {
+            observations: newObservations
+          });
+          
+          refreshedCount++;
+        }
+      }
+
+      res.json({ 
+        message: `Successfully refreshed ${refreshedCount} inspection reports with updated format`,
+        refreshedCount 
+      });
+    } catch (error) {
+      console.error("Error refreshing inspections:", error);
+      res.status(500).json({ error: "Failed to refresh inspections" });
+    }
+  });
+
   app.get('/api/inspections/:id', isAuthenticated, async (req: any, res) => {
     try {
       const inspection = await storage.getInspection(req.params.id);
