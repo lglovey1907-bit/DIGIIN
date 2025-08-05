@@ -207,7 +207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes for user management
-  app.get('/api/admin/pending-users', requireAdmin, async (req, res) => {
+  app.get('/api/admin/pending-users', isAuthenticated, requireAdmin, async (req, res) => {
     try {
       const pendingUsers = await storage.getAllPendingUsers();
       res.json(pendingUsers.map(user => ({
@@ -224,7 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/approve-user/:id', requireAdmin, async (req: any, res) => {
+  app.post('/api/admin/approve-user/:id', isAuthenticated, requireAdmin, async (req: any, res) => {
     try {
       const user = await storage.approveUser(req.params.id, req.user.id);
       res.json({ message: "User approved successfully", user });
@@ -233,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/cmis', requireAdmin, async (req, res) => {
+  app.get('/api/admin/cmis', isAuthenticated, requireAdmin, async (req, res) => {
     try {
       const cmis = await storage.getAllCMIs();
       res.json(cmis.map(cmi => ({
