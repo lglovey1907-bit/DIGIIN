@@ -1118,20 +1118,19 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
               spacing: { after: 200 }
             })
           ] : convertedDoc.signatures.length === 2 ? [
-            // Two inspectors: 2-row table, each row contains name and designation of one inspector
+            // Two inspectors: 2-column table, each column contains name and designation of one inspector
             new Table({
-              rows: convertedDoc.signatures.map((signature, index) => {
-                const lines = signature.split('\n');
-                const name = lines[0] || '';
-                const designation = lines[1] || '';
-                
-                // First inspector: right-aligned, Second inspector: center-aligned
-                const alignment = index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER;
-                
-                return new TableRow({
-                  children: [
-                    // Single cell containing both name and designation stacked
-                    new TableCell({
+              rows: [
+                new TableRow({
+                  children: convertedDoc.signatures.map((signature, index) => {
+                    const lines = signature.split('\n');
+                    const name = lines[0] || '';
+                    const designation = lines[1] || '';
+                    
+                    // First inspector: right-aligned, Second inspector: center-aligned
+                    const alignment = index === 0 ? AlignmentType.RIGHT : AlignmentType.CENTER;
+                    
+                    return new TableCell({
                       children: [
                         new Paragraph({
                           children: [new TextRun({ text: name, bold: true, size: 22 })],
@@ -1144,7 +1143,7 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
                           spacing: { after: 50 }
                         })
                       ],
-                      width: { size: 100, type: WidthType.PERCENTAGE },
+                      width: { size: 50, type: WidthType.PERCENTAGE },
                       margins: { top: 100, bottom: 100, left: 100, right: 100 },
                       borders: {
                         top: { style: BorderStyle.NONE },
@@ -1152,10 +1151,10 @@ export async function generateWordDocument(convertedDoc: ConvertedDocument): Pro
                         left: { style: BorderStyle.NONE },
                         right: { style: BorderStyle.NONE }
                       }
-                    })
-                  ]
-                });
-              }),
+                    });
+                  })
+                })
+              ],
               width: { size: 100, type: WidthType.PERCENTAGE }
             })
           ] : [
