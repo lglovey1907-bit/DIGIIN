@@ -12,6 +12,7 @@ import { Link, useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { Train, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { NorthernRailwayLogo } from "@/components/northern-railway-logo";
 
 export default function Register() {
   const [, setLocation] = useLocation();
