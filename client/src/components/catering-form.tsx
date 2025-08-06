@@ -9,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { SmartSearch } from "./smart-search";
 import { EnhancedSmartSearch } from "./enhanced-smart-search";
 import { ValidatedUnapprovedSearch } from "./validated-unapproved-search";
-import { Upload, Plus, Trash2, Utensils } from "lucide-react";
+import { Upload, Plus, Trash2, Utensils, FileText } from "lucide-react";
 
 interface CateringFormProps {
   observations: any;
@@ -34,13 +34,20 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
       vendorName: "",
       billMachine: "",
       foodLicense: "",
+      foodLicenseDetails: "",
       medicalCard: false,
+      medicalCardDetails: "",
+      idCard: false,
+      idCardNumber: "",
       properUniform: false,
       digitalPayment: "",
       rateListDisplay: "",
+      billFoodFree: "",
       policeVerification: false,
+      policeVerificationDetails: "",
       unapprovedItems: [""],
-      overchargingItems: [{ name: "", mrpPrice: "", sellingPrice: "" }]
+      overchargingItems: [{ name: "", mrpPrice: "", sellingPrice: "" }],
+      additionalObservations: []
     }
   ]);
 
@@ -94,13 +101,20 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
       vendorName: "",
       billMachine: "",
       foodLicense: "",
+      foodLicenseDetails: "",
       medicalCard: false,
+      medicalCardDetails: "",
+      idCard: false,
+      idCardNumber: "",
       properUniform: false,
       digitalPayment: "",
       rateListDisplay: "",
+      billFoodFree: "",
       policeVerification: false,
+      policeVerificationDetails: "",
       unapprovedItems: [""],
-      overchargingItems: [{ name: "", mrpPrice: "", sellingPrice: "" }]
+      overchargingItems: [{ name: "", mrpPrice: "", sellingPrice: "" }],
+      additionalObservations: []
     };
     const updatedCompanies = [...companies, newCompany];
     setCompanies(updatedCompanies);
@@ -187,6 +201,48 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
             overchargingItems: company.overchargingItems.map((item, j) => 
               j === itemIndex ? { ...item, [field]: value } : item
             )
+          }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  // Additional observation points functions
+  const addAdditionalPoint = (companyIndex: number) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex 
+        ? { 
+            ...company, 
+            additionalObservations: [...(company.additionalObservations || []), { title: "", content: "" }]
+          }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  const removeAdditionalPoint = (companyIndex: number, pointIndex: number) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex 
+        ? { 
+            ...company, 
+            additionalObservations: company.additionalObservations?.filter((_, j) => j !== pointIndex) || []
+          }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  const updateAdditionalPoint = (companyIndex: number, pointIndex: number, field: string, value: string) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex 
+        ? { 
+            ...company, 
+            additionalObservations: company.additionalObservations?.map((point, j) => 
+              j === pointIndex ? { ...point, [field]: value } : point
+            ) || []
           }
         : company
     );
@@ -286,7 +342,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                     <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">2</span>
                     Uniform & Documentation Check
                   </h5>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-3">
                     <div className="flex items-center space-x-2">
                       <Checkbox 
                         id={`properUniform-${companyIndex}`}
@@ -295,21 +351,56 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       />
                       <Label htmlFor={`properUniform-${companyIndex}`}>Proper Uniform</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`medicalCard-${companyIndex}`}
-                        checked={company.medicalCard || false}
-                        onCheckedChange={(checked) => updateCompany(companyIndex, 'medicalCard', checked)}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`medicalCard-${companyIndex}`}
+                          checked={company.medicalCard || false}
+                          onCheckedChange={(checked) => updateCompany(companyIndex, 'medicalCard', checked)}
+                        />
+                        <Label htmlFor={`medicalCard-${companyIndex}`}>Medical Card</Label>
+                      </div>
+                      <Input 
+                        placeholder="Medical card details (validity, type, etc.)"
+                        value={company.medicalCardDetails || ""}
+                        onChange={(e) => updateCompany(companyIndex, 'medicalCardDetails', e.target.value)}
+                        className="text-sm"
                       />
-                      <Label htmlFor={`medicalCard-${companyIndex}`}>Medical Card</Label>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`policeVerification-${companyIndex}`}
-                        checked={company.policeVerification || false}
-                        onCheckedChange={(checked) => updateCompany(companyIndex, 'policeVerification', checked)}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`idCard-${companyIndex}`}
+                          checked={company.idCard || false}
+                          onCheckedChange={(checked) => updateCompany(companyIndex, 'idCard', checked)}
+                        />
+                        <Label htmlFor={`idCard-${companyIndex}`}>ID Card</Label>
+                      </div>
+                      <Input 
+                        placeholder="ID card number"
+                        value={company.idCardNumber || ""}
+                        onChange={(e) => updateCompany(companyIndex, 'idCardNumber', e.target.value)}
+                        className="text-sm"
                       />
-                      <Label htmlFor={`policeVerification-${companyIndex}`}>Police Verification</Label>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`policeVerification-${companyIndex}`}
+                          checked={company.policeVerification || false}
+                          onCheckedChange={(checked) => updateCompany(companyIndex, 'policeVerification', checked)}
+                        />
+                        <Label htmlFor={`policeVerification-${companyIndex}`}>Police Verification</Label>
+                      </div>
+                      <Input 
+                        placeholder="Police verification details (date, station, etc.)"
+                        value={company.policeVerificationDetails || ""}
+                        onChange={(e) => updateCompany(companyIndex, 'policeVerificationDetails', e.target.value)}
+                        className="text-sm"
+                      />
                     </div>
                   </div>
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
@@ -334,14 +425,22 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       <Label htmlFor={`license-not-available-${companyIndex}`}>Not Available</Label>
                     </div>
                   </RadioGroup>
+                  {company.foodLicense === 'available' && (
+                    <Input 
+                      placeholder="Food license details (number, validity, issuing authority, etc.)"
+                      value={company.foodLicenseDetails || ""}
+                      onChange={(e) => updateCompany(companyIndex, 'foodLicenseDetails', e.target.value)}
+                      className="mt-2 text-sm"
+                    />
+                  )}
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
                 </div>
 
-                {/* Point 4: Rate List Display */}
+                {/* Point 4A: Rate List Display */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-2 flex items-center">
-                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">4</span>
-                    Rate List & "No Bill Food is Free" Display
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">4A</span>
+                    Rate List Display
                   </h5>
                   <RadioGroup 
                     value={company.rateListDisplay || ""}
@@ -354,6 +453,28 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                     <div className="flex items-center space-x-2">
                       <RadioGroupItem value="not_displayed" id={`rate-not-displayed-${companyIndex}`} />
                       <Label htmlFor={`rate-not-displayed-${companyIndex}`}>Not Displayed</Label>
+                    </div>
+                  </RadioGroup>
+                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                </div>
+
+                {/* Point 4B: Bill Food Free Display */}
+                <div className="border border-gray-200 rounded-lg p-3">
+                  <h5 className="font-medium text-nr-navy mb-2 flex items-center">
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">4B</span>
+                    "No Bill Food is Free" Display
+                  </h5>
+                  <RadioGroup 
+                    value={company.billFoodFree || ""}
+                    onValueChange={(value) => updateCompany(companyIndex, 'billFoodFree', value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="properly_displayed" id={`bill-food-displayed-${companyIndex}`} />
+                      <Label htmlFor={`bill-food-displayed-${companyIndex}`}>Properly Displayed</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="not_displayed" id={`bill-food-not-displayed-${companyIndex}`} />
+                      <Label htmlFor={`bill-food-not-displayed-${companyIndex}`}>Not Displayed</Label>
                     </div>
                   </RadioGroup>
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
@@ -534,6 +655,61 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                     </div>
                   ))}
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                </div>
+
+                {/* Additional Observation Points */}
+                {company.additionalObservations && company.additionalObservations.length > 0 && (
+                  <div className="space-y-4">
+                    {company.additionalObservations.map((point, pointIndex) => (
+                      <div key={pointIndex} className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <h5 className="font-medium text-nr-navy flex items-center">
+                            <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">
+                              {8 + pointIndex + 1}
+                            </span>
+                            Additional Observation Point {pointIndex + 1}
+                          </h5>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeAdditionalPoint(companyIndex, pointIndex)}
+                            className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          <Input
+                            placeholder="Observation title or category"
+                            value={point.title || ""}
+                            onChange={(e) => updateAdditionalPoint(companyIndex, pointIndex, 'title', e.target.value)}
+                            className="font-medium"
+                          />
+                          <Textarea
+                            placeholder="Detailed observation or deficiency..."
+                            value={point.content || ""}
+                            onChange={(e) => updateAdditionalPoint(companyIndex, pointIndex, 'content', e.target.value)}
+                            rows={3}
+                          />
+                          <Input type="file" accept="image/*" className="text-sm" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add Additional Observation Point Button */}
+                <div className="mt-4 pt-2 border-t border-gray-200">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => addAdditionalPoint(companyIndex)}
+                    className="w-full border-dashed border-2 border-gray-300 hover:border-nr-blue hover:bg-blue-50"
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Add Additional Observation Point
+                  </Button>
                 </div>
               </div>
               

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Package, Tag, Hash } from "lucide-react";
@@ -23,27 +23,46 @@ interface EnhancedSmartSearchProps {
 
 export function EnhancedSmartSearch({ value, onChange, placeholder, className }: EnhancedSmartSearchProps) {
   const [searchTerm, setSearchTerm] = useState(value || "");
+  const [debouncedTerm, setDebouncedTerm] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const debounceRef = useRef<NodeJS.Timeout>();
+
+  // Debounce search term to prevent immediate searching while typing
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    
+    debounceRef.current = setTimeout(() => {
+      setDebouncedTerm(searchTerm);
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [searchTerm]);
 
   // Use backend search API for better performance and scalability
   const { data: searchResults = [] } = useQuery<ShortlistedItem[]>({
-    queryKey: ["/api/shortlisted-items/search", searchTerm],
+    queryKey: ["/api/shortlisted-items/search", debouncedTerm],
     queryFn: async () => {
-      if (!searchTerm.trim() || searchTerm.length < 1) return [];
+      if (!debouncedTerm.trim() || debouncedTerm.length < 2) return [];
       
-      const response = await fetch(`/api/shortlisted-items/search?q=${encodeURIComponent(searchTerm.trim())}`);
+      const response = await fetch(`/api/shortlisted-items/search?q=${encodeURIComponent(debouncedTerm.trim())}`);
       if (!response.ok) throw new Error('Search failed');
       return response.json();
     },
-    enabled: searchTerm.trim().length >= 1,
+    enabled: debouncedTerm.trim().length >= 2,
   });
 
   // Add match type and field information to search results
   const enhancedResults = useMemo(() => {
-    if (!searchTerm.trim()) return [];
+    if (!debouncedTerm.trim()) return [];
     
-    const term = searchTerm.toLowerCase().trim();
+    const term = debouncedTerm.toLowerCase().trim();
     return searchResults.map((item) => {
       let matchType = "General";
       let matchField = "";
@@ -77,12 +96,12 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
 
       return { ...item, matchType, matchField };
     });
-  }, [searchResults, searchTerm]);
+  }, [searchResults, debouncedTerm]);
 
   useEffect(() => {
-    setShowResults(searchTerm.length >= 1 && enhancedResults.length > 0);
+    setShowResults(debouncedTerm.length >= 2 && enhancedResults.length > 0);
     setFocusedIndex(-1);
-  }, [searchTerm, enhancedResults]);
+  }, [debouncedTerm, enhancedResults]);
 
   const selectItem = (item: ShortlistedItem) => {
     const selectedText = `S.No ${item.sno}: ${item.brand || ''} ${item.item || ''} ${item.flavour || ''} (${item.quantity || ''}) - ₹${item.mrp || 0}`;
@@ -140,7 +159,7 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
           value={searchTerm}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
-          onFocus={() => searchTerm.length >= 1 && enhancedResults.length > 0 && setShowResults(true)}
+          onFocus={() => debouncedTerm.length >= 2 && enhancedResults.length > 0 && setShowResults(true)}
           className="pr-10"
         />
         <Search className="absolute right-3 top-3 text-gray-400" size={16} />
