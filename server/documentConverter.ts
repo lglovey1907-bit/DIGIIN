@@ -38,6 +38,19 @@ interface ObservationEntry {
   imageFiles?: Array<{id: string; fileName: string; filePath: string; fileType: string}>;
 }
 
+// Generate professional subject with station code integration
+function generateProfessionalSubject(originalSubject: string, stationCode: string): string {
+  const subjectVariants = [
+    `Sub: Comprehensive Commercial Inspection Report for ${stationCode} Railway Station - ${originalSubject}`,
+    `Sub: Detailed Assessment and Evaluation Report of Commercial Operations at ${stationCode} Railway Station - ${originalSubject}`,
+    `Sub: Systematic Commercial Compliance Audit conducted at ${stationCode} Railway Station - ${originalSubject}`,
+    `Sub: Professional Commercial Operations Review and Assessment at ${stationCode} Railway Station - ${originalSubject}`,
+    `Sub: Thorough Commercial Inspection and Regulatory Compliance Report - ${stationCode} Railway Station - ${originalSubject}`
+  ];
+  
+  return subjectVariants[Math.floor(Math.random() * subjectVariants.length)];
+}
+
 export async function convertInspectionToDocument(inspectionData: InspectionData): Promise<ConvertedDocument> {
   try {
     console.log("Converting inspection data:", JSON.stringify(inspectionData, null, 2));
@@ -50,17 +63,53 @@ export async function convertInspectionToDocument(inspectionData: InspectionData
       year: 'numeric'
     });
 
-    // Use inspection subject from form
-    const generatedSubject = `Sub: ${inspectionData.subject}`;
+    // Auto-generate professional subject with station code integration
+    const generatedSubject = generateProfessionalSubject(inspectionData.subject, inspectionData.stationCode);
 
-    // Generate varied opening paragraph with professional language
-    const openingVariants = [
-      `In compliance with the aforementioned directive, the undersigned undertook a comprehensive ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the systematic examination and verification process, the following observations pertaining to Commercial Operations were documented:-`,
-      `In pursuance of the above-referenced instruction, the undersigned conducted a thorough ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. Through meticulous assessment and evaluation procedures, the following Commercial Operations observations were recorded:-`,
-      `In adherence to the prescribed directive, the undersigned executed a detailed ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the comprehensive inspection and verification process, the following Commercial Operations findings were established:-`,
-      `In accordance with the referenced mandate, the undersigned performed an extensive ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. Through systematic evaluation and assessment procedures, the following Commercial Operations observations were identified:-`
-    ];
-    const openingParagraph = openingVariants[Math.floor(Math.random() * openingVariants.length)];
+    // Advanced Varied Language System - generates unique, sophisticated Railway inspection terminology
+    const generateAdvancedOpeningParagraph = () => {
+      const directiveTerms = [
+        'aforementioned directive', 'above-referenced instruction', 'prescribed mandate', 
+        'referenced guidelines', 'stipulated directives', 'specified instructions',
+        'authorized mandate', 'designated directive'
+      ];
+      
+      const actionVerbs = [
+        'undertook', 'conducted', 'executed', 'performed', 'carried out', 
+        'implemented', 'administered', 'orchestrated'
+      ];
+      
+      const inspectionTerms = [
+        'comprehensive', 'thorough', 'detailed', 'extensive', 'systematic',
+        'meticulous', 'rigorous', 'in-depth', 'exhaustive'
+      ];
+      
+      const processTerms = [
+        'examination and verification process', 'assessment and evaluation procedures',
+        'inspection and verification process', 'evaluation and assessment procedures',
+        'systematic review and analysis', 'comprehensive audit and evaluation',
+        'detailed scrutiny and assessment'
+      ];
+      
+      const observationTerms = [
+        'observations pertaining to Commercial Operations were documented',
+        'Commercial Operations observations were recorded',
+        'Commercial Operations findings were established',
+        'Commercial Operations observations were identified',
+        'findings related to Commercial Operations were noted',
+        'Commercial Operations assessments were compiled'
+      ];
+      
+      const directive = directiveTerms[Math.floor(Math.random() * directiveTerms.length)];
+      const action = actionVerbs[Math.floor(Math.random() * actionVerbs.length)];
+      const inspection = inspectionTerms[Math.floor(Math.random() * inspectionTerms.length)];
+      const process = processTerms[Math.floor(Math.random() * processTerms.length)];
+      const observation = observationTerms[Math.floor(Math.random() * observationTerms.length)];
+      
+      return `In compliance with the ${directive}, the undersigned ${action} a ${inspection} ${inspectionData.subject.toLowerCase()} at ${inspectionData.stationCode} Railway Station on ${formattedDate}. During the ${process}, the following ${observation}:-`;
+    };
+    
+    const openingParagraph = generateAdvancedOpeningParagraph();
 
     // Convert observations to structured format
     const convertedObservations = await convertObservationsToDocument(inspectionData.observations, inspectionData);
@@ -517,8 +566,23 @@ async function convertNewCateringCompanyObservation(company: any, serialNumber: 
   // Convert new catering structure to English narrative
   const observations = [];
   
-  // Vendor details with varied professional expressions
-  if (company.vendorName) {
+  // Smart vendor details handling - supports both single and multiple vendors
+  const vendorNames = [];
+  if (company.vendorDetails && Array.isArray(company.vendorDetails)) {
+    // Handle new multiple vendor structure
+    company.vendorDetails.forEach(vendor => {
+      if (vendor.name && vendor.name.trim()) {
+        const nameWithDesignation = vendor.designation ? 
+          `${vendor.name} (${vendor.designation})` : vendor.name;
+        vendorNames.push(nameWithDesignation);
+      }
+    });
+  } else if (company.vendorName && company.vendorName.trim()) {
+    // Handle legacy single vendor field
+    vendorNames.push(company.vendorName);
+  }
+
+  if (vendorNames.length > 0) {
     const uniformVariants = company.properUniform ? [
       'was observed to be properly attired in prescribed uniform',
       'was found appropriately dressed in regulation attire',
@@ -575,15 +639,45 @@ async function convertNewCateringCompanyObservation(company: any, serialNumber: 
     const opening = openingVariants[Math.floor(Math.random() * openingVariants.length)];
     const closing = closingVariants[Math.floor(Math.random() * closingVariants.length)];
     
-    observations.push(`${opening} ${company.vendorName} ${uniformStatus}, ${medicalStatus} ${policeStatus}. ${closing}`);
+    const vendorText = vendorNames.length === 1 ? 
+      vendorNames[0] : 
+      `the following personnel: ${vendorNames.join(', ')}`;
+    
+    observations.push(`${opening} ${vendorText} ${uniformStatus}, ${medicalStatus} ${policeStatus}. ${closing}`);
   }
   
-  // Overcharging examination with regulatory emphasis
+  // Smart overcharging detection - only add if violations detected
   if (company.overchargingItems && company.overchargingItems.length > 0) {
-    const item = company.overchargingItems[0];
-    observations.push(`A flagrant violation of pricing regulations was detected wherein ${item.name} was being retailed at Rs.${item.sellingPrice}/- against the prescribed Maximum Retail Price of Rs.${item.mrpPrice}/-. This constitutes a serious breach of commercial licensing terms and warrants immediate corrective action.`);
-  } else {
-    observations.push('Comprehensive examination of pricing practices revealed no instances of overcharging, with all merchandise being sold at Maximum Retail Price as mandated by railway commercial regulations.');
+    const hasActualOvercharging = company.overchargingItems.some((item: any) => 
+      item.name && item.name.trim() && 
+      item.mrpPrice && item.sellingPrice && 
+      parseFloat(item.sellingPrice) > parseFloat(item.mrpPrice)
+    );
+    
+    if (hasActualOvercharging) {
+      const overchargedItem = company.overchargingItems.find((item: any) => 
+        item.name && item.name.trim() && 
+        item.mrpPrice && item.sellingPrice && 
+        parseFloat(item.sellingPrice) > parseFloat(item.mrpPrice)
+      );
+      
+      if (!overchargedItem) return;
+      
+      const overchargingVariants = [
+        `A flagrant violation of pricing regulations was detected wherein ${overchargedItem.name} was being retailed at Rs.${overchargedItem.sellingPrice}/- against the prescribed Maximum Retail Price of Rs.${overchargedItem.mrpPrice}/-. This constitutes a serious breach of commercial licensing terms and warrants immediate corrective action.`,
+        `Serious pricing irregularities were identified where ${overchargedItem.name} was being sold at Rs.${overchargedItem.sellingPrice}/- exceeding the authorized Maximum Retail Price of Rs.${overchargedItem.mrpPrice}/-. This represents a significant contravention of commercial regulations requiring urgent rectification.`,
+        `Critical overcharging practices were observed with ${overchargedItem.name} being offered at Rs.${overchargedItem.sellingPrice}/- substantially above the stipulated Maximum Retail Price of Rs.${overchargedItem.mrpPrice}/-. This violation demands immediate corrective measures to ensure regulatory compliance.`
+      ];
+      observations.push(overchargingVariants[Math.floor(Math.random() * overchargingVariants.length)]);
+    } else {
+      // Only add positive observation if no overcharging detected
+      const noOverchargingVariants = [
+        'Comprehensive examination of pricing practices revealed no instances of overcharging, with all merchandise being sold at Maximum Retail Price as mandated by railway commercial regulations.',
+        'Systematic price verification demonstrated complete adherence to Maximum Retail Price protocols, with no pricing violations detected during the comprehensive assessment.',
+        'Thorough pricing audit confirmed full compliance with prescribed tariff structures, with all commodities being retailed at authorized Maximum Retail Prices.'
+      ];
+      observations.push(noOverchargingVariants[Math.floor(Math.random() * noOverchargingVariants.length)]);
+    }
   }
   
   // Electronic billing infrastructure assessment

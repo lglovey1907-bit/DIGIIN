@@ -11,6 +11,46 @@ import { EnhancedSmartSearch } from "./enhanced-smart-search";
 import { ValidatedUnapprovedSearch } from "./validated-unapproved-search";
 import { Upload, Plus, Trash2, Utensils, FileText } from "lucide-react";
 
+interface VendorDetail {
+  name: string;
+  designation: string;
+}
+
+interface AdditionalObservation {
+  title: string;
+  content: string;
+}
+
+interface OverchargingItem {
+  name: string;
+  mrpPrice: string;
+  sellingPrice: string;
+}
+
+interface CompanyData {
+  companyName: string;
+  unitType: string;
+  platformNo: string;
+  vendorName: string;
+  vendorDetails: VendorDetail[];
+  billMachine: string;
+  foodLicense: string;
+  foodLicenseDetails: string;
+  medicalCard: boolean;
+  medicalCardDetails: string;
+  idCard: boolean;
+  idCardNumber: string;
+  properUniform: boolean;
+  digitalPayment: string;
+  rateListDisplay: string;
+  billFoodFree: string;
+  policeVerification: boolean;
+  policeVerificationDetails: string;
+  unapprovedItems: string[];
+  overchargingItems: OverchargingItem[];
+  additionalObservations: AdditionalObservation[];
+}
+
 interface CateringFormProps {
   observations: any;
   onObservationsChange: (observations: any) => void;
@@ -26,12 +66,13 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
   const [additionalPoints, setAdditionalPoints] = useState([]);
   
   // Multiple companies state
-  const [companies, setCompanies] = useState([
+  const [companies, setCompanies] = useState<CompanyData[]>([
     {
       companyName: "",
       unitType: "",
       platformNo: "",
       vendorName: "",
+      vendorDetails: [{ name: "", designation: "" }],
       billMachine: "",
       foodLicense: "",
       foodLicenseDetails: "",
@@ -94,11 +135,12 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
 
   // Multiple companies functions
   const addCompany = () => {
-    const newCompany = {
+    const newCompany: CompanyData = {
       companyName: "",
       unitType: "",
       platformNo: "",
       vendorName: "",
+      vendorDetails: [{ name: "", designation: "" }],
       billMachine: "",
       foodLicense: "",
       foodLicenseDetails: "",
@@ -250,6 +292,48 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
     updateObservation('companies', updatedCompanies);
   };
 
+  // Multiple vendor details functions
+  const addVendorDetail = (companyIndex: number) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex 
+        ? { 
+            ...company, 
+            vendorDetails: [...(company.vendorDetails || []), { name: "", designation: "" }]
+          }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  const removeVendorDetail = (companyIndex: number, vendorIndex: number) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex && (company.vendorDetails || []).length > 1
+        ? { 
+            ...company, 
+            vendorDetails: (company.vendorDetails || []).filter((_, j) => j !== vendorIndex)
+          }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
+  const updateVendorDetail = (companyIndex: number, vendorIndex: number, field: string, value: string) => {
+    const updatedCompanies = companies.map((company, i) => 
+      i === companyIndex 
+        ? { 
+            ...company, 
+            vendorDetails: (company.vendorDetails || []).map((vendor, j) => 
+              j === vendorIndex ? { ...vendor, [field]: value } : vendor
+            )
+          }
+        : company
+    );
+    setCompanies(updatedCompanies);
+    updateObservation('companies', updatedCompanies);
+  };
+
   return (
     <Card className="mb-8">
       <CardHeader>
@@ -320,7 +404,51 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
 
               {/* Company-specific Observation Points */}
               <div className="space-y-4">
-                {/* Point 1: Vendor Name */}
+                {/* Point 1: Multiple Vendor Details */}
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Vendor Details</Label>
+                  <div className="mt-2">
+                    {(company.vendorDetails || [{ name: "", designation: "" }]).map((vendor, vendorIndex) => (
+                      <div key={vendorIndex} className="flex gap-3 mb-3 items-center">
+                        <Input
+                          placeholder="Vendor Name"
+                          value={vendor.name || ""}
+                          onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'name', e.target.value)}
+                          className="flex-1"
+                        />
+                        <Input
+                          placeholder="Designation (optional)"
+                          value={vendor.designation || ""}
+                          onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'designation', e.target.value)}
+                          className="flex-1"
+                        />
+                        {(company.vendorDetails || []).length > 1 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeVendorDetail(companyIndex, vendorIndex)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addVendorDetail(companyIndex)}
+                      className="mt-2"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Another Vendor
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Legacy Vendor Name Field for backward compatibility */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-2 flex items-center">
                     <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">1</span>
