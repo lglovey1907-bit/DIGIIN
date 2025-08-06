@@ -566,23 +566,36 @@ async function convertNewCateringCompanyObservation(company: any, serialNumber: 
   // Convert new catering structure to English narrative
   const observations = [];
   
-  // Smart vendor details handling - supports both single and multiple vendors
-  const vendorNames = [];
+  // Smart vendor details handling - merges main vendor with additional vendors
+  const allVendors = [];
+  
+  // Add main vendor from Point 1 if exists
+  if (company.vendorName && company.vendorName.trim()) {
+    allVendors.push({
+      name: company.vendorName,
+      designation: '',
+      properUniform: company.properUniform,
+      medicalCard: company.medicalCard,
+      policeVerification: company.policeVerification
+    });
+  }
+  
+  // Add additional vendors from vendorDetails if exists
   if (company.vendorDetails && Array.isArray(company.vendorDetails)) {
-    // Handle new multiple vendor structure
-    company.vendorDetails.forEach(vendor => {
+    company.vendorDetails.forEach((vendor: any) => {
       if (vendor.name && vendor.name.trim()) {
-        const nameWithDesignation = vendor.designation ? 
-          `${vendor.name} (${vendor.designation})` : vendor.name;
-        vendorNames.push(nameWithDesignation);
+        allVendors.push({
+          name: vendor.name,
+          designation: vendor.designation || '',
+          properUniform: vendor.properUniform || false,
+          medicalCard: vendor.medicalCard || false,
+          policeVerification: vendor.policeVerification || false
+        });
       }
     });
-  } else if (company.vendorName && company.vendorName.trim()) {
-    // Handle legacy single vendor field
-    vendorNames.push(company.vendorName);
   }
 
-  if (vendorNames.length > 0) {
+  if (allVendors.length > 0) {
     const uniformVariants = company.properUniform ? [
       'was observed to be properly attired in prescribed uniform',
       'was found appropriately dressed in regulation attire',
@@ -639,11 +652,41 @@ async function convertNewCateringCompanyObservation(company: any, serialNumber: 
     const opening = openingVariants[Math.floor(Math.random() * openingVariants.length)];
     const closing = closingVariants[Math.floor(Math.random() * closingVariants.length)];
     
-    const vendorText = vendorNames.length === 1 ? 
-      vendorNames[0] : 
-      `the following personnel: ${vendorNames.join(', ')}`;
-    
-    observations.push(`${opening} ${vendorText} ${uniformStatus}, ${medicalStatus} ${policeStatus}. ${closing}`);
+    // Generate professional merged vendor observation
+    if (allVendors.length === 1) {
+      const vendor = allVendors[0];
+      const vendorText = vendor.designation ? 
+        `${vendor.name} (${vendor.designation})` : vendor.name;
+      
+      const uniformStatus = vendor.properUniform ? 
+        uniformVariants[Math.floor(Math.random() * uniformVariants.length)] :
+        uniformVariants.filter(v => v.includes('without') || v.includes('violation'))[Math.floor(Math.random() * 2)];
+      
+      const medicalStatus = vendor.medicalCard ? 
+        medicalVariants[Math.floor(Math.random() * medicalVariants.length)] :
+        medicalVariants.filter(v => v.includes('without') || v.includes('lacking'))[Math.floor(Math.random() * 2)];
+        
+      const policeStatus = vendor.policeVerification ? 
+        policeVariants[Math.floor(Math.random() * policeVariants.length)] :
+        policeVariants.filter(v => v.includes('lacking') || v.includes('without'))[Math.floor(Math.random() * 2)];
+      
+      observations.push(`${opening} ${vendorText} ${uniformStatus}, ${medicalStatus} ${policeStatus}. ${closing}`);
+    } else {
+      // Multiple vendors - create comprehensive professional observation
+      const vendorDescriptions = allVendors.map(vendor => {
+        const vendorText = vendor.designation ? 
+          `${vendor.name} (${vendor.designation})` : vendor.name;
+        
+        const uniformStatus = vendor.properUniform ? 'properly uniformed' : 'lacking proper uniform';
+        const medicalStatus = vendor.medicalCard ? 'with valid medical certification' : 'without medical certification';
+        const policeStatus = vendor.policeVerification ? 'with police verification' : 'lacking police verification';
+        
+        return `${vendorText} was observed ${uniformStatus}, ${medicalStatus} and ${policeStatus}`;
+      });
+      
+      const multiVendorObservation = `${opening} the following personnel were assessed: ${vendorDescriptions.join('; ')}. ${closing}`;
+      observations.push(multiVendorObservation);
+    }
   }
   
   // Smart overcharging detection - only add if violations detected
@@ -661,7 +704,7 @@ async function convertNewCateringCompanyObservation(company: any, serialNumber: 
         parseFloat(item.sellingPrice) > parseFloat(item.mrpPrice)
       );
       
-      if (!overchargedItem) return;
+      if (!overchargedItem) return { serial: serialNumber, observations: '', actionTaken: actionTaken || '', photographs: '', imageFiles: [] };
       
       const overchargingVariants = [
         `A flagrant violation of pricing regulations was detected wherein ${overchargedItem.name} was being retailed at Rs.${overchargedItem.sellingPrice}/- against the prescribed Maximum Retail Price of Rs.${overchargedItem.mrpPrice}/-. This constitutes a serious breach of commercial licensing terms and warrants immediate corrective action.`,

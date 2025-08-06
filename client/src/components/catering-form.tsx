@@ -14,6 +14,9 @@ import { Upload, Plus, Trash2, Utensils, FileText } from "lucide-react";
 interface VendorDetail {
   name: string;
   designation: string;
+  properUniform?: boolean;
+  medicalCard?: boolean;
+  policeVerification?: boolean;
 }
 
 interface AdditionalObservation {
@@ -72,7 +75,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
       unitType: "",
       platformNo: "",
       vendorName: "",
-      vendorDetails: [{ name: "", designation: "" }],
+      vendorDetails: [],
       billMachine: "",
       foodLicense: "",
       foodLicenseDetails: "",
@@ -140,7 +143,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
       unitType: "",
       platformNo: "",
       vendorName: "",
-      vendorDetails: [{ name: "", designation: "" }],
+      vendorDetails: [],
       billMachine: "",
       foodLicense: "",
       foodLicenseDetails: "",
@@ -298,7 +301,13 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
       i === companyIndex 
         ? { 
             ...company, 
-            vendorDetails: [...(company.vendorDetails || []), { name: "", designation: "" }]
+            vendorDetails: [...(company.vendorDetails || []), { 
+              name: "", 
+              designation: "", 
+              properUniform: false, 
+              medicalCard: false, 
+              policeVerification: false 
+            }]
           }
         : company
     );
@@ -319,7 +328,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
     updateObservation('companies', updatedCompanies);
   };
 
-  const updateVendorDetail = (companyIndex: number, vendorIndex: number, field: string, value: string) => {
+  const updateVendorDetail = (companyIndex: number, vendorIndex: number, field: string, value: string | boolean) => {
     const updatedCompanies = companies.map((company, i) => 
       i === companyIndex 
         ? { 
@@ -404,51 +413,6 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
 
               {/* Company-specific Observation Points */}
               <div className="space-y-4">
-                {/* Point 1: Multiple Vendor Details */}
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Vendor Details</Label>
-                  <div className="mt-2">
-                    {(company.vendorDetails || [{ name: "", designation: "" }]).map((vendor, vendorIndex) => (
-                      <div key={vendorIndex} className="flex gap-3 mb-3 items-center">
-                        <Input
-                          placeholder="Vendor Name"
-                          value={vendor.name || ""}
-                          onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'name', e.target.value)}
-                          className="flex-1"
-                        />
-                        <Input
-                          placeholder="Designation (optional)"
-                          value={vendor.designation || ""}
-                          onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'designation', e.target.value)}
-                          className="flex-1"
-                        />
-                        {(company.vendorDetails || []).length > 1 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeVendorDetail(companyIndex, vendorIndex)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addVendorDetail(companyIndex)}
-                      className="mt-2"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Another Vendor
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Legacy Vendor Name Field for backward compatibility */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-2 flex items-center">
                     <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">1</span>
@@ -532,6 +496,89 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                     </div>
                   </div>
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                </div>
+
+                {/* Optional Additional Vendor Details */}
+                {(company.vendorDetails || []).length > 0 && (
+                  <div className="border border-gray-200 rounded-lg p-3 bg-blue-50">
+                    <h5 className="font-medium text-nr-navy mb-2 flex items-center">
+                      <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">2A</span>
+                      Additional Vendor Details
+                    </h5>
+                    <div className="space-y-3">
+                      {(company.vendorDetails || []).map((vendor, vendorIndex) => (
+                        <div key={vendorIndex} className="bg-white rounded p-3 border">
+                          <div className="flex gap-3 mb-3 items-center">
+                            <Input
+                              placeholder="Additional Vendor Name"
+                              value={vendor.name || ""}
+                              onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'name', e.target.value)}
+                              className="flex-1"
+                            />
+                            <Input
+                              placeholder="Designation (optional)"
+                              value={vendor.designation || ""}
+                              onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'designation', e.target.value)}
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeVendorDetail(companyIndex, vendorIndex)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          
+                          {/* Additional vendor uniform & documentation check */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`additionalUniform-${companyIndex}-${vendorIndex}`}
+                                checked={vendor.properUniform || false}
+                                onCheckedChange={(checked) => updateVendorDetail(companyIndex, vendorIndex, 'properUniform', checked as boolean)}
+                              />
+                              <Label htmlFor={`additionalUniform-${companyIndex}-${vendorIndex}`} className="text-sm">Proper Uniform</Label>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`additionalMedical-${companyIndex}-${vendorIndex}`}
+                                checked={vendor.medicalCard || false}
+                                onCheckedChange={(checked) => updateVendorDetail(companyIndex, vendorIndex, 'medicalCard', checked as boolean)}
+                              />
+                              <Label htmlFor={`additionalMedical-${companyIndex}-${vendorIndex}`} className="text-sm">Medical Card</Label>
+                            </div>
+                            
+                            <div className="flex items-center space-x-2">
+                              <Checkbox 
+                                id={`additionalPolice-${companyIndex}-${vendorIndex}`}
+                                checked={vendor.policeVerification || false}
+                                onCheckedChange={(checked) => updateVendorDetail(companyIndex, vendorIndex, 'policeVerification', checked as boolean)}
+                              />
+                              <Label htmlFor={`additionalPolice-${companyIndex}-${vendorIndex}`} className="text-sm">Police Verification</Label>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add Another Vendor Button */}
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addVendorDetail(companyIndex)}
+                    className="border-dashed border-2 border-nr-blue text-nr-blue hover:bg-nr-blue hover:text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Another Vendor (Optional)
+                  </Button>
                 </div>
 
                 {/* Point 3: Food License */}
