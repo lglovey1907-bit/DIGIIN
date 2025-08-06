@@ -7,6 +7,7 @@ import {
   permissions,
   userPermissions,
   inspectionActionRequests,
+  passwordResetTokens,
   type User,
   type UpsertUser,
   type RegisterUser,
@@ -25,6 +26,8 @@ import {
   type InsertUserPermission,
   type InspectionActionRequest,
   type InsertInspectionActionRequest,
+  type PasswordResetToken,
+  type InsertPasswordResetToken,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, like, or, desc, ilike, sql } from "drizzle-orm";
@@ -42,6 +45,12 @@ export interface IStorage {
   approveUser(userId: string, approvedBy: string): Promise<User>;
   getAllPendingUsers(): Promise<User[]>;
   getAllCMIs(): Promise<User[]>;
+  
+  // Password reset operations
+  createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  deletePasswordResetToken(token: string): Promise<void>;
+  updateUserPassword(userId: string, hashedPassword: string): Promise<User>;
   
   // Inspection operations
   createInspection(inspection: InsertInspection): Promise<Inspection>;
@@ -168,6 +177,37 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(and(eq(users.role, 'cmi'), eq(users.isApproved, true)))
       .orderBy(users.name);
+  }
+
+  // Password reset operations
+  async createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const [result] = await db.insert(passwordResetTokens)
+      .values(token)
+      .returning();
+    return result;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [result] = await db.select()
+      .from(passwordResetTokens)
+      .where(and(
+        eq(passwordResetTokens.token, token),
+        gt(passwordResetTokens.expiresAt, new Date())
+      ));
+    return result;
+  }
+
+  async deletePasswordResetToken(token: string): Promise<void> {
+    await db.delete(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+  }
+
+  async updateUserPassword(userId: string, hashedPassword: string): Promise<User> {
+    const [result] = await db.update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, userId))
+      .returning();
+    return result;
   }
 
   // Inspection operations

@@ -168,6 +168,14 @@ export default function Landing() {
               </form>
             </Form>
 
+            <div className="mt-4 text-center">
+              <Link href="/forgot-password">
+                <Button variant="ghost" className="text-sm text-nr-blue hover:text-blue-800">
+                  Forgot your password?
+                </Button>
+              </Link>
+            </div>
+
             <div className="mt-6 text-center">
               <Link href="/register">
                 <Button variant="outline" className="w-full border-nr-navy text-nr-navy hover:bg-nr-navy hover:text-white">

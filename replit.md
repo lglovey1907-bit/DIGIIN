@@ -6,6 +6,17 @@ This is a Digital Inspection Platform built for the Northern Railway Delhi Divis
 
 Preferred communication style: Simple, everyday language.
 
+# Recent Changes
+
+## Password Reset Functionality (August 6, 2025)
+- Added complete forgot password and reset password functionality
+- Created password reset tokens database table with expiry mechanism
+- Implemented secure password reset flow with token validation
+- Added forgot password link to login page
+- Created user-friendly forgot password and reset password pages
+- Backend API routes for password reset process with proper security measures
+- Token-based password reset with 1-hour expiry for security
+
 # System Architecture
 
 ## Frontend Architecture

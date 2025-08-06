@@ -7,6 +7,8 @@ import { OfflineIndicator } from "@/components/offline-indicator";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/landing";
 import Register from "@/pages/register";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
 import Home from "@/pages/home";
 import InspectionForm from "@/pages/inspection-form";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -24,6 +26,8 @@ function Router() {
         <>
           <Route path="/" component={Landing} />
           <Route path="/register" component={Register} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/reset-password" component={ResetPassword} />
         </>
       ) : (
         <>

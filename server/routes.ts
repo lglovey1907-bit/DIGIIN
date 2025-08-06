@@ -10,7 +10,11 @@ import {
   insertShortlistedItemSchema,
   registerUserSchema,
   loginUserSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   type User,
+  type ForgotPassword,
+  type ResetPassword,
 } from "@shared/schema";
 import multer from "multer";
 import path from "path";
@@ -19,6 +23,8 @@ import PDFDocument from "pdfkit";
 import passport from "passport";
 import { generateReportLayoutSuggestions, analyzeInspectionTrends } from "./aiService";
 import { convertInspectionToDocument, generateDocumentText, generateRTFDocument, generateWordDocument } from "./documentConverter";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
 
 // Extend Express types
 declare global {
@@ -158,6 +164,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.json({ message: "Logout successful" });
     });
+  });
+
+  // Forgot password route
+  app.post('/api/forgot-password', async (req, res) => {
+    try {
+      const { email } = forgotPasswordSchema.parse(req.body);
+      
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if email doesn't exist for security
+        return res.json({ message: "If the email exists, a password reset link has been sent." });
+      }
+      
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour expiry
+      
+      // Save reset token
+      await storage.createPasswordResetToken({
+        userId: user.id,
+        token: resetToken,
+        expiresAt,
+      });
+      
+      // TODO: Send email with reset link
+      // For now, we'll return the token (in production, this should be sent via email)
+      console.log(`Password reset token for ${email}: ${resetToken}`);
+      
+      res.json({ 
+        message: "If the email exists, a password reset link has been sent.",
+        // Remove this in production:
+        resetToken: resetToken 
+      });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // Reset password route
+  app.post('/api/reset-password', async (req, res) => {
+    try {
+      const { token, password } = resetPasswordSchema.parse(req.body);
+      
+      // Find valid reset token
+      const resetToken = await storage.getPasswordResetToken(token);
+      if (!resetToken) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+      
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Update user password
+      await storage.updateUserPassword(resetToken.userId, hashedPassword);
+      
+      // Delete used token
+      await storage.deletePasswordResetToken(token);
+      
+      res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(500).json({ message: "Server error" });
+    }
   });
 
   // Auth routes (local auth only)
