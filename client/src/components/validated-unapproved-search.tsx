@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,6 +30,7 @@ export function ValidatedUnapprovedSearch({
   className = "" 
 }: ValidatedUnapprovedSearchProps) {
   const [searchQuery, setSearchQuery] = useState(value);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isChecking, setIsChecking] = useState(false);
   const [validationResult, setValidationResult] = useState<{
     isApproved: boolean;
@@ -37,6 +38,8 @@ export function ValidatedUnapprovedSearch({
     message: string;
   } | null>(null);
   const [isValidated, setIsValidated] = useState(false);
+  const [showFoundItems, setShowFoundItems] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout>();
 
   // Check if item exists in shortlisted items (7A database)
   const checkAgainstShortlistedItems = async (query: string) => {
@@ -58,6 +61,7 @@ export function ValidatedUnapprovedSearch({
           message: `⚠️ This item is already approved! Found ${foundItems.length} matching item(s) in the shortlisted catalog.`
         });
         setIsValidated(false);
+        setShowFoundItems(true);
       } else {
         // Item not found in approved list - can be added as unapproved
         setValidationResult({
@@ -66,6 +70,7 @@ export function ValidatedUnapprovedSearch({
           message: `✅ This item is not in the approved catalog. You can record it as unapproved.`
         });
         setIsValidated(true);
+        setShowFoundItems(false);
       }
     } catch (error) {
       console.error('Error checking shortlisted items:', error);
@@ -80,60 +85,117 @@ export function ValidatedUnapprovedSearch({
     }
   };
 
-  // Auto-check when user stops typing
+  // Debounce the search query to prevent immediate searching while typing
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery !== value) {
-        setSearchQuery(value);
-      }
-      if (value.trim()) {
-        checkAgainstShortlistedItems(value);
-      } else {
-        setValidationResult(null);
-        setIsValidated(false);
-      }
-    }, 500);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    
+    debounceRef.current = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500); // Wait 500ms after user stops typing
 
-    return () => clearTimeout(timeoutId);
-  }, [value]);
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Auto-check when debounced query changes
+  useEffect(() => {
+    if (debouncedQuery.trim() && debouncedQuery.length >= 2) {
+      checkAgainstShortlistedItems(debouncedQuery);
+    } else {
+      setValidationResult(null);
+      setIsValidated(false);
+      setShowFoundItems(false);
+    }
+  }, [debouncedQuery]);
 
   const handleInputChange = (newValue: string) => {
+    setSearchQuery(newValue);
     onChange(newValue);
     setIsValidated(false);
+    setShowFoundItems(false);
     if (!newValue.trim()) {
       setValidationResult(null);
     }
   };
 
   const handleValidateClick = () => {
-    if (value.trim()) {
-      checkAgainstShortlistedItems(value);
+    if (searchQuery.trim()) {
+      checkAgainstShortlistedItems(searchQuery);
     }
   };
 
+  const closeDropdown = () => {
+    setShowFoundItems(false);
+  };
+
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={`relative space-y-2 ${className}`}>
       <div className="flex gap-2">
-        <Input
-          type="text"
-          value={value}
-          onChange={(e) => handleInputChange(e.target.value)}
-          placeholder={placeholder}
-          className={`flex-1 ${
-            validationResult
-              ? validationResult.isApproved
-                ? "border-red-300 bg-red-50"
-                : "border-green-300 bg-green-50"
-              : ""
-          }`}
-          disabled={isChecking}
-        />
+        <div className="relative flex-1">
+          <Input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => handleInputChange(e.target.value)}
+            placeholder={placeholder}
+            className={`${
+              validationResult
+                ? validationResult.isApproved
+                  ? "border-red-300 bg-red-50"
+                  : "border-green-300 bg-green-50"
+                : ""
+            }`}
+            disabled={isChecking}
+          />
+          {isChecking && (
+            <div className="absolute right-3 top-3">
+              <div className="w-4 h-4 animate-spin border-2 border-blue-600 border-t-transparent rounded-full" />
+            </div>
+          )}
+          
+          {/* Scrollable Found Items Dropdown */}
+          {showFoundItems && validationResult && validationResult.foundItems.length > 0 && (
+            <div className="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto border border-red-300 rounded-lg bg-white shadow-xl">
+              <div className="p-2 bg-red-50 border-b text-xs text-red-700 font-medium">
+                ⚠️ Found {validationResult.foundItems.length} matching item(s) in approved catalog
+              </div>
+              {validationResult.foundItems.map((item, index) => (
+                <div
+                  key={item.id}
+                  onClick={closeDropdown}
+                  className="p-3 border-b last:border-b-0 hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900">
+                        {item.brand} {item.item}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {item.flavour || 'N/A'} • {item.quantity || 'N/A'} • ₹{item.mrp || 0}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
+                      S.No {item.sno}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div className="p-3 bg-red-50 border-t text-xs text-red-600">
+                This item is already approved and should not be added to unapproved items.
+              </div>
+            </div>
+          )}
+        </div>
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={handleValidateClick}
-          disabled={isChecking || !value.trim()}
+          disabled={isChecking || !searchQuery.trim()}
           className="shrink-0"
         >
           {isChecking ? (
@@ -144,7 +206,7 @@ export function ValidatedUnapprovedSearch({
         </Button>
       </div>
 
-      {/* Validation Result */}
+      {/* Validation Result Alert */}
       {validationResult && (
         <Alert className={validationResult.isApproved ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}>
           <div className="flex items-start gap-2">
@@ -157,23 +219,6 @@ export function ValidatedUnapprovedSearch({
               <AlertDescription className={validationResult.isApproved ? "text-red-800" : "text-green-800"}>
                 {validationResult.message}
               </AlertDescription>
-              
-              {/* Show found items if any */}
-              {validationResult.foundItems.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  <p className="text-xs font-medium text-red-700">Found in approved catalog:</p>
-                  {validationResult.foundItems.slice(0, 3).map((item) => (
-                    <div key={item.id} className="text-xs bg-white p-2 rounded border border-red-200">
-                      <span className="font-medium">S.No {item.sno}:</span> {item.brand} - {item.item}
-                      {item.flavour && <span className="text-gray-600"> ({item.flavour})</span>}
-                      <span className="text-gray-600"> | {item.quantity} | ₹{item.mrp}</span>
-                    </div>
-                  ))}
-                  {validationResult.foundItems.length > 3 && (
-                    <p className="text-xs text-red-600">...and {validationResult.foundItems.length - 3} more</p>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </Alert>
