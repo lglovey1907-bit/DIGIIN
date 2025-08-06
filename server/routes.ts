@@ -275,43 +275,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('Auth check - User:', req.user);
     console.log('Auth check - Session:', req.session);
     
-    // First try session-based auth
-    if (req.isAuthenticated() && req.user) {
-      return res.json({
-        id: req.user.id,
-        email: req.user.email,
-        name: req.user.name,
-        role: req.user.role,
-        designation: req.user.designation,
-        stationSection: req.user.stationSection,
-      });
-    }
-    
-    // Try token-based auth as fallback
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      try {
-        const decoded = Buffer.from(token, 'base64').toString();
-        const [userId] = decoded.split(':');
-        
-        const user = await storage.getUser(userId);
-        if (user && user.isApproved) {
-          return res.json({
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            designation: user.designation,
-            stationSection: user.stationSection,
-          });
-        }
-      } catch (error) {
-        console.log('Token decode error:', error);
+    try {
+      // Check for demo mode session first
+      const sessionUserId = (req.session as any).userId;
+      if (sessionUserId === 'demo-user-1') {
+        const demoUser = {
+          id: 'demo-user-1',
+          email: 'lglovey1907@gmail.com',
+          name: 'Demo User',
+          role: 'cmi',
+          designation: 'Commercial Inspector',
+          stationSection: 'Delhi Division'
+        };
+        console.log('Demo user authenticated via session');
+        return res.json({ user: demoUser });
       }
+
+      // Check token-based authentication for demo mode
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const decoded = Buffer.from(token, 'base64').toString('utf8');
+          const [userId] = decoded.split(':');
+          
+          if (userId === 'demo-user-1') {
+            const demoUser = {
+              id: 'demo-user-1',
+              email: 'lglovey1907@gmail.com',
+              name: 'Demo User',
+              role: 'cmi',
+              designation: 'Commercial Inspector',
+              stationSection: 'Delhi Division'
+            };
+            console.log('Demo user authenticated via token');
+            return res.json({ user: demoUser });
+          }
+          
+          // Try database lookup for other users
+          if (userId) {
+            const user = await storage.getUser(userId);
+            if (user && user.isApproved) {
+              return res.json({
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                role: user.role,
+                designation: user.designation,
+                stationSection: user.stationSection,
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Token decode error:', error);
+        }
+      }
+
+      // Try session-based authentication for regular users
+      if (req.isAuthenticated() && req.user) {
+        return res.json({
+          id: req.user.id,
+          email: req.user.email,
+          name: req.user.name,
+          role: req.user.role,
+          designation: req.user.designation,
+          stationSection: req.user.stationSection,
+        });
+      }
+
+      res.status(401).json({ message: "Unauthorized" });
+    } catch (error) {
+      console.error('Auth check error:', error);
+      res.status(500).json({ message: "Authentication service error" });
     }
-    
-    res.status(401).json({ message: "Unauthorized" });
   });
 
   // Admin routes for user management
