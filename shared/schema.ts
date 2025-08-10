@@ -84,16 +84,14 @@ export const inspectionAssignments = pgTable("inspection_assignments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Shortlisted items table
-export const shortlistedItems = pgTable("shortlisted_items", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  sno: integer("sno").notNull(),
-  category: varchar("category").notNull(),
-  brand: varchar("brand").notNull(),
-  item: varchar("item").notNull(),
-  flavour: varchar("flavour"),
-  quantity: varchar("quantity").notNull(),
-  mrp: decimal("mrp", { precision: 10, scale: 2 }).notNull(),
+// Shortlisted items table - Updated to match Supabase table "Shortlisted Approved Items"
+export const shortlistedItems = pgTable("Shortlisted Approved Items", {
+  sn: integer("SN").primaryKey(),
+  items: text("Items").notNull(),
+  brand: text("Brand").notNull(),
+  flavour: text("Flavour"),
+  quantity: text("Quantity").notNull(),
+  mrp: text("MRP(Rs.)").notNull(),
 });
 
 // File uploads table
@@ -135,9 +133,7 @@ export const insertInspectionAssignmentSchema = createInsertSchema(inspectionAss
   dueDate: z.string().transform((str) => new Date(str)),
 });
 
-export const insertShortlistedItemSchema = createInsertSchema(shortlistedItems).omit({
-  id: true,
-});
+export const insertShortlistedItemSchema = createInsertSchema(shortlistedItems);
 
 export const insertFileUploadSchema = createInsertSchema(fileUploads).omit({
   id: true,
