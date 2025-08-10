@@ -7,4 +7,4 @@ vite.config.ts.*
 .local/
 .config/
 .config/
-.env
+.env.env
