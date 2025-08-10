@@ -1,7 +1,14 @@
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let openai: OpenAI | null = null;
+
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+} else {
+  console.warn("⚠️ OPENAI_API_KEY is missing — AI features will be disabled.");
+}
 
 export interface ReportLayoutSuggestion {
   recommendedTemplate: 'standard' | 'executive' | 'detailed';
@@ -75,6 +82,29 @@ Respond with JSON in this exact format:
   "keyInsights": ["insight1", "insight2", ...]
 }`;
 
+    if (!openai) {
+      console.warn("⚠️ Skipping AI layout suggestions — API key missing.");
+      return {
+        recommendedTemplate: 'standard',
+        layout: {
+          includeCharts: inspectionData.area === 'catering',
+          includeTrendAnalysis: false,
+          includeComplianceMetrics: true,
+          includeStationComparison: false,
+          prioritySections: ['observations', 'action_taken']
+        },
+        reasoning: 'Standard template recommended. AI service unavailable.',
+        visualizations: inspectionData.area === 'catering' ? [
+          {
+            type: 'bar',
+            title: 'Compliance Overview',
+            description: 'Overview of compliance status across different criteria'
+          }
+        ] : [],
+        keyInsights: ['Manual review recommended for detailed analysis']
+      };
+    }
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -92,8 +122,7 @@ Respond with JSON in this exact format:
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
-    
-    // Validate and provide defaults
+
     return {
       recommendedTemplate: result.recommendedTemplate || 'standard',
       layout: {
@@ -109,8 +138,6 @@ Respond with JSON in this exact format:
     };
   } catch (error) {
     console.error("Error generating AI layout suggestions:", error);
-    
-    // Fallback suggestions based on inspection area
     return {
       recommendedTemplate: 'standard',
       layout: {
@@ -151,6 +178,15 @@ Provide analysis in JSON format:
   "recommendations": ["recommendation1", "recommendation2", ...],
   "criticalAreas": ["area1", "area2", ...]
 }`;
+
+    if (!openai) {
+      console.warn("⚠️ Skipping AI trend analysis — API key missing.");
+      return {
+        trends: ['Analysis temporarily unavailable'],
+        recommendations: ['Manual review recommended'],
+        criticalAreas: ['Review required']
+      };
+    }
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
