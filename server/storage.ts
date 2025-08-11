@@ -300,21 +300,33 @@ export class DatabaseStorage implements IStorage {
 
   async searchShortlistedItems(query: string): Promise<ShortlistedItem[]> {
     const searchTerm = `%${query}%`;
+    const isNumeric = /^\d+$/.test(query.trim());
     
-    // Build search conditions - Updated to match new schema columns
-    const conditions = [
-      ilike(shortlistedItems.brand, searchTerm),    // "Brand" column
-      ilike(shortlistedItems.items, searchTerm),    // "Items" column (was "item")
-      ilike(shortlistedItems.flavour, searchTerm),  // "Flavour" column  
-      ilike(shortlistedItems.quantity, searchTerm), // "Quantity" column
-      ilike(shortlistedItems.mrp, searchTerm),      // "MRP(Rs.)" column
-    ];
-    
-    return await db
-      .select()
-      .from(shortlistedItems)
-      .where(or(...conditions))
-      .limit(20);
+    if (isNumeric) {
+      const numericQuery = parseInt(query.trim());
+      return await db
+        .select()
+        .from(shortlistedItems)
+        .where(
+          or(
+            eq(shortlistedItems.sn, numericQuery),        // Exact SN match
+            ilike(shortlistedItems.items, searchTerm),
+            ilike(shortlistedItems.brand, searchTerm),
+            ilike(shortlistedItems.flavour, searchTerm)
+          )
+        );
+    } else {
+      return await db
+        .select()
+        .from(shortlistedItems)
+        .where(
+          or(
+            ilike(shortlistedItems.items, searchTerm),
+            ilike(shortlistedItems.brand, searchTerm),
+            ilike(shortlistedItems.flavour, searchTerm)
+          )
+        );
+    }
   }
 
   async getAllShortlistedItems(): Promise<ShortlistedItem[]> {
@@ -461,16 +473,34 @@ export const storage = new DatabaseStorage();
 // New standalone function for searching shortlisted items
 export async function searchShortlistedItems(query: string) {
   try {
-    return await db
-      .select()
-      .from(shortlistedItems)
-      .where(
-        or(
-          ilike(shortlistedItems.items, `%${query}%`),
-          ilike(shortlistedItems.brand, `%${query}%`),
-          ilike(shortlistedItems.flavour, `%${query}%`)
-        )
-      );
+    const searchTerm = `%${query}%`;
+    const isNumeric = /^\d+$/.test(query.trim());
+    
+    if (isNumeric) {
+      const numericQuery = parseInt(query.trim());
+      return await db
+        .select()
+        .from(shortlistedItems)
+        .where(
+          or(
+            eq(shortlistedItems.sn, numericQuery),        // Exact SN match
+            ilike(shortlistedItems.items, searchTerm),
+            ilike(shortlistedItems.brand, searchTerm),
+            ilike(shortlistedItems.flavour, searchTerm)
+          )
+        );
+    } else {
+      return await db
+        .select()
+        .from(shortlistedItems)
+        .where(
+          or(
+            ilike(shortlistedItems.items, searchTerm),
+            ilike(shortlistedItems.brand, searchTerm),
+            ilike(shortlistedItems.flavour, searchTerm)
+          )
+        );
+    }
   } catch (error) {
     console.error('Error searching shortlisted items:', error);
     throw error;

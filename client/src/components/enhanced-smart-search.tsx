@@ -4,14 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, Package, Tag, Hash } from "lucide-react";
 
 interface ShortlistedItem {
-  id: string;
-  sno: number;
-  category: string;
-  brand: string;
-  item: string;
-  flavour: string;
-  quantity: string;
-  mrp: number;
+  sn: number;        // Serial Number
+  items: string;     // Items (not 'item')
+  brand: string;     // Brand
+  flavour: string;   // Flavour
+  quantity: string;  // Quantity
+  mrp: string;       // MRP (text, not number)
 }
 
 interface EnhancedSmartSearchProps {
@@ -70,26 +68,26 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
       // Determine match type based on what field matched
       if (term.match(/^(s\.?no\.?|sn\.?|serial)\s*(\d+)$/i)) {
         const snoMatch = term.match(/(\d+)/);
-        if (snoMatch && item.sno === parseInt(snoMatch[1])) {
+        if (snoMatch && item.sn === parseInt(snoMatch[1])) {
           matchType = "Serial Number";
-          matchField = `S.No ${item.sno}`;
+          matchField = `S.No ${item.sn}`;
         }
-      } else if (term.match(/^\d+$/) && item.sno === parseInt(term)) {
+      } else if (term.match(/^\d+$/) && item.sn === parseInt(term)) {
         matchType = "Serial Number";
-        matchField = `S.No ${item.sno}`;
+        matchField = `S.No ${item.sn}`;
       } else if (item.brand?.toLowerCase().includes(term)) {
         matchType = "Brand";
         matchField = item.brand;
-      } else if (item.item?.toLowerCase().includes(term) || item.category?.toLowerCase().includes(term)) {
+      } else if (item.items?.toLowerCase().includes(term)) {
         matchType = "Category";
-        matchField = `${item.category} - ${item.item}`;
+        matchField = item.items; // Remove the category reference
       } else if (item.flavour?.toLowerCase().includes(term)) {
         matchType = "Flavour";
         matchField = item.flavour;
       } else if (item.quantity?.toLowerCase().includes(term)) {
         matchType = "Quantity";
         matchField = item.quantity;
-      } else if (term.match(/^\d+$/) && item.mrp === parseFloat(term)) {
+      } else if (term.match(/^\d+$/) && item.mrp?.includes(term)) {
         matchType = "Price";
         matchField = `₹${item.mrp}`;
       }
@@ -104,7 +102,7 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
   }, [debouncedTerm, enhancedResults]);
 
   const selectItem = (item: ShortlistedItem) => {
-    const selectedText = `S.No ${item.sno}: ${item.brand || ''} ${item.item || ''} ${item.flavour || ''} (${item.quantity || ''}) - ₹${item.mrp || 0}`;
+    const selectedText = `S.No ${item.sn}: ${item.brand || ''} ${item.items || ''} ${item.flavour || ''} (${item.quantity || ''}) - ₹${item.mrp || 0}`;
     setSearchTerm(selectedText);
     onChange(selectedText);
     setShowResults(false);
@@ -173,7 +171,7 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
           </div>
           {enhancedResults.map((item, index) => (
             <div
-              key={item.id}
+              key={item.sn}
               onClick={() => selectItem(item)}
               className={`p-3 cursor-pointer border-b last:border-b-0 transition-colors ${
                 index === focusedIndex ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50'
@@ -188,14 +186,14 @@ export function EnhancedSmartSearch({ value, onChange, placeholder, className }:
                     </span>
                   </div>
                   <div className="font-medium text-gray-900">
-                    {item.brand} {item.item}
+                    {item.brand} {item.items}
                   </div>
                   <div className="text-sm text-gray-600">
                     {item.flavour || 'N/A'} • {item.quantity || 'N/A'} • ₹{item.mrp || 0}
                   </div>
                 </div>
                 <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
-                  S.No {item.sno}
+                  S.No {item.sn}
                 </div>
               </div>
             </div>
