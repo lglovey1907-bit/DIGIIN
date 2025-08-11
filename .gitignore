@@ -9,3 +9,4 @@ vite.config.ts.*
 .config/
 .env.env
 .env
+.env
