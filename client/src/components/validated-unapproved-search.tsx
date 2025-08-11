@@ -91,7 +91,7 @@ export function ValidatedUnapprovedSearch({
     
     debounceRef.current = setTimeout(() => {
       setDebouncedQuery(searchQuery);
-    }, 800); // Wait longer for user to finish typing
+    }, 1200); // Wait 1.2 seconds for user to finish typing
 
     return () => {
       if (debounceRef.current) {
@@ -102,7 +102,7 @@ export function ValidatedUnapprovedSearch({
 
   // Auto-check when debounced query changes
   useEffect(() => {
-    if (debouncedQuery.trim() && debouncedQuery.length >= 3) {
+    if (debouncedQuery.trim() && debouncedQuery.length >= 4) {
       checkAgainstShortlistedItems(debouncedQuery);
     } else {
       setValidationResult(null);
@@ -116,7 +116,7 @@ export function ValidatedUnapprovedSearch({
     setSearchQuery(newValue);
     onChange(newValue);
     // Don't immediately show results while typing
-    if (newValue.length < 3) {
+    if (newValue.length < 4) {
       setShowFoundItems(false);
     }
   };
@@ -149,9 +149,19 @@ export function ValidatedUnapprovedSearch({
             }`}
             disabled={isChecking}
             onFocus={() => {
-              if (debouncedQuery.length >= 3 && validationResult?.foundItems.length! > 0) {
-                setShowFoundItems(true);
+              // Only show dropdown if user hasn't seen results yet and there are results
+              if (debouncedQuery.length >= 4 && validationResult?.foundItems && validationResult.foundItems.length > 0 && !isChecking) {
+                // Small delay to prevent immediate show
+                setTimeout(() => setShowFoundItems(true), 200);
               }
+            }}
+            onBlur={(e) => {
+              // Hide dropdown when clicking outside, but with delay to allow clicking on results
+              setTimeout(() => {
+                if (!e.currentTarget.contains(document.activeElement)) {
+                  setShowFoundItems(false);
+                }
+              }, 150);
             }}
           />
           {isChecking && (
