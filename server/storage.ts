@@ -457,3 +457,22 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+// New standalone function for searching shortlisted items
+export async function searchShortlistedItems(query: string) {
+  try {
+    return await db
+      .select()
+      .from(shortlistedItems)
+      .where(
+        or(
+          ilike(shortlistedItems.items, `%${query}%`),
+          ilike(shortlistedItems.brand, `%${query}%`),
+          ilike(shortlistedItems.flavour, `%${query}%`)
+        )
+      );
+  } catch (error) {
+    console.error('Error searching shortlisted items:', error);
+    throw error;
+  }
+}

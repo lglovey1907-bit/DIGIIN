@@ -88,10 +88,10 @@ export const inspectionAssignments = pgTable("inspection_assignments", {
 export const shortlistedItems = pgTable("Shortlisted Approved Items", {
   sn: integer("SN").primaryKey(),
   items: text("Items"),
-  brand: text("Brand"), 
-  flavour: text("Flavour"),
+  brand: text("Brand"),
+  flavour: text("Flavour"), 
   quantity: text("Quantity"),
-  mrp: text("MRP (Rs.)"), // <-- Add the space here
+  mrp: text("MRP (Rs.)"), // <-- Space between MRP and (Rs.)
 });
 
 // File uploads table
