@@ -6,14 +6,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, AlertTriangle, Search } from "lucide-react";
 
 interface ShortlistedItem {
-  id: string;
-  sno: number;
-  category: string;
+  sn: number;        // Not 'id' and 'sno'
+  items: string;     // Not 'item' 
   brand: string;
-  item: string;
   flavour: string;
   quantity: string;
-  mrp: number;
+  mrp: string;       // Text, not number
 }
 
 interface ValidatedUnapprovedSearchProps {
@@ -93,7 +91,7 @@ export function ValidatedUnapprovedSearch({
     
     debounceRef.current = setTimeout(() => {
       setDebouncedQuery(searchQuery);
-    }, 500); // Wait 500ms after user stops typing
+    }, 800); // Wait longer for user to finish typing
 
     return () => {
       if (debounceRef.current) {
@@ -104,7 +102,7 @@ export function ValidatedUnapprovedSearch({
 
   // Auto-check when debounced query changes
   useEffect(() => {
-    if (debouncedQuery.trim() && debouncedQuery.length >= 2) {
+    if (debouncedQuery.trim() && debouncedQuery.length >= 3) {
       checkAgainstShortlistedItems(debouncedQuery);
     } else {
       setValidationResult(null);
@@ -113,13 +111,13 @@ export function ValidatedUnapprovedSearch({
     }
   }, [debouncedQuery]);
 
-  const handleInputChange = (newValue: string) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
     setSearchQuery(newValue);
     onChange(newValue);
-    setIsValidated(false);
-    setShowFoundItems(false);
-    if (!newValue.trim()) {
-      setValidationResult(null);
+    // Don't immediately show results while typing
+    if (newValue.length < 3) {
+      setShowFoundItems(false);
     }
   };
 
@@ -140,7 +138,7 @@ export function ValidatedUnapprovedSearch({
           <Input
             type="text"
             value={searchQuery}
-            onChange={(e) => handleInputChange(e.target.value)}
+            onChange={handleInputChange}
             placeholder={placeholder}
             className={`${
               validationResult
@@ -150,6 +148,11 @@ export function ValidatedUnapprovedSearch({
                 : ""
             }`}
             disabled={isChecking}
+            onFocus={() => {
+              if (debouncedQuery.length >= 3 && validationResult?.foundItems.length! > 0) {
+                setShowFoundItems(true);
+              }
+            }}
           />
           {isChecking && (
             <div className="absolute right-3 top-3">
@@ -165,21 +168,21 @@ export function ValidatedUnapprovedSearch({
               </div>
               {validationResult.foundItems.map((item, index) => (
                 <div
-                  key={item.id}
+                  key={item.sn}
                   onClick={closeDropdown}
                   className="p-3 border-b last:border-b-0 hover:bg-red-50 transition-colors cursor-pointer"
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="font-medium text-gray-900">
-                        {item.brand} {item.item}
+                        {item.brand} {item.items}
                       </div>
                       <div className="text-sm text-gray-600">
                         {item.flavour || 'N/A'} • {item.quantity || 'N/A'} • ₹{item.mrp || 0}
                       </div>
                     </div>
                     <div className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">
-                      S.No {item.sno}
+                      S.No {item.sn}
                     </div>
                   </div>
                 </div>
