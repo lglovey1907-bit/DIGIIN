@@ -12,24 +12,8 @@ const app = express();
 app.set("trust proxy", 1);
 
 // ✅ Updated CORS configuration
-const allowedOrigins = [
-  "http://localhost:5000", // local dev
-  "http://localhost:5001", // local dev
-  "https://digiin-digital-inspection-platform.onrender.com" // ✅ Correct production URL
-];
-
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log("CORS blocked origin:", origin); // Debug logging
-      callback(new Error("CORS not allowed"));
-    }
-  },
+  origin: true, // Allow all origins
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true
 }));
