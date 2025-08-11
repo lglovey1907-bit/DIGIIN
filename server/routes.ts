@@ -987,12 +987,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/shortlisted-items/search', async (req, res) => {
     try {
       const query = req.query.q as string;
-      if (!query || query.length < 2) {
+      if (!query) {
         return res.json([]);
       }
-      
-      const items = await storage.searchShortlistedItems(query);
-      res.json(items);
+      const results = await storage.searchShortlistedItems(query);
+      res.json(results);
     } catch (error) {
       console.error("Error searching items:", error);
       res.status(500).json({ message: "Failed to search items" });

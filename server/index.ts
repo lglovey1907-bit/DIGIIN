@@ -65,6 +65,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Import routes
+import './routes.ts'; // or however you import your routes
+
 // Start server
 (async () => {
   const server = await registerRoutes(app);
