@@ -87,11 +87,11 @@ export const inspectionAssignments = pgTable("inspection_assignments", {
 // Shortlisted items table - Updated to match Supabase table "Shortlisted Approved Items"
 export const shortlistedItems = pgTable("Shortlisted Approved Items", {
   sn: integer("SN").primaryKey(),
-  items: text("Items").notNull(),
-  brand: text("Brand").notNull(),
+  items: text("Items"),
+  brand: text("Brand"), 
   flavour: text("Flavour"),
-  quantity: text("Quantity").notNull(),
-  mrp: text("MRP(Rs.)").notNull(),
+  quantity: text("Quantity"),
+  mrp: text("MRP (Rs.)"), // <-- Add the space here
 });
 
 // File uploads table
