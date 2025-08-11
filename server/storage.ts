@@ -300,33 +300,48 @@ export class DatabaseStorage implements IStorage {
 
   async searchShortlistedItems(query: string): Promise<ShortlistedItem[]> {
     const searchTerm = `%${query}%`;
-    const isNumeric = /^\d+$/.test(query.trim());
+    const trimmedQuery = query.trim();
+    
+    // Check if query is a number (for exact SN match)
+    const isNumeric = /^\d+$/.test(trimmedQuery);
+    
+    let conditions;
     
     if (isNumeric) {
-      const numericQuery = parseInt(query.trim());
-      return await db
-        .select()
-        .from(shortlistedItems)
-        .where(
-          or(
-            eq(shortlistedItems.sn, numericQuery),        // Exact SN match
-            ilike(shortlistedItems.items, searchTerm),
-            ilike(shortlistedItems.brand, searchTerm),
-            ilike(shortlistedItems.flavour, searchTerm)
-          )
-        );
+      const numericQuery = parseInt(trimmedQuery);
+      conditions = [
+        eq(shortlistedItems.sn, numericQuery),         // Exact SN match: "10" → row 10
+        ilike(shortlistedItems.brand, searchTerm),     // Brand contains: "10" in brand name
+        ilike(shortlistedItems.items, searchTerm),     // Items contains: "10" in item name  
+        ilike(shortlistedItems.flavour, searchTerm),   // Flavour contains: "10" 
+        ilike(shortlistedItems.quantity, searchTerm),  // Quantity contains: "10"
+        ilike(shortlistedItems.mrp, searchTerm),       // MRP contains: "10"
+      ];
     } else {
-      return await db
-        .select()
-        .from(shortlistedItems)
-        .where(
-          or(
-            ilike(shortlistedItems.items, searchTerm),
-            ilike(shortlistedItems.brand, searchTerm),
-            ilike(shortlistedItems.flavour, searchTerm)
-          )
-        );
+      // Text search across all fields
+      conditions = [
+        ilike(shortlistedItems.brand, searchTerm),     // "Haldiram" → all Haldiram items
+        ilike(shortlistedItems.items, searchTerm),     // "Biscuit" → all biscuit items
+        ilike(shortlistedItems.flavour, searchTerm),   // "Masala" → all masala flavours
+        ilike(shortlistedItems.quantity, searchTerm),  // "500g" → all 500g quantities
+        ilike(shortlistedItems.mrp, searchTerm),       // "50" → all items with ₹50
+      ];
     }
+    
+    // Always return complete row details
+    return await db
+      .select({
+        sn: shortlistedItems.sn,           // Serial Number
+        items: shortlistedItems.items,     // Item Name
+        brand: shortlistedItems.brand,     // Brand Name
+        flavour: shortlistedItems.flavour, // Flavour
+        quantity: shortlistedItems.quantity, // Quantity
+        mrp: shortlistedItems.mrp,         // MRP Price
+      })
+      .from(shortlistedItems)
+      .where(or(...conditions))
+      .orderBy(shortlistedItems.sn)        // Order by Serial Number
+      .limit(50);                          // Increase limit for brand searches
   }
 
   async getAllShortlistedItems(): Promise<ShortlistedItem[]> {
@@ -474,33 +489,46 @@ export const storage = new DatabaseStorage();
 export async function searchShortlistedItems(query: string) {
   try {
     const searchTerm = `%${query}%`;
-    const isNumeric = /^\d+$/.test(query.trim());
+    const trimmedQuery = query.trim();
+    const isNumeric = /^\d+$/.test(trimmedQuery);
+    
+    let whereCondition;
     
     if (isNumeric) {
-      const numericQuery = parseInt(query.trim());
-      return await db
-        .select()
-        .from(shortlistedItems)
-        .where(
-          or(
-            eq(shortlistedItems.sn, numericQuery),        // Exact SN match
-            ilike(shortlistedItems.items, searchTerm),
-            ilike(shortlistedItems.brand, searchTerm),
-            ilike(shortlistedItems.flavour, searchTerm)
-          )
-        );
+      const numericQuery = parseInt(trimmedQuery);
+      whereCondition = or(
+        eq(shortlistedItems.sn, numericQuery),        // "10" → exact row 10
+        ilike(shortlistedItems.items, searchTerm),    // "10" in items
+        ilike(shortlistedItems.brand, searchTerm),    // "10" in brand
+        ilike(shortlistedItems.flavour, searchTerm),  // "10" in flavour
+        ilike(shortlistedItems.quantity, searchTerm), // "10" in quantity
+        ilike(shortlistedItems.mrp, searchTerm)       // "10" in MRP
+      );
     } else {
-      return await db
-        .select()
-        .from(shortlistedItems)
-        .where(
-          or(
-            ilike(shortlistedItems.items, searchTerm),
-            ilike(shortlistedItems.brand, searchTerm),
-            ilike(shortlistedItems.flavour, searchTerm)
-          )
-        );
+      whereCondition = or(
+        ilike(shortlistedItems.brand, searchTerm),    // "Haldiram" → all Haldiram
+        ilike(shortlistedItems.items, searchTerm),    // "Chips" → all chips
+        ilike(shortlistedItems.flavour, searchTerm),  // "Spicy" → all spicy
+        ilike(shortlistedItems.quantity, searchTerm), // "100g" → all 100g
+        ilike(shortlistedItems.mrp, searchTerm)       // "25" → all ₹25 items
+      );
     }
+    
+    // Always return complete row information
+    return await db
+      .select({
+        sn: shortlistedItems.sn,           // Complete row data
+        items: shortlistedItems.items,
+        brand: shortlistedItems.brand,
+        flavour: shortlistedItems.flavour,
+        quantity: shortlistedItems.quantity,
+        mrp: shortlistedItems.mrp,
+      })
+      .from(shortlistedItems)
+      .where(whereCondition)
+      .orderBy(shortlistedItems.sn)
+      .limit(50);
+      
   } catch (error) {
     console.error('Error searching shortlisted items:', error);
     throw error;
