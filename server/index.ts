@@ -11,17 +11,22 @@ const app = express();
 // Trust proxy for session cookies
 app.set("trust proxy", 1);
 
-// ✅ Proper CORS configuration
+// ✅ Updated CORS configuration
 const allowedOrigins = [
   "http://localhost:5000", // local dev
-  "https://digiin-frontend.onrender.com" // production frontend
+  "http://localhost:5001", // local dev
+  "https://digiin-digital-inspection-platform.onrender.com" // ✅ Correct production URL
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Allow requests with no origin (like mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log("CORS blocked origin:", origin); // Debug logging
       callback(new Error("CORS not allowed"));
     }
   },
