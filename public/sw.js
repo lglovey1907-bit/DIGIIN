@@ -265,3 +265,6 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+
+// Serve static files from public directory
+app.use(express.static('public'));
