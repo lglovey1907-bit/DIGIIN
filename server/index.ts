@@ -7,7 +7,11 @@ dotenv.config();
 import cors from "cors";
 import { generateInspectionReport } from './api/generate-inspection-report';
 import { uploadGallery, createPhotoGallery, getPhotoGallery } from './api/photo-gallery';
-import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 
@@ -67,8 +71,8 @@ app.post('/api/generate-inspection-report', generateInspectionReport);
 app.post('/api/upload-gallery', uploadGallery, createPhotoGallery);
 app.get('/api/photo-gallery/:galleryId', getPhotoGallery);
 
-// Serve uploaded images
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Fix the uploads route
+app.use("/uploads", express.static(join(__dirname, "../uploads")));
 
 // Start server
 (async () => {
