@@ -10,22 +10,25 @@ import { SmartSearch } from "./smart-search";
 import { EnhancedSmartSearch } from "./enhanced-smart-search";
 import { ValidatedUnapprovedSearch } from "./validated-unapproved-search";
 import { Upload, Plus, Trash2, Utensils, FileText } from "lucide-react";
+import { PhotoManager } from "./photo-manager";
 
 interface VendorDetail {
   name: string;
   designation: string;
   properUniform?: boolean;
   medicalCard?: boolean;
-  medicalCardDetails?: string;  // Add this
-  idCard?: boolean;             // Add this
-  idCardNumber?: string;        // Add this
+  medicalCardDetails?: string;
+  idCard?: boolean;
+  idCardNumber?: string;
   policeVerification?: boolean;
-  policeVerificationDetails?: string; // Add this
+  policeVerificationDetails?: string;
+  photos?: any[]; // Add this field for photo data
 }
 
 interface AdditionalObservation {
   title: string;
   content: string;
+  photos?: any[]; // Add this field for photo data
 }
 
 interface OverchargingItem {
@@ -56,6 +59,15 @@ interface CompanyData {
   unapprovedItems: string[];
   overchargingItems: OverchargingItem[];
   additionalObservations: AdditionalObservation[];
+  // Add photo fields
+  vendorDocsPhotos?: any[];
+  foodLicensePhotos?: any[];
+  rateListDisplayPhotos?: any[];
+  billFoodFreeDisplayPhotos?: any[];
+  billMachinePhotos?: any[];
+  digitalPaymentPhotos?: any[];
+  itemVerificationPhotos?: any[];
+  overchargingItemsPhotos?: any[];
 }
 
 interface CateringFormProps {
@@ -95,7 +107,16 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
       policeVerificationDetails: "",
       unapprovedItems: [""],
       overchargingItems: [{ name: "", mrpPrice: "", sellingPrice: "" }],
-      additionalObservations: []
+      additionalObservations: [],
+      // Add photo fields
+      vendorDocsPhotos: [],
+      foodLicensePhotos: [],
+      rateListDisplayPhotos: [],
+      billFoodFreeDisplayPhotos: [],
+      billMachinePhotos: [],
+      digitalPaymentPhotos: [],
+      itemVerificationPhotos: [],
+      overchargingItemsPhotos: []
     }
   ]);
 
@@ -163,7 +184,16 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
       policeVerificationDetails: "",
       unapprovedItems: [""],
       overchargingItems: [{ name: "", mrpPrice: "", sellingPrice: "" }],
-      additionalObservations: []
+      additionalObservations: [],
+      // Add photo fields
+      vendorDocsPhotos: [],
+      foodLicensePhotos: [],
+      rateListDisplayPhotos: [],
+      billFoodFreeDisplayPhotos: [],
+      billMachinePhotos: [],
+      digitalPaymentPhotos: [],
+      itemVerificationPhotos: [],
+      overchargingItemsPhotos: []
     };
     const updatedCompanies = [...companies, newCompany];
     setCompanies(updatedCompanies);
@@ -263,7 +293,11 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
       i === companyIndex 
         ? { 
             ...company, 
-            additionalObservations: [...(company.additionalObservations || []), { title: "", content: "" }]
+            additionalObservations: [...(company.additionalObservations || []), { 
+              title: "", 
+              content: "", 
+              photos: [] // Add this
+            }]
           }
         : company
     );
@@ -284,7 +318,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
     updateObservation('companies', updatedCompanies);
   };
 
-  const updateAdditionalPoint = (companyIndex: number, pointIndex: number, field: string, value: string) => {
+  const updateAdditionalPoint = (companyIndex: number, pointIndex: number, field: string, value: string | any) => {
     const updatedCompanies = companies.map((company, i) => 
       i === companyIndex 
         ? { 
@@ -314,7 +348,8 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
               idCard: false,
               idCardNumber: "",
               policeVerification: false,
-              policeVerificationDetails: ""
+              policeVerificationDetails: "",
+              photos: [] // Add this
             }]
           }
         : company
@@ -336,7 +371,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
     updateObservation('companies', updatedCompanies);
   };
 
-  const updateVendorDetail = (companyIndex: number, vendorIndex: number, field: string, value: string | boolean) => {
+  const updateVendorDetail = (companyIndex: number, vendorIndex: number, field: string, value: string | boolean | any) => {
     const updatedCompanies = companies.map((company, i) => 
       i === companyIndex 
         ? { 
@@ -512,7 +547,15 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       </div>
                     </div>
                     
-                    <Input type="file" accept="image/*" className="mt-3 text-sm" />
+                    <PhotoManager
+                      sectionId={`vendor-docs-${companyIndex}`}
+                      sectionName="vendorDocs"
+                      maxInReport={2}
+                      onPhotosChange={(photos) => {
+                        // Handle photos for this section
+                        updateCompany(companyIndex, `vendorDocs`, photos);
+                      }}
+                    />
                   </div>
 
                   {/* Additional Vendors - Now part of Point 1 */}
@@ -624,7 +667,15 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                             </div>
                           </div>
                           
-                          <Input type="file" accept="image/*" className="mt-3 text-sm" />
+                          <PhotoManager
+                            sectionId={`additional-vendor-docs-${companyIndex}-${vendorIndex}`}
+                            sectionName="additionalVendorDocs"
+                            maxInReport={2}
+                            onPhotosChange={(photos) => {
+                              // Handle photos for this section
+                              updateVendorDetail(companyIndex, vendorIndex, 'photos', photos);
+                            }}
+                          />
                         </div>
                       ))}
                     </div>
@@ -672,7 +723,15 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       className="mt-2 text-sm"
                     />
                   )}
-                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                  <PhotoManager
+                    sectionId={`food-license-${companyIndex}`}
+                    sectionName="foodLicense"
+                    maxInReport={2}
+                    onPhotosChange={(photos) => {
+                      // Handle photos for this section
+                      updateCompany(companyIndex, `foodLicensePhotos`, photos);
+                    }}
+                  />
                 </div>
 
                 {/* Point 3A: Rate List Display (was Point 4A) */}
@@ -694,7 +753,15 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       <Label htmlFor={`rate-not-displayed-${companyIndex}`}>Not Displayed</Label>
                     </div>
                   </RadioGroup>
-                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                  <PhotoManager
+                    sectionId={`rate-list-display-${companyIndex}`}
+                    sectionName="rateListDisplay"
+                    maxInReport={2}
+                    onPhotosChange={(photos) => {
+                      // Handle photos for this section
+                      updateCompany(companyIndex, `rateListDisplayPhotos`, photos);
+                    }}
+                  />
                 </div>
 
                 {/* Point 3B: Bill Food Free Display (was Point 4B) */}
@@ -716,7 +783,15 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       <Label htmlFor={`bill-food-not-displayed-${companyIndex}`}>Not Displayed</Label>
                     </div>
                   </RadioGroup>
-                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                  <PhotoManager
+                    sectionId={`bill-food-free-display-${companyIndex}`}
+                    sectionName="billFoodFreeDisplay"
+                    maxInReport={2}
+                    onPhotosChange={(photos) => {
+                      // Handle photos for this section
+                      updateCompany(companyIndex, `billFoodFreeDisplayPhotos`, photos);
+                    }}
+                  />
                 </div>
 
                 {/* Point 4: Bill Machine (was Point 5) */}
@@ -742,7 +817,15 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       <Label htmlFor={`bill-not-available-${companyIndex}`}>Not Available</Label>
                     </div>
                   </RadioGroup>
-                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                  <PhotoManager
+                    sectionId={`bill-machine-${companyIndex}`}
+                    sectionName="billMachine"
+                    maxInReport={2}
+                    onPhotosChange={(photos) => {
+                      // Handle photos for this section
+                      updateCompany(companyIndex, `billMachinePhotos`, photos);
+                    }}
+                  />
                 </div>
 
                 {/* Point 5: Digital Payment (was Point 6) */}
@@ -764,7 +847,15 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       <Label htmlFor={`digital-not-accepting-${companyIndex}`}>Not Accepting</Label>
                     </div>
                   </RadioGroup>
-                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                  <PhotoManager
+                    sectionId={`digital-payment-${companyIndex}`}
+                    sectionName="digitalPayment"
+                    maxInReport={2}
+                    onPhotosChange={(photos) => {
+                      // Handle photos for this section
+                      updateCompany(companyIndex, `digitalPaymentPhotos`, photos);
+                    }}
+                  />
                 </div>
 
                 {/* Point 6: Item Verification (was Point 7) */}
@@ -842,7 +933,15 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                     </div>
                   </div>
                   
-                  <Input type="file" accept="image/*" className="mt-3 text-sm" />
+                  <PhotoManager
+                    sectionId={`item-verification-${companyIndex}`}
+                    sectionName="itemVerification"
+                    maxInReport={2}
+                    onPhotosChange={(photos) => {
+                      // Handle photos for this section
+                      updateCompany(companyIndex, `itemVerificationPhotos`, photos);
+                    }}
+                  />
                 </div>
 
                 {/* Point 7: Overcharging Items (was Point 8) */}
@@ -893,7 +992,15 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       </div>
                     </div>
                   ))}
-                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                  <PhotoManager
+                    sectionId={`overcharging-items-${companyIndex}`}
+                    sectionName="overchargingItems"
+                    maxInReport={2}
+                    onPhotosChange={(photos) => {
+                      // Handle photos for this section
+                      updateCompany(companyIndex, `overchargingItemsPhotos`, photos);
+                    }}
+                  />
                 </div>
 
                 {/* Additional Observation Points - Now starting from Point 8 */}
@@ -931,7 +1038,15 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                             onChange={(e) => updateAdditionalPoint(companyIndex, pointIndex, 'content', e.target.value)}
                             rows={3}
                           />
-                          <Input type="file" accept="image/*" className="text-sm" />
+                          <PhotoManager
+                            sectionId={`additional-observation-${companyIndex}-${pointIndex}`}
+                            sectionName="additionalObservations"
+                            maxInReport={2}
+                            onPhotosChange={(photos) => {
+                              // Handle photos for this section
+                              updateAdditionalPoint(companyIndex, pointIndex, 'photos', photos);
+                            }}
+                          />
                         </div>
                       </div>
                     ))}

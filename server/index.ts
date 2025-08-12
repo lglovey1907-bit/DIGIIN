@@ -6,6 +6,8 @@ dotenv.config();
 
 import cors from "cors";
 import { generateInspectionReport } from './api/generate-inspection-report';
+import { uploadGallery, createPhotoGallery, getPhotoGallery } from './api/photo-gallery';
+import path from 'path';
 
 const app = express();
 
@@ -60,6 +62,13 @@ import './routes.ts'; // or however you import your routes
 
 // Add this route
 app.post('/api/generate-inspection-report', generateInspectionReport);
+
+// Photo gallery routes
+app.post('/api/upload-gallery', uploadGallery, createPhotoGallery);
+app.get('/api/photo-gallery/:galleryId', getPhotoGallery);
+
+// Serve uploaded images
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Start server
 (async () => {
