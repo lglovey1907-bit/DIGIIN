@@ -413,28 +413,35 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
 
               {/* Company-specific Observation Points */}
               <div className="space-y-4">
+                {/* Point 1: Name of the Vendor + Uniform & Documentation (MERGED) */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-2 flex items-center">
                     <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">1</span>
-                    Name of the Vendor
+                    Name of the Vendor & Documentation Check
                   </h5>
-                  <Input
-                    placeholder="Enter vendor name"
-                    value={company.vendorName || ""}
-                    onChange={(e) => updateCompany(companyIndex, 'vendorName', e.target.value)}
-                  />
-                  <div className="mt-2">
-                    <Input type="file" accept="image/*" className="text-sm" />
+                  
+                  {/* Vendor Name */}
+                  <div className="mb-4">
+                    <Label className="text-sm font-medium">Vendor Name</Label>
+                    <Input
+                      placeholder="Enter vendor name"
+                      value={company.vendorName || ""}
+                      onChange={(e) => {
+                        let value = e.target.value;
+                        // Automatically add Sh. prefix if not present
+                        if (value && !value.startsWith('Sh. ')) {
+                          value = 'Sh. ' + value;
+                        }
+                        updateCompany(companyIndex, 'vendorName', value);
+                      }}
+                      className="mt-1"
+                    />
                   </div>
-                </div>
 
-                {/* Point 2: Uniform & Documentation */}
-                <div className="border border-gray-200 rounded-lg p-3">
-                  <h5 className="font-medium text-nr-navy mb-2 flex items-center">
-                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">2</span>
-                    Uniform & Documentation Check
-                  </h5>
-                  <div className="space-y-3">
+                  {/* Uniform & Documentation Check - Now part of Point 1 */}
+                  <div className="space-y-3 border-t border-gray-100 pt-3">
+                    <h6 className="text-sm font-medium text-gray-700">Documentation & Uniform Verification</h6>
+                    
                     <div className="flex items-center space-x-2">
                       <Checkbox 
                         id={`properUniform-${companyIndex}`}
@@ -495,14 +502,15 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       />
                     </div>
                   </div>
-                  <Input type="file" accept="image/*" className="mt-2 text-sm" />
+                  
+                  <Input type="file" accept="image/*" className="mt-3 text-sm" />
                 </div>
 
-                {/* Optional Additional Vendor Details */}
+                {/* Tab 1A: Additional Vendor Details */}
                 {(company.vendorDetails || []).length > 0 && (
                   <div className="border border-gray-200 rounded-lg p-3 bg-blue-50">
                     <h5 className="font-medium text-nr-navy mb-2 flex items-center">
-                      <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">2A</span>
+                      <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">1A</span>
                       Additional Vendor Details
                     </h5>
                     <div className="space-y-3">
@@ -512,7 +520,14 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                             <Input
                               placeholder="Additional Vendor Name"
                               value={vendor.name || ""}
-                              onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'name', e.target.value)}
+                              onChange={(e) => {
+                                let value = e.target.value;
+                                // Automatically add Sh. prefix if not present
+                                if (value && !value.startsWith('Sh. ')) {
+                                  value = 'Sh. ' + value;
+                                }
+                                updateVendorDetail(companyIndex, vendorIndex, 'name', value);
+                              }}
                               className="flex-1"
                             />
                             <Input
@@ -567,7 +582,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   </div>
                 )}
 
-                {/* Add Another Vendor Button */}
+                {/* Add Another Vendor Button - Now opens Tab 1A */}
                 <div className="text-center">
                   <Button
                     type="button"
@@ -577,14 +592,14 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                     className="border-dashed border-2 border-nr-blue text-nr-blue hover:bg-nr-blue hover:text-white"
                   >
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Another Vendor (Optional)
+                    Add Another Vendor (Opens Tab 1A)
                   </Button>
                 </div>
 
-                {/* Point 3: Food License */}
+                {/* Point 2: Food License (was Point 3) */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-2 flex items-center">
-                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">3</span>
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">2</span>
                     Food License
                   </h5>
                   <RadioGroup 
@@ -611,10 +626,10 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
                 </div>
 
-                {/* Point 4A: Rate List Display */}
+                {/* Point 3A: Rate List Display (was Point 4A) */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-2 flex items-center">
-                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">4A</span>
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">3A</span>
                     Rate List Display
                   </h5>
                   <RadioGroup 
@@ -633,10 +648,10 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
                 </div>
 
-                {/* Point 4B: Bill Food Free Display */}
+                {/* Point 3B: Bill Food Free Display (was Point 4B) */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-2 flex items-center">
-                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">4B</span>
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">3B</span>
                     "No Bill Food is Free" Display
                   </h5>
                   <RadioGroup 
@@ -655,10 +670,10 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
                 </div>
 
-                {/* Point 5: Bill Machine */}
+                {/* Point 4: Bill Machine (was Point 5) */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-2 flex items-center">
-                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">5</span>
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">4</span>
                     Electronic Billing Machine
                   </h5>
                   <RadioGroup 
@@ -681,10 +696,10 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
                 </div>
 
-                {/* Point 6: Digital Payment */}
+                {/* Point 5: Digital Payment (was Point 6) */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-2 flex items-center">
-                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">6</span>
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">5</span>
                     Digital Payment Acceptance
                   </h5>
                   <RadioGroup 
@@ -703,14 +718,14 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
                 </div>
 
-                {/* Point 7: Item Verification */}
+                {/* Point 6: Item Verification (was Point 7) */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-4 flex items-center">
-                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">7</span>
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">6</span>
                     Item Verification
                   </h5>
                   
-                  {/* 7A: Shortlisted Items Search */}
+                  {/* 6A: Shortlisted Items Search */}
                   <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                     <h6 className="font-medium text-green-800 mb-2 flex items-center">
                       <span className="bg-green-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs mr-2">A</span>
@@ -730,11 +745,11 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                     </div>
                   </div>
 
-                  {/* 7B: Unapproved Items with Validation */}
+                  {/* 6B: Unapproved Items with Validation */}
                   <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                     <h6 className="font-medium text-red-800 mb-3 flex items-center">
                       <span className="bg-red-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs mr-2">B</span>
-                      Unapproved Items (Auto-validates against 7A)
+                      Unapproved Items (Auto-validates against 6A)
                     </h6>
                     {company.unapprovedItems.map((item, itemIndex) => (
                       <div key={itemIndex} className="mb-4">
@@ -773,7 +788,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                       </div>
                     ))}
                     <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                      <strong>Smart Validation:</strong> Each item entered here is automatically checked against the approved shortlisted items (7A). 
+                      <strong>Smart Validation:</strong> Each item entered here is automatically checked against the approved shortlisted items (6A). 
                       Only items NOT found in the approved catalog can be recorded as unapproved items.
                     </div>
                   </div>
@@ -781,10 +796,10 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   <Input type="file" accept="image/*" className="mt-3 text-sm" />
                 </div>
 
-                {/* Point 8: Overcharging Items */}
+                {/* Point 7: Overcharging Items (was Point 8) */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-2 flex items-center">
-                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">8</span>
+                    <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">7</span>
                     Overcharging Items (if found)
                   </h5>
                   {company.overchargingItems.map((item, itemIndex) => (
@@ -832,7 +847,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                   <Input type="file" accept="image/*" className="mt-2 text-sm" />
                 </div>
 
-                {/* Additional Observation Points */}
+                {/* Additional Observation Points - Now starting from Point 8 */}
                 {company.additionalObservations && company.additionalObservations.length > 0 && (
                   <div className="space-y-4">
                     {company.additionalObservations.map((point, pointIndex) => (
@@ -840,7 +855,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                         <div className="flex justify-between items-center mb-2">
                           <h5 className="font-medium text-nr-navy flex items-center">
                             <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">
-                              {8 + pointIndex + 1}
+                              {7 + pointIndex + 1}
                             </span>
                             Additional Observation Point {pointIndex + 1}
                           </h5>
