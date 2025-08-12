@@ -5,6 +5,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 import cors from "cors";
+import { generateInspectionReport } from './api/generate-inspection-report';
 
 const app = express();
 
@@ -56,6 +57,9 @@ app.use((req, res, next) => {
 
 // Import routes
 import './routes.ts'; // or however you import your routes
+
+// Add this route
+app.post('/api/generate-inspection-report', generateInspectionReport);
 
 // Start server
 (async () => {
