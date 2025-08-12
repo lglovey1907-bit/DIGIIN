@@ -16,7 +16,11 @@ interface VendorDetail {
   designation: string;
   properUniform?: boolean;
   medicalCard?: boolean;
+  medicalCardDetails?: string;  // Add this
+  idCard?: boolean;             // Add this
+  idCardNumber?: string;        // Add this
   policeVerification?: boolean;
+  policeVerificationDetails?: string; // Add this
 }
 
 interface AdditionalObservation {
@@ -305,8 +309,12 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
               name: "", 
               designation: "", 
               properUniform: false, 
-              medicalCard: false, 
-              policeVerification: false 
+              medicalCard: false,
+              medicalCardDetails: "",
+              idCard: false,
+              idCardNumber: "",
+              policeVerification: false,
+              policeVerificationDetails: ""
             }]
           }
         : company
@@ -356,7 +364,6 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
         <div className="mb-6">
           <div className="mb-4">
             <h3 className="text-lg font-medium text-nr-navy">Observations/Deficiencies</h3>
-          </div>
           
           {companies.map((company, companyIndex) => (
             <div key={companyIndex} className="bg-gray-50 rounded-lg p-4 mb-6 relative">
@@ -413,129 +420,109 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
 
               {/* Company-specific Observation Points */}
               <div className="space-y-4">
-                {/* Point 1: Name of the Vendor + Uniform & Documentation (MERGED) */}
+                {/* Point 1: Name of the Vendor & Documentation Check (MERGED with 1A) */}
                 <div className="border border-gray-200 rounded-lg p-3">
                   <h5 className="font-medium text-nr-navy mb-2 flex items-center">
                     <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">1</span>
                     Name of the Vendor & Documentation Check
                   </h5>
                   
-                  {/* Vendor Name */}
-                  <div className="mb-4">
-                    <Label className="text-sm font-medium">Vendor Name</Label>
-                    <Input
-                      placeholder="Enter vendor name"
-                      value={company.vendorName || ""}
-                      onChange={(e) => {
-                        let value = e.target.value;
-                        // Automatically add Sh. prefix if not present
-                        if (value && !value.startsWith('Sh. ')) {
-                          value = 'Sh. ' + value;
-                        }
-                        updateCompany(companyIndex, 'vendorName', value);
-                      }}
-                      className="mt-1"
-                    />
-                  </div>
+                  {/* Main Vendor */}
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h6 className="text-sm font-medium text-blue-800 mb-3">Primary Vendor</h6>
+                    
+                    <div className="mb-4">
+                      <Label className="text-sm font-medium">Vendor Name</Label>
+                      <Input
+                        placeholder="Enter vendor name"
+                        value={company.vendorName || ""}
+                        onChange={(e) => {
+                          let value = e.target.value;
+                          if (value && !value.startsWith('Sh. ')) {
+                            value = 'Sh. ' + value;
+                          }
+                          updateCompany(companyIndex, 'vendorName', value);
+                        }}
+                        className="mt-1"
+                      />
+                    </div>
 
-                  {/* Uniform & Documentation Check - Now part of Point 1 */}
-                  <div className="space-y-3 border-t border-gray-100 pt-3">
-                    <h6 className="text-sm font-medium text-gray-700">Documentation & Uniform Verification</h6>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`properUniform-${companyIndex}`}
-                        checked={company.properUniform || false}
-                        onCheckedChange={(checked) => updateCompany(companyIndex, 'properUniform', checked)}
-                      />
-                      <Label htmlFor={`properUniform-${companyIndex}`}>Proper Uniform</Label>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`medicalCard-${companyIndex}`}
-                          checked={company.medicalCard || false}
-                          onCheckedChange={(checked) => updateCompany(companyIndex, 'medicalCard', checked)}
-                        />
-                        <Label htmlFor={`medicalCard-${companyIndex}`}>Medical Card</Label>
-                      </div>
-                      <Input 
-                        placeholder="Medical card details (validity, type, etc.)"
-                        value={company.medicalCardDetails || ""}
-                        onChange={(e) => updateCompany(companyIndex, 'medicalCardDetails', e.target.value)}
-                        className="text-sm"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`idCard-${companyIndex}`}
-                          checked={company.idCard || false}
-                          onCheckedChange={(checked) => updateCompany(companyIndex, 'idCard', checked)}
-                        />
-                        <Label htmlFor={`idCard-${companyIndex}`}>ID Card</Label>
-                      </div>
-                      <Input 
-                        placeholder="ID card number"
-                        value={company.idCardNumber || ""}
-                        onChange={(e) => updateCompany(companyIndex, 'idCardNumber', e.target.value)}
-                        className="text-sm"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox 
-                          id={`policeVerification-${companyIndex}`}
-                          checked={company.policeVerification || false}
-                          onCheckedChange={(checked) => updateCompany(companyIndex, 'policeVerification', checked)}
-                        />
-                        <Label htmlFor={`policeVerification-${companyIndex}`}>Police Verification</Label>
-                      </div>
-                      <Input 
-                        placeholder="Police verification details (date, station, etc.)"
-                        value={company.policeVerificationDetails || ""}
-                        onChange={(e) => updateCompany(companyIndex, 'policeVerificationDetails', e.target.value)}
-                        className="text-sm"
-                      />
-                    </div>
-                  </div>
-                  
-                  <Input type="file" accept="image/*" className="mt-3 text-sm" />
-                </div>
-
-                {/* Tab 1A: Additional Vendor Details */}
-                {(company.vendorDetails || []).length > 0 && (
-                  <div className="border border-gray-200 rounded-lg p-3 bg-blue-50">
-                    <h5 className="font-medium text-nr-navy mb-2 flex items-center">
-                      <span className="bg-nr-blue text-white rounded-full w-5 h-5 flex items-center justify-center text-xs mr-2">1A</span>
-                      Additional Vendor Details
-                    </h5>
+                    {/* Primary Vendor Documentation */}
                     <div className="space-y-3">
+                      <h6 className="text-sm font-medium text-gray-700">Documentation & Uniform Verification</h6>
+                      
+                      <div className="flex items-center space-x-2">
+                        <Checkbox 
+                          id={`properUniform-${companyIndex}`}
+                          checked={company.properUniform || false}
+                          onCheckedChange={(checked) => updateCompany(companyIndex, 'properUniform', checked)}
+                        />
+                        <Label htmlFor={`properUniform-${companyIndex}`}>Proper Uniform</Label>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`medicalCard-${companyIndex}`}
+                            checked={company.medicalCard || false}
+                            onCheckedChange={(checked) => updateCompany(companyIndex, 'medicalCard', checked)}
+                          />
+                          <Label htmlFor={`medicalCard-${companyIndex}`}>Medical Card</Label>
+                        </div>
+                        <Input 
+                          placeholder="Medical card details (validity, type, etc.)"
+                          value={company.medicalCardDetails || ""}
+                          onChange={(e) => updateCompany(companyIndex, 'medicalCardDetails', e.target.value)}
+                          className="text-sm"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`idCard-${companyIndex}`}
+                            checked={company.idCard || false}
+                            onCheckedChange={(checked) => updateCompany(companyIndex, 'idCard', checked)}
+                          />
+                          <Label htmlFor={`idCard-${companyIndex}`}>ID Card</Label>
+                        </div>
+                        <Input 
+                          placeholder="ID card number"
+                          value={company.idCardNumber || ""}
+                          onChange={(e) => updateCompany(companyIndex, 'idCardNumber', e.target.value)}
+                          className="text-sm"
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`policeVerification-${companyIndex}`}
+                            checked={company.policeVerification || false}
+                            onCheckedChange={(checked) => updateCompany(companyIndex, 'policeVerification', checked)}
+                          />
+                          <Label htmlFor={`policeVerification-${companyIndex}`}>Police Verification</Label>
+                        </div>
+                        <Input 
+                          placeholder="Police verification details (date, station, etc.)"
+                          value={company.policeVerificationDetails || ""}
+                          onChange={(e) => updateCompany(companyIndex, 'policeVerificationDetails', e.target.value)}
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                    
+                    <Input type="file" accept="image/*" className="mt-3 text-sm" />
+                  </div>
+
+                  {/* Additional Vendors - Now part of Point 1 */}
+                  {(company.vendorDetails || []).length > 0 && (
+                    <div className="space-y-4">
+                      <h6 className="text-sm font-medium text-gray-700 border-t border-gray-200 pt-3">Additional Vendors</h6>
                       {(company.vendorDetails || []).map((vendor, vendorIndex) => (
-                        <div key={vendorIndex} className="bg-white rounded p-3 border">
-                          <div className="flex gap-3 mb-3 items-center">
-                            <Input
-                              placeholder="Additional Vendor Name"
-                              value={vendor.name || ""}
-                              onChange={(e) => {
-                                let value = e.target.value;
-                                // Automatically add Sh. prefix if not present
-                                if (value && !value.startsWith('Sh. ')) {
-                                  value = 'Sh. ' + value;
-                                }
-                                updateVendorDetail(companyIndex, vendorIndex, 'name', value);
-                              }}
-                              className="flex-1"
-                            />
-                            <Input
-                              placeholder="Designation (optional)"
-                              value={vendor.designation || ""}
-                              onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'designation', e.target.value)}
-                              className="flex-1"
-                            />
+                        <div key={vendorIndex} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <div className="flex justify-between items-center mb-3">
+                            <h6 className="text-sm font-medium text-green-800">Vendor {vendorIndex + 2}</h6>
                             <Button
                               type="button"
                               variant="outline"
@@ -547,8 +534,35 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                             </Button>
                           </div>
                           
-                          {/* Additional vendor uniform & documentation check */}
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                            <div>
+                              <Label className="text-sm">Vendor Name</Label>
+                              <Input
+                                placeholder="Additional Vendor Name"
+                                value={vendor.name || ""}
+                                onChange={(e) => {
+                                  let value = e.target.value;
+                                  if (value && !value.startsWith('Sh. ')) {
+                                    value = 'Sh. ' + value;
+                                  }
+                                  updateVendorDetail(companyIndex, vendorIndex, 'name', value);
+                                }}
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-sm">Designation</Label>
+                              <Input
+                                placeholder="Designation (optional)"
+                                value={vendor.designation || ""}
+                                onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'designation', e.target.value)}
+                                className="mt-1"
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Additional vendor documentation with text fields */}
+                          <div className="space-y-3">
                             <div className="flex items-center space-x-2">
                               <Checkbox 
                                 id={`additionalUniform-${companyIndex}-${vendorIndex}`}
@@ -558,42 +572,77 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
                               <Label htmlFor={`additionalUniform-${companyIndex}-${vendorIndex}`} className="text-sm">Proper Uniform</Label>
                             </div>
                             
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id={`additionalMedical-${companyIndex}-${vendorIndex}`}
-                                checked={vendor.medicalCard || false}
-                                onCheckedChange={(checked) => updateVendorDetail(companyIndex, vendorIndex, 'medicalCard', checked as boolean)}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id={`additionalMedical-${companyIndex}-${vendorIndex}`}
+                                  checked={vendor.medicalCard || false}
+                                  onCheckedChange={(checked) => updateVendorDetail(companyIndex, vendorIndex, 'medicalCard', checked as boolean)}
+                                />
+                                <Label htmlFor={`additionalMedical-${companyIndex}-${vendorIndex}`} className="text-sm">Medical Card</Label>
+                              </div>
+                              <Input 
+                                placeholder="Medical card details"
+                                value={vendor.medicalCardDetails || ""}
+                                onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'medicalCardDetails', e.target.value)}
+                                className="text-sm"
                               />
-                              <Label htmlFor={`additionalMedical-${companyIndex}-${vendorIndex}`} className="text-sm">Medical Card</Label>
                             </div>
                             
-                            <div className="flex items-center space-x-2">
-                              <Checkbox 
-                                id={`additionalPolice-${companyIndex}-${vendorIndex}`}
-                                checked={vendor.policeVerification || false}
-                                onCheckedChange={(checked) => updateVendorDetail(companyIndex, vendorIndex, 'policeVerification', checked as boolean)}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id={`additionalId-${companyIndex}-${vendorIndex}`}
+                                  checked={vendor.idCard || false}
+                                  onCheckedChange={(checked) => updateVendorDetail(companyIndex, vendorIndex, 'idCard', checked as boolean)}
+                                />
+                                <Label htmlFor={`additionalId-${companyIndex}-${vendorIndex}`} className="text-sm">ID Card</Label>
+                              </div>
+                              <Input 
+                                placeholder="ID card number"
+                                value={vendor.idCardNumber || ""}
+                                onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'idCardNumber', e.target.value)}
+                                className="text-sm"
                               />
-                              <Label htmlFor={`additionalPolice-${companyIndex}-${vendorIndex}`} className="text-sm">Police Verification</Label>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                  id={`additionalPolice-${companyIndex}-${vendorIndex}`}
+                                  checked={vendor.policeVerification || false}
+                                  onCheckedChange={(checked) => updateVendorDetail(companyIndex, vendorIndex, 'policeVerification', checked as boolean)}
+                                />
+                                <Label htmlFor={`additionalPolice-${companyIndex}-${vendorIndex}`} className="text-sm">Police Verification</Label>
+                              </div>
+                              <Input 
+                                placeholder="Police verification details"
+                                value={vendor.policeVerificationDetails || ""}
+                                onChange={(e) => updateVendorDetail(companyIndex, vendorIndex, 'policeVerificationDetails', e.target.value)}
+                                className="text-sm"
+                              />
                             </div>
                           </div>
+                          
+                          <Input type="file" accept="image/*" className="mt-3 text-sm" />
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Add Another Vendor Button - Now opens Tab 1A */}
-                <div className="text-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => addVendorDetail(companyIndex)}
-                    className="border-dashed border-2 border-nr-blue text-nr-blue hover:bg-nr-blue hover:text-white"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Another Vendor (Opens Tab 1A)
-                  </Button>
+                  {/* Add Another Vendor Button - Now adds to Point 1 */}
+                  <div className="mt-4 text-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addVendorDetail(companyIndex)}
+                      className="border-dashed border-2 border-nr-blue text-nr-blue hover:bg-nr-blue hover:text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Another Vendor
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Point 2: Food License (was Point 3) */}
@@ -919,7 +968,7 @@ export default function CateringForm({ observations, onObservationsChange }: Cat
             </div>
           ))}
         </div>
-
+      </div>
 
       </CardContent>
     </Card>
