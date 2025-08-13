@@ -266,5 +266,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Serve static files from public directory
-app.use(express.static('public'));
+// END OF FILE - no more code after this
