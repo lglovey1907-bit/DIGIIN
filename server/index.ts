@@ -9,6 +9,7 @@ import { generateInspectionReport } from './api/generate-inspection-report';
 import { uploadGallery, createPhotoGallery, getPhotoGallery } from './api/photo-gallery';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,10 +33,15 @@ app.options("*", cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Request logging
+// Request logging - Enhanced for mobile debugging
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
+  const userAgent = req.get('User-Agent') || 'Unknown';
+  const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
+  
+  console.log(`🌐 ${req.method} ${path} from ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
+  
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
@@ -46,23 +52,22 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-      log(logLine);
+    let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+    if (isMobile) logLine += ' [MOBILE]';
+    if (capturedJsonResponse) {
+      logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
     }
+    if (logLine.length > 80) {
+      logLine = logLine.slice(0, 79) + "…";
+    }
+    log(logLine);
   });
 
   next();
 });
 
 // Import routes
-import './routes.ts'; // or however you import your routes
+import './routes.ts';
 
 // Add this route
 app.post('/api/generate-inspection-report', generateInspectionReport);
@@ -73,6 +78,21 @@ app.get('/api/photo-gallery/:galleryId', getPhotoGallery);
 
 // Fix the uploads route
 app.use("/uploads", express.static(join(__dirname, "../uploads")));
+
+// Debug static files path
+const staticPath = join(__dirname, '../dist/public');
+const indexPath = join(staticPath, 'index.html');
+
+console.log('🔍 Debug - Current directory:', __dirname);
+console.log('🔍 Debug - Static files path:', staticPath);
+console.log('🔍 Debug - Index.html path:', indexPath);
+console.log('🔍 Debug - Static directory exists:', fs.existsSync(staticPath));
+console.log('🔍 Debug - Index.html exists:', fs.existsSync(indexPath));
+
+if (fs.existsSync(staticPath)) {
+  const files = fs.readdirSync(staticPath);
+  console.log('🔍 Debug - Files in static directory:', files);
+}
 
 // Start server
 (async () => {
@@ -86,28 +106,45 @@ app.use("/uploads", express.static(join(__dirname, "../uploads")));
   });
 
   if (app.get("env") === "development") {
+    console.log('🚧 Running in DEVELOPMENT mode');
     await setupVite(app, server);
   } else {
+    console.log('🚀 Running in PRODUCTION mode');
     serveStatic(app);
     
-    // Add the static file serving and routing INSIDE the async function
-    app.use(express.static(join(__dirname, '../dist/public')));
+    // Add static file serving with debugging
+    app.use(express.static(staticPath, {
+      dotfiles: 'ignore',
+      index: ['index.html'],
+      setHeaders: (res, path) => {
+        console.log('📁 Serving static file:', path);
+      }
+    }));
 
+    // Catch-all route for React Router with debugging
     app.get('*', (req, res) => {
+      console.log(`🔄 Catch-all route hit: ${req.path}`);
+      
       // Don't interfere with API routes
       if (req.path.startsWith('/api/')) {
+        console.log('❌ API route not found:', req.path);
         return res.status(404).json({ error: 'API endpoint not found' });
       }
       
-      // Serve React app for all other routes
-      res.sendFile(join(__dirname, '../dist/public/index.html'));
+      // Check if index.html exists before serving
+      if (fs.existsSync(indexPath)) {
+        console.log('✅ Serving index.html for:', req.path);
+        res.sendFile(indexPath);
+      } else {
+        console.log('❌ index.html not found at:', indexPath);
+        res.status(404).send('index.html not found');
+      }
     });
   }
 
   const port = parseInt(process.env.PORT || "10000", 10);
   server.listen(port, () => {
-    log(`Server running on port ${port}`);
+    console.log(`🚀 Server running on port ${port}`);
+    console.log(`🌍 Environment: ${app.get("env")}`);
   });
 })();
-
-// REMOVE EVERYTHING BELOW THIS LINE - it was causing the duplicate server issue
