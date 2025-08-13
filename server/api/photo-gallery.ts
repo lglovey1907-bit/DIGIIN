@@ -44,12 +44,27 @@ interface GalleryData {
 // In-memory storage (use database in production)
 const galleries: Map<string, GalleryData> = new Map();
 
-export const uploadGallery = upload.array('photos') as any;
+// Accept multiple possible field names
+export const uploadGallery = upload.fields([
+  { name: 'photos', maxCount: 10 },
+  { name: 'photo', maxCount: 10 },
+  { name: 'image', maxCount: 10 },
+  { name: 'file', maxCount: 10 },
+  { name: 'images', maxCount: 10 }
+]) as any;
 
 export async function createPhotoGallery(req: Request, res: Response) {
   try {
     const { galleryId, sectionName } = req.body;
-    const files = req.files as Express.Multer.File[];
+    const filesObj = req.files as { [fieldname: string]: Express.Multer.File[] };
+    
+    // Extract files from any of the possible field names
+    let files: Express.Multer.File[] = [];
+    if (filesObj) {
+      Object.values(filesObj).forEach(fileArray => {
+        files.push(...fileArray);
+      });
+    }
     
     if (!files || files.length === 0) {
       return res.status(400).json({ error: 'No files uploaded' });
