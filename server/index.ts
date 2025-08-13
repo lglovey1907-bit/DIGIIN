@@ -96,3 +96,22 @@ app.use("/uploads", express.static(join(__dirname, "../uploads")));
     log(`serving on port ${port}`);
   });
 })();
+
+// Serve static files
+app.use(express.static(join(__dirname, '../dist/public')));
+
+// Handle React routing - serve index.html for all non-API routes
+app.get('*', (req, res) => {
+  // Don't interfere with API routes
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  
+  // Serve React app for all other routes
+  res.sendFile(join(__dirname, '../dist/public/index.html'));
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
