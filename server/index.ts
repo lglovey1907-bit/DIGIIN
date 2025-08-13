@@ -97,10 +97,9 @@ app.use("/uploads", express.static(join(__dirname, "../uploads")));
   });
 })();
 
-// Serve static files
+// Static file serving and routing
 app.use(express.static(join(__dirname, '../dist/public')));
 
-// Handle React routing - serve index.html for all non-API routes
 app.get('*', (req, res) => {
   // Don't interfere with API routes
   if (req.path.startsWith('/api/')) {
@@ -111,7 +110,8 @@ app.get('*', (req, res) => {
   res.sendFile(join(__dirname, '../dist/public/index.html'));
 });
 
-const PORT = process.env.PORT || 3000;
+// ONLY ONE app.listen() call at the very end
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
