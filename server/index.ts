@@ -142,6 +142,31 @@ if (fs.existsSync(staticPath)) {
     });
   }
 
+  // Add this after your API routes but before static file serving
+  // Serve service worker with correct MIME type
+  app.get('/sw.js', (req, res) => {
+    const swPath = join(__dirname, '../dist/public/sw.js');
+    
+    if (fs.existsSync(swPath)) {
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Service-Worker-Allowed', '/');
+      res.sendFile(swPath);
+      console.log('✅ Served sw.js from dist/public');
+    } else {
+      // Fallback: serve from public folder
+      const publicSwPath = join(__dirname, '../public/sw.js');
+      if (fs.existsSync(publicSwPath)) {
+        res.setHeader('Content-Type', 'application/javascript'); 
+        res.setHeader('Service-Worker-Allowed', '/');
+        res.sendFile(publicSwPath);
+        console.log('✅ Served sw.js from public folder (fallback)');
+      } else {
+        console.log('❌ sw.js not found in either location');
+        res.status(404).send('Service worker not found');
+      }
+    }
+  });
+
   const port = parseInt(process.env.PORT || "10000", 10);
   server.listen(port, () => {
     console.log(`🚀 Server running on port ${port}`);
