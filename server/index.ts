@@ -89,29 +89,25 @@ app.use("/uploads", express.static(join(__dirname, "../uploads")));
     await setupVite(app, server);
   } else {
     serveStatic(app);
+    
+    // Add the static file serving and routing INSIDE the async function
+    app.use(express.static(join(__dirname, '../dist/public')));
+
+    app.get('*', (req, res) => {
+      // Don't interfere with API routes
+      if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+      }
+      
+      // Serve React app for all other routes
+      res.sendFile(join(__dirname, '../dist/public/index.html'));
+    });
   }
 
-  const port = parseInt(process.env.PORT || "5001", 10);
+  const port = parseInt(process.env.PORT || "10000", 10);
   server.listen(port, () => {
-    log(`serving on port ${port}`);
+    log(`Server running on port ${port}`);
   });
 })();
 
-// Static file serving and routing
-app.use(express.static(join(__dirname, '../dist/public')));
-
-app.get('*', (req, res) => {
-  // Don't interfere with API routes
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'API endpoint not found' });
-  }
-  
-  // Serve React app for all other routes
-  res.sendFile(join(__dirname, '../dist/public/index.html'));
-});
-
-// ONLY ONE app.listen() call at the very end
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// REMOVE EVERYTHING BELOW THIS LINE - it was causing the duplicate server issue
