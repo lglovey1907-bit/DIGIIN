@@ -9,7 +9,7 @@ import { generateInspectionReport } from './api/generate-inspection-report';
 import { uploadGallery, createPhotoGallery, getPhotoGallery } from './api/photo-gallery';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import fs from 'fs';
+import fs from 'fs';  // <- Add this line
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
