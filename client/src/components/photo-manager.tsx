@@ -443,4 +443,4 @@ export function PhotoManager({
       </CardContent>
     </Card>
   );
-}
+}// Camera timing fix
