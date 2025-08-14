@@ -45,20 +45,17 @@ const sentenceStructures = {
 export async function generateInspectionReport(req: Request, res: Response) {
   try {
     const { observationData, style, variationIndex, previousReports }: ReportGenerationRequest = req.body;
-    
-    // Generate multiple variations using different vocabulary and structures
+
     const variations = generateReportVariations(observationData, style, 3);
-    
-    // Select variation based on index, avoiding previous reports
     const selectedVariation = selectUniqueVariation(variations, previousReports, variationIndex);
-    
+
     res.json({
       report: selectedVariation,
       variations: variations,
       style: style,
       timestamp: new Date().toISOString()
     });
-    
+
   } catch (error) {
     console.error('Error generating report:', error);
     res.status(500).json({ error: 'Failed to generate report' });
@@ -67,34 +64,25 @@ export async function generateInspectionReport(req: Request, res: Response) {
 
 function generateReportVariations(data: any, style: string, count: number): string[] {
   const variations = [];
-  
   for (let i = 0; i < count; i++) {
     const variation = generateStyledReport(data, style, i);
     variations.push(variation);
   }
-  
   return variations;
 }
 
 function generateStyledReport(data: any, style: string, variationIndex: number): string {
   const companies = data.companies || [];
   const vocabularySet = vocabularyVariations[style as keyof typeof vocabularyVariations] || vocabularyVariations.formal;
-  
-  // Use different vocabulary based on variation index
-  const getVariedWord = (wordArray: string[], index: number) => {
-    return wordArray[index % wordArray.length];
-  };
-  
   const currentDate = new Date().toLocaleDateString('en-IN');
-  
-  // Generate report with varied language
+
   return `${getReportHeader(style, variationIndex)}
 
 ${getDateSection(currentDate, variationIndex)}
 
 ${getExecutiveSummary(companies, vocabularySet, variationIndex)}
 
-${companies.map((company: any, index: number) => 
+${companies.map((company: any, index: number) =>
   generateUnitSection(company, index, vocabularySet, variationIndex)
 ).join('\n\n')}
 
@@ -107,7 +95,7 @@ function getReportHeader(style: string, variation: number): string {
   const headers = {
     formal: [
       'COMPREHENSIVE INSPECTION REPORT',
-      'DETAILED ASSESSMENT REPORT', 
+      'DETAILED ASSESSMENT REPORT',
       'FORMAL EVALUATION DOCUMENT',
       'REGULATORY COMPLIANCE REPORT'
     ],
@@ -118,7 +106,6 @@ function getReportHeader(style: string, variation: number): string {
       'TECHNICAL COMPLIANCE REVIEW'
     ]
   };
-  
   const headerArray = headers[style as keyof typeof headers] || headers.formal;
   return headerArray[variation % headerArray.length];
 }
@@ -130,7 +117,6 @@ function getDateSection(date: string, variation: number): string {
     `Evaluation Date: ${date}`,
     `Review Date: ${date}`
   ];
-  
   return datePrefixes[variation % datePrefixes.length];
 }
 
@@ -138,7 +124,7 @@ function getExecutiveSummary(companies: any[], vocabulary: string[][], variation
   const assessmentWord = vocabulary[0] ? vocabulary[0][variation % vocabulary[0].length] : 'assessed';
   const complianceWord = vocabulary[1] ? vocabulary[1][variation % vocabulary[1].length] : 'compliance';
   const standardsWord = vocabulary[2] ? vocabulary[2][variation % vocabulary[2].length] : 'standards';
-  
+
   return `EXECUTIVE SUMMARY
 This comprehensive inspection ${assessmentWord} ${complianceWord} with established ${standardsWord} across ${companies.length} operational unit${companies.length > 1 ? 's' : ''}. The evaluation encompasses vendor documentation, operational protocols, and regulatory adherence.`;
 }
@@ -148,17 +134,21 @@ function generateUnitSection(company: any, index: number, vocabulary: string[][]
   const implementedWord = vocabulary[4] ? vocabulary[4][variation % vocabulary[4].length] : 'implemented';
   const deficiencyWord = vocabulary[5] ? vocabulary[5][variation % vocabulary[5].length] : 'deficiencies';
 
-  // Images section logic
   let imagesSection = 'Images of the Inspection:\n';
   if (company.photos && company.photos.length > 0) {
-    imagesSection += company.photos
-      .map((photo: any, idx: number) => `- [Photo ${idx + 1}](${photo.url})`)
-      .join('\n');
+    const includedPhotos = company.photos.filter((photo: any) => photo.includeInReport);
+    if (includedPhotos.length > 0) {
+      imagesSection += includedPhotos
+        .map((photo: any, idx: number) => `- [Photo ${idx + 1}](${photo.url})`)
+        .join('\n');
+    } else {
+      imagesSection += 'As per annexure';
+    }
   } else {
     imagesSection += 'As per annexure';
   }
 
-  return `UNIT ${index + 1}: ${company.companyName || `Unit ${index + 1`}
+  return `UNIT ${index + 1}: ${company.companyName || `Unit ${index + 1}`}
 Location: ${company.unitType || 'Not specified'} - Platform ${company.platformNo || 'N/A'}
 
 Vendor Information: ${company.vendorName || 'Not specified'}
@@ -176,7 +166,7 @@ Operational Standards ${implementedWord}:
 
 ${imagesSection}
 
-${company.unapprovedItems && company.unapprovedItems.filter((item: string) => item.trim()).length > 0 
+${company.unapprovedItems && company.unapprovedItems.filter((item: string) => item.trim()).length > 0
   ? `Inventory ${deficiencyWord} noted: ${company.unapprovedItems.filter((item: string) => item.trim()).length} unauthorized items`
   : 'Inventory compliance maintained'
 }`;
@@ -184,7 +174,7 @@ ${company.unapprovedItems && company.unapprovedItems.filter((item: string) => it
 
 function getRecommendationsSection(companies: any[], vocabulary: string[][], variation: number): string {
   const recommendWord = vocabulary[6] ? vocabulary[6][variation % vocabulary[6].length] : 'recommendations';
-  
+
   return `${recommendWord.toUpperCase()}
 1. Address documentation gaps systematically
 2. Enhance operational protocol compliance
@@ -199,30 +189,23 @@ function getReportFooter(style: string, variation: number): string {
     'Evaluation conducted following standard procedures.',
     'Review executed in compliance with established methodology.'
   ];
-  
   return `---\n${footers[variation % footers.length]}`;
 }
 
 function selectUniqueVariation(variations: string[], previousReports: string[], preferredIndex: number): string {
-  // Simple uniqueness check - in production, you might want more sophisticated comparison
-  const availableVariations = variations.filter(variation => 
+  const availableVariations = variations.filter(variation =>
     !previousReports.some(previous => calculateSimilarity(variation, previous) > 0.8)
   );
-  
   if (availableVariations.length === 0) {
     return variations[preferredIndex % variations.length];
   }
-  
   return availableVariations[preferredIndex % availableVariations.length];
 }
 
 function calculateSimilarity(text1: string, text2: string): number {
-  // Simple similarity calculation - could be enhanced with more sophisticated algorithms
   const words1 = text1.toLowerCase().split(/\s+/);
   const words2 = text2.toLowerCase().split(/\s+/);
-  
   const commonWords = words1.filter(word => words2.includes(word)).length;
   const totalWords = Math.max(words1.length, words2.length);
-  
   return commonWords / totalWords;
 }
