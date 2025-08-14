@@ -373,6 +373,17 @@ export function PhotoManager({
                   <Camera className="w-4 h-4 mr-2" />
                   Capture
                 </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    if (streamRef.current && videoRef.current) {
+                      videoRef.current.srcObject = streamRef.current;
+                      console.log('Manual stream attachment');
+                    }
+                  }}
+                >
+                  Fix Video
+                </Button>
                 <Button variant="outline" onClick={stopCamera}>
                   Cancel
                 </Button>
