@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -43,18 +43,36 @@ export function PhotoManager({
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' } // Use back camera if available
+        video: { facingMode: 'environment' }
       });
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
       setShowCamera(true);
     } catch (error) {
       console.error('Error accessing camera:', error);
       alert('Camera access denied. Please use file upload instead.');
     }
   };
+
+  const attachStreamToVideo = (stream: MediaStream, retries = 0) => {
+    if (retries > 10) {
+      console.error('Failed to attach stream after 10 retries');
+      return;
+    }
+    
+    if (!videoRef.current) {
+      setTimeout(() => attachStreamToVideo(stream, retries + 1), 200);
+      return;
+    }
+    
+    videoRef.current.srcObject = stream;
+    console.log('Stream attached successfully!');
+  };
+
+  useEffect(() => {
+    if (showCamera && streamRef.current) {
+      attachStreamToVideo(streamRef.current);
+    }
+  }, [showCamera]);
 
   const stopCamera = () => {
     if (streamRef.current) {
