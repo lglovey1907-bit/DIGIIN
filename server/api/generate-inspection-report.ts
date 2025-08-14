@@ -147,8 +147,18 @@ function generateUnitSection(company: any, index: number, vocabulary: string[][]
   const identifiedWord = vocabulary[3] ? vocabulary[3][variation % vocabulary[3].length] : 'identified';
   const implementedWord = vocabulary[4] ? vocabulary[4][variation % vocabulary[4].length] : 'implemented';
   const deficiencyWord = vocabulary[5] ? vocabulary[5][variation % vocabulary[5].length] : 'deficiencies';
-  
-  return `UNIT ${index + 1}: ${company.companyName || `Unit ${index + 1}`}
+
+  // Images section logic
+  let imagesSection = 'Images of the Inspection:\n';
+  if (company.photos && company.photos.length > 0) {
+    imagesSection += company.photos
+      .map((photo: any, idx: number) => `- [Photo ${idx + 1}](${photo.url})`)
+      .join('\n');
+  } else {
+    imagesSection += 'As per annexure';
+  }
+
+  return `UNIT ${index + 1}: ${company.companyName || `Unit ${index + 1`}
 Location: ${company.unitType || 'Not specified'} - Platform ${company.platformNo || 'N/A'}
 
 Vendor Information: ${company.vendorName || 'Not specified'}
@@ -163,6 +173,8 @@ Operational Standards ${implementedWord}:
 - Rate Display: ${company.rateListDisplay === 'properly_displayed' ? 'Compliant' : 'Non-compliant'}
 - Billing Systems: ${company.billMachine === 'available_working' ? 'Functional' : 'Needs Repair'}
 - Digital Payments: ${company.digitalPayment === 'accepting' ? 'Available' : 'Not Available'}
+
+${imagesSection}
 
 ${company.unapprovedItems && company.unapprovedItems.filter((item: string) => item.trim()).length > 0 
   ? `Inventory ${deficiencyWord} noted: ${company.unapprovedItems.filter((item: string) => item.trim()).length} unauthorized items`
