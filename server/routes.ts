@@ -867,7 +867,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/inspections/:id/convert-to-doc', async (req: any, res) => {
     try {
       console.log('convert-to-doc request body:', req.body);
-      // If you process companies/photos, log them here:
       if (req.body && req.body.catering && req.body.catering.companies) {
         console.log('Catering companies:', req.body.catering.companies);
       }
