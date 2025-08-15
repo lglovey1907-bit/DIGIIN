@@ -44,7 +44,10 @@ const sentenceStructures = {
 
 export async function generateInspectionReport(req: Request, res: Response) {
   try {
+    console.log('Request body:', req.body);
     const { observationData, style, variationIndex, previousReports }: ReportGenerationRequest = req.body;
+    console.log('Observation data:', observationData);
+    console.log('Companies:', observationData.companies);
 
     const variations = generateReportVariations(observationData, style, 3);
     const selectedVariation = selectUniqueVariation(variations, previousReports, variationIndex);
