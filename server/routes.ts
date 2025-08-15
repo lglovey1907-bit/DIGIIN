@@ -25,6 +25,7 @@ import { generateReportLayoutSuggestions, analyzeInspectionTrends } from "./aiSe
 import { convertInspectionToDocument, generateDocumentText, generateRTFDocument, generateWordDocument } from "./documentConverter";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import QRCode from 'qrcode';
 
 // Extend Express types
 declare global {
@@ -61,6 +62,18 @@ const upload = multer({
     }
   }
 });
+
+// Add this helper function above your registerRoutes export
+async function getImagesForInspection(inspectionId: string) {
+  // Example: fetch files from storage by inspectionId
+  const files = await storage.getInspectionFiles(inspectionId);
+  // Filter only image files (jpeg, jpg, png, gif)
+  const imageFiles = files.filter(file =>
+    ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'].includes(file.fileType)
+  );
+  // Return URLs for frontend use
+  return imageFiles.map(file => `/uploads/${path.basename(file.filePath)}`);
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup local authentication only (disable Replit Auth to avoid conflicts)
@@ -1385,6 +1398,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error revoking permission:", error);
       res.status(500).json({ message: "Failed to revoke permission" });
     }
+  });
+
+  // Generate QR code for gallery
+  app.get('/api/inspections/:id/gallery-qr', async (req, res) => {
+    const inspectionId = req.params.id;
+    const galleryUrl = `https://your-domain.com/gallery/${inspectionId}`;
+    try {
+      const qrDataUrl = await QRCode.toDataURL(galleryUrl);
+      res.json({ qrCode: qrDataUrl, galleryUrl });
+    } catch (err) {
+      res.status(500).json({ error: 'Failed to generate QR code' });
+    }
+  });
+
+  // Get all images for an inspection
+  app.get('/api/inspections/:id/gallery', async (req, res) => {
+    const inspectionId = req.params.id;
+    // Example: fetch image URLs from DB or filesystem
+    const images = await getImagesForInspection(inspectionId); // Implement this function
+    res.json({ images });
+  });
+
+  // QR code upload route
+  const qrCodeUpload = multer({ dest: 'uploads/qr-codes/' });
+  app.post('/api/inspections/:id/upload-qr', qrCodeUpload.single('qrCode'), (req, res) => {
+    // Save the uploaded QR code file and link it to the inspection
+    res.json({ success: true, filePath: req.file.path });
   });
 
   const httpServer = createServer(app);
