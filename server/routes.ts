@@ -866,6 +866,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PDF to DOC conversion route
   app.post('/api/inspections/:id/convert-to-doc', async (req: any, res) => {
     try {
+      console.log('convert-to-doc request body:', req.body);
+      // If you process companies/photos, log them here:
+      if (req.body && req.body.catering && req.body.catering.companies) {
+        console.log('Catering companies:', req.body.catering.companies);
+      }
+      
       const inspection = await storage.getInspection(req.params.id);
       if (!inspection) {
         return res.status(404).json({ message: "Inspection not found" });
