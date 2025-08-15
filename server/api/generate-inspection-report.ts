@@ -148,6 +148,8 @@ function generateUnitSection(company: any, index: number, vocabulary: string[][]
     imagesSection += 'As per annexure';
   }
 
+  console.log('Company photos:', company.photos);
+
   return `UNIT ${index + 1}: ${company.companyName || `Unit ${index + 1}`}
 Location: ${company.unitType || 'Not specified'} - Platform ${company.platformNo || 'N/A'}
 
